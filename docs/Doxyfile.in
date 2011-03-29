@@ -1424,24 +1424,24 @@ PREDEFINED             = \
 APPNAME_DOCUMENTATION \
 CORK_DOCUMENTATION \
 \
-"CORK_DEFINE_INTERFACE(ifacename, since_version)= \
- /** \@brief An instance of the ifacename##_iface_t interface */ \
- /** \@since since_version */ \
- typedef struct ifacename##_t \
+"CORK_INTERFACE(ifacename, since_version)= \
+ typedef struct ifacename##_iface_t  ifacename##_iface_t; \
+ struct ifacename##_iface_t" \
+\
+"CORK_FACADE(facadename, since_version) = \
+ typedef struct facadename##_t \
  { \
-     /** \@brief The interface implementation for this instance. */ \
-     const ifacename##_iface_t  *impl; \
-     /** \@brief The instance data pointer for this instance. */ \
+     /** \@brief The implementation struct for this facade. */ \
+     const facadename##_impl_t  impl; \
+     /** \@brief The instance pointer for this facade. */ \
      void  *self; \
- } ifacename##_t;" \
+ } facadename##_t; \
+ /** \@brief An implementation struct for the \@c facadename facade. */ \
+ /** \@since since_version */ \
+ typedef struct facadename##_impl_t  facadename##_impl_t;" \
 \
 "CORK_IMPLEMENTS(ifacename, classname, since_version)= \
- /** \@struct classname##_t \"\" \"\" \@implements ifacename##_iface_t */ \
- /** \@brief A \@ref ifacename##_iface_t implementation. */ \
- /** \@protected \@memberof classname##_t */ \
- /** \@since since_version */ \
- const ifacename##_iface_t * \
- classname##__impl__##ifacename(void);" \
+ /** \@struct classname##_t \"\" \"\" \@implements ifacename##_iface_t */" \
 \
 "CORK_DECLARE_ERROR_CLASS(modulename, sinceversion)= \
  /** \@brief Return the error class for the \@c modulename module */ \
