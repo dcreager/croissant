@@ -1,0 +1,7 @@
+Name: dunkin
+Description: C implementation of Pastry DHT and overlay network
+Version: @VERSION@
+URL: http://github.com/redjack/dunkin/
+Requires: libcork
+Libs: -L@prefix@/lib -ldunkin
+Cflags: -I@prefix@/include
