@@ -1421,7 +1421,7 @@ INCLUDE_FILE_PATTERNS  =
 # instead of the = operator.
 
 PREDEFINED             = \
-APPNAME_DOCUMENTATION \
+DUNKIN_DOCUMENTATION \
 CORK_DOCUMENTATION \
 \
 "CORK_INTERFACE(ifacename, since_version)= \
