@@ -44,11 +44,27 @@ typedef union dunkin_id_t
      * @private
      */
 
-    uint8_t  u8[16];
+    uint8_t  u8[20];
 
-    /** @brief 64-bit chunks of the identifier. @private */
-    uint64_t  u64[2];
+    /** @brief 32-bit chunks of the identifier. @private */
+    uint32_t  u32[5];
 } dunkin_id_t;
+
+/**
+ * @brief The number of bits in a Pastry identifier.
+ * @showinitializer
+ * @since 0.0-dev
+ */
+
+#define DUNKIN_ID_BIT_LENGTH  160
+
+/**
+ * @brief The number of nybbles in a Pastry identifier.
+ * @showinitializer
+ * @since 0.0-dev
+ */
+
+#define DUNKIN_ID_NYBBLE_LENGTH  (DUNKIN_ID_BIT_LENGTH / 4)
 
 /**
  * @brief The minimum size of a buffer that can hold the string
@@ -57,23 +73,8 @@ typedef union dunkin_id_t
  * @since 0.0-dev
  */
 
-#define DUNKIN_ID_STRING_LENGTH  33  /* includes NUL terminator */
-
-/**
- * @brief The number of bits in a Pastry identifier.
- * @showinitializer
- * @since 0.0-dev
- */
-
-#define DUNKIN_ID_BIT_LENGTH  128
-
-/**
- * @brief The number of nybbles in a Pastry identifier.
- * @showinitializer
- * @since 0.0-dev
- */
-
-#define DUNKIN_ID_NYBBLE_LENGTH  (128 / 4)
+/* includes NUL terminator */
+#define DUNKIN_ID_STRING_LENGTH  (DUNKIN_ID_NYBBLE_LENGTH + 1)
 
 /* end of id group */
 /**

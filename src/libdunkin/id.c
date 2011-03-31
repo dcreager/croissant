@@ -70,16 +70,25 @@ void
 dunkin_id_to_raw_string(cork_context_t *ctx, const dunkin_id_t *id, char *str)
 {
     snprintf(str, DUNKIN_ID_STRING_LENGTH,
-             "%016" PRIx64 "%016" PRIx64,
-             CORK_UINT64_BIG_TO_HOST(id->u64[0]),
-             CORK_UINT64_BIG_TO_HOST(id->u64[1]));
+             "%08" PRIx32 "%08" PRIx32 "%08" PRIx32
+             "%08" PRIx32 "%08" PRIx32,
+             CORK_UINT32_BIG_TO_HOST(id->u32[0]),
+             CORK_UINT32_BIG_TO_HOST(id->u32[1]),
+             CORK_UINT32_BIG_TO_HOST(id->u32[2]),
+             CORK_UINT32_BIG_TO_HOST(id->u32[3]),
+             CORK_UINT32_BIG_TO_HOST(id->u32[4]));
 }
 
 
 bool
 dunkin_id_equals(const dunkin_id_t *id1, const dunkin_id_t *id2)
 {
-    return (id1->u64[0] == id2->u64[0]) && (id1->u64[1] == id2->u64[1]);
+    return
+        (id1->u32[0] == id2->u32[0]) &&
+        (id1->u32[1] == id2->u32[1]) &&
+        (id1->u32[2] == id2->u32[2]) &&
+        (id1->u32[3] == id2->u32[3]) &&
+        (id1->u32[4] == id2->u32[4]);
 }
 
 
