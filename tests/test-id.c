@@ -73,6 +73,49 @@ START_TEST(test_get_nybble)
 END_TEST
 
 
+START_TEST(test_get_msdd)
+{
+    cork_context_t  *ctx = cork_context_new_with_debug_allocator();
+
+    static const char  *SRC1 = "00000000000000000000000000000000";
+    dunkin_id_t  id1;
+    dunkin_id_init(ctx, &id1, SRC1);
+
+    char  SRC2[DUNKIN_ID_STRING_LENGTH];
+    char  SRC3[DUNKIN_ID_STRING_LENGTH];
+
+    int  expected;
+    for (expected = -1; expected < DUNKIN_ID_NYBBLE_LENGTH; expected++) {
+        unsigned int  i;
+        for (i = 0; i < DUNKIN_ID_STRING_LENGTH-1; i++) {
+            SRC2[i] = (i >= expected)? '1': '0';
+            SRC3[i] = (i == expected)? '1': '0';
+        }
+        SRC2[DUNKIN_ID_STRING_LENGTH-1] = '\0';
+        SRC3[DUNKIN_ID_STRING_LENGTH-1] = '\0';
+
+        //printf("<%s> <%s>: %d?\n", SRC1, SRC2, expected);
+        dunkin_id_t  id2;
+        dunkin_id_init(ctx, &id2, SRC2);
+        int  actual2 = dunkin_id_get_msdd(&id1, &id2);
+        fail_unless(actual2 == expected,
+                    "Unexpected MSDD: got %d, expected %d",
+                    actual2, expected);
+
+        //printf("<%s> <%s>: %d?\n", SRC1, SRC3, expected);
+        dunkin_id_t  id3;
+        dunkin_id_init(ctx, &id3, SRC3);
+        int  actual3 = dunkin_id_get_msdd(&id1, &id3);
+        fail_unless(actual3 == expected,
+                    "Unexpected MSDD: got %d, expected %d",
+                    actual3, expected);
+    }
+
+    cork_context_free(ctx);
+}
+END_TEST
+
+
 /*-----------------------------------------------------------------------
  * Testing harness
  */
@@ -85,6 +128,7 @@ test_suite()
     TCase  *tc_id = tcase_create("id");
     tcase_add_test(tc_id, test_id);
     tcase_add_test(tc_id, test_get_nybble);
+    tcase_add_test(tc_id, test_get_msdd);
     suite_add_tcase(s, tc_id);
 
     return s;

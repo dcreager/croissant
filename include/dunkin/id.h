@@ -128,6 +128,7 @@ dunkin_id_to_raw_string(cork_context_t *ctx, const dunkin_id_t *id, char *str);
  * @param [in] id1  An identifier
  * @param [in] id2  An identifier
  * @returns Whether the two identifiers are equal.
+ * @public @memberof dunkin_id_t
  * @since 0.0-dev
  */
 
@@ -137,9 +138,10 @@ dunkin_id_equals(const dunkin_id_t *id1, const dunkin_id_t *id2);
 
 /**
  * @brief Return the nth nybble of the identifer.
- * @param [in] id1  An identifier
+ * @param [in] id  An identifier
  * @param [in] index  The index of the nybble to retrieve
  * @returns The nth nybble of the identifier.
+ * @public @memberof dunkin_id_t
  * @since 0.0-dev
  */
 
@@ -152,6 +154,21 @@ dunkin_id_get_nybble(const dunkin_id_t *id, const unsigned int index);
      (((id)->u8[index/2] & 0xf0) >> 4):  /* an even index */ \
       ((id)->u8[index/2] & 0x0f))        /* an odd index */
 #endif
+
+
+/**
+ * @brief Return the most-significant different digit (MSDD) between two
+ * identifiers.
+ * @param [in] id1  An identifier
+ * @param [in] id2  An identifier
+ * @returns The index of the first digit which is different in the two
+ * identifiers, or -1 if the two identifiers are identical.
+ * @public @memberof dunkin_id_t
+ * @since 0.0-dev
+ */
+
+int
+dunkin_id_get_msdd(const dunkin_id_t *id1, const dunkin_id_t *id2);
 
 
 #endif  /* DUNKIN_ID_H */

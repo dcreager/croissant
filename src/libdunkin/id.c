@@ -81,3 +81,20 @@ dunkin_id_equals(const dunkin_id_t *id1, const dunkin_id_t *id2)
 {
     return (id1->u64[0] == id2->u64[0]) && (id1->u64[1] == id2->u64[1]);
 }
+
+
+int
+dunkin_id_get_msdd(const dunkin_id_t *id1, const dunkin_id_t *id2)
+{
+    unsigned int  i;
+    for (i = 0; i < DUNKIN_ID_NYBBLE_LENGTH; i++) {
+        unsigned int  digit1 = dunkin_id_get_nybble(id1, i);
+        unsigned int  digit2 = dunkin_id_get_nybble(id2, i);
+
+        if (digit1 != digit2) {
+            return i;
+        }
+    }
+
+    return -1;
+}
