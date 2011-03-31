@@ -48,6 +48,31 @@ START_TEST(test_id)
 END_TEST
 
 
+START_TEST(test_get_nybble)
+{
+    cork_context_t  *ctx = cork_context_new_with_debug_allocator();
+
+    static const char  *SRC1 = "0123456789abcdeffedcba9876543210";
+    dunkin_id_t  id;
+    dunkin_id_init(ctx, &id, SRC1);
+
+    unsigned int  expected[] =
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+      15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+
+    unsigned int  i;
+    for (i = 0; i < DUNKIN_ID_NYBBLE_LENGTH; i++) {
+        fail_unless(dunkin_id_get_nybble(&id, i) == expected[i],
+                    "Unexpected value for nybble %u: "
+                    "got 0x%x, expected 0x%x",
+                    i, dunkin_id_get_nybble(&id, i), expected[i]);
+    }
+
+    cork_context_free(ctx);
+}
+END_TEST
+
+
 /*-----------------------------------------------------------------------
  * Testing harness
  */
@@ -59,6 +84,7 @@ test_suite()
 
     TCase  *tc_id = tcase_create("id");
     tcase_add_test(tc_id, test_id);
+    tcase_add_test(tc_id, test_get_nybble);
     suite_add_tcase(s, tc_id);
 
     return s;

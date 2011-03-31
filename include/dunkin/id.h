@@ -59,6 +59,22 @@ typedef union dunkin_id_t
 
 #define DUNKIN_ID_STRING_LENGTH  33  /* includes NUL terminator */
 
+/**
+ * @brief The number of bits in a Pastry identifier.
+ * @showinitializer
+ * @since 0.0-dev
+ */
+
+#define DUNKIN_ID_BIT_LENGTH  128
+
+/**
+ * @brief The number of nybbles in a Pastry identifier.
+ * @showinitializer
+ * @since 0.0-dev
+ */
+
+#define DUNKIN_ID_NYBBLE_LENGTH  (128 / 4)
+
 /* end of id group */
 /**
  * @}
@@ -117,6 +133,25 @@ dunkin_id_to_raw_string(cork_context_t *ctx, const dunkin_id_t *id, char *str);
 
 bool
 dunkin_id_equals(const dunkin_id_t *id1, const dunkin_id_t *id2);
+
+
+/**
+ * @brief Return the nth nybble of the identifer.
+ * @param [in] id1  An identifier
+ * @param [in] index  The index of the nybble to retrieve
+ * @returns The nth nybble of the identifier.
+ * @since 0.0-dev
+ */
+
+#if defined(DUNKIN_DOCUMENTATION)
+unsigned int
+dunkin_id_get_nybble(const dunkin_id_t *id, const unsigned int index);
+#else
+#define dunkin_id_get_nybble(id, index) \
+    (((index % 2) == 0)? \
+     (((id)->u8[index/2] & 0xf0) >> 4):  /* an even index */ \
+      ((id)->u8[index/2] & 0x0f))        /* an odd index */
+#endif
 
 
 #endif  /* DUNKIN_ID_H */
