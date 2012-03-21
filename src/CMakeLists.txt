@@ -20,7 +20,7 @@ set_target_properties(libdunkin PROPERTIES
     SOVERSION 0.0.0)
 target_link_libraries(libdunkin
     ${CORK_LIBRARIES}
-    )
+)
 
 install(TARGETS libdunkin LIBRARY DESTINATION lib)
 

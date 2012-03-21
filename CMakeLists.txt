@@ -26,6 +26,8 @@ endif(VERSION_RESULT)
 # This causes an annoying extra prompt in ccmake.
 # message("Current version: " ${VERSION})
 
+string(REGEX REPLACE "-dev.*" "-dev" BASE_VERSION "${VERSION}")
+
 #-----------------------------------------------------------------------
 # Check for prerequisite libraries
 
@@ -38,12 +40,13 @@ link_directories(${CORK_LIBRARY_DIRS})
 #-----------------------------------------------------------------------
 # Set some options
 
-# We can't set this by default since we don't have a Universal glib to
-# link to...
-
 if(APPLE)
-    set(CMAKE_OSX_ARCHITECTURES "i386;x86_64"
-        CACHE STRING "Build architectures for Mac OS X")
+    if (NOT CMAKE_OSX_ARCHITECTURES)
+        set(CMAKE_OSX_ARCHITECTURES "i386;x86_64" CACHE STRING "Build architectures for Mac OS X")
+    endif (NOT CMAKE_OSX_ARCHITECTURES)
+    if (NOT CMAKE_INSTALL_NAME_DIR)
+        set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+    endif (NOT CMAKE_INSTALL_NAME_DIR)
 endif(APPLE)
 
 if(NOT CMAKE_BUILD_TYPE)

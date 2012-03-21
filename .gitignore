@@ -1,5 +1,5 @@
-/.lock-wscript
 /build/
+/.build/
 
 RELEASE-VERSION
 dunkin.pc
