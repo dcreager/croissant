@@ -23,46 +23,40 @@
 
 START_TEST(test_id)
 {
-    cork_context_t  *ctx = cork_context_new_with_debug_allocator();
+    struct dunkin_id  expected =
+    {{{ 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+        0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13 }}};
 
-    dunkin_id_t  expected =
-    {{ 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-       0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13 }};
-
-    dunkin_id_t  actual;
+    struct dunkin_id  actual;
     static const char  *SRC1 = "000102030405060708090a0b0c0d0e0f10111213";
     static const char  *SRC2 = "000102030405060708090A0B0C0D0E0F10111213";
 
     char  str[DUNKIN_ID_STRING_LENGTH];
 
-    fail_unless(dunkin_id_init(ctx, &actual, SRC1),
+    fail_unless(dunkin_id_init(&actual, SRC1),
                 "Cannot parse first identifier");
     fail_unless(dunkin_id_equals(&actual, &expected),
                 "Identifiers not equal");
-    dunkin_id_to_raw_string(ctx, &actual, str);
+    dunkin_id_to_raw_string(&actual, str);
     fail_unless(strcmp(str, SRC1) == 0,
                 "String representations not equal");
 
-    fail_unless(dunkin_id_init(ctx, &actual, SRC2),
+    fail_unless(dunkin_id_init(&actual, SRC2),
                 "Cannot parse second identifier");
     fail_unless(dunkin_id_equals(&actual, &expected),
                 "Identifiers not equal");
-    dunkin_id_to_raw_string(ctx, &actual, str);
+    dunkin_id_to_raw_string(&actual, str);
     fail_unless(strcmp(str, SRC1) == 0,
                 "String representations not equal");
-
-    cork_context_free(ctx);
 }
 END_TEST
 
 
 START_TEST(test_get_nybble)
 {
-    cork_context_t  *ctx = cork_context_new_with_debug_allocator();
-
     static const char  *SRC1 = "0123456789abcdef01233210fedcba9876543210";
-    dunkin_id_t  id;
-    dunkin_id_init(ctx, &id, SRC1);
+    struct dunkin_id  id;
+    dunkin_id_init(&id, SRC1);
 
     unsigned int  expected[] =
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3,
@@ -75,19 +69,15 @@ START_TEST(test_get_nybble)
                     "got 0x%x, expected 0x%x",
                     i, dunkin_id_get_nybble(&id, i), expected[i]);
     }
-
-    cork_context_free(ctx);
 }
 END_TEST
 
 
 START_TEST(test_get_msdd)
 {
-    cork_context_t  *ctx = cork_context_new_with_debug_allocator();
-
     static const char  *SRC1 = "0000000000000000000000000000000000000000";
-    dunkin_id_t  id1;
-    dunkin_id_init(ctx, &id1, SRC1);
+    struct dunkin_id  id1;
+    dunkin_id_init(&id1, SRC1);
 
     char  SRC2[DUNKIN_ID_STRING_LENGTH];
     char  SRC3[DUNKIN_ID_STRING_LENGTH];
@@ -103,23 +93,21 @@ START_TEST(test_get_msdd)
         SRC3[DUNKIN_ID_STRING_LENGTH-1] = '\0';
 
         //printf("<%s> <%s>: %d?\n", SRC1, SRC2, expected);
-        dunkin_id_t  id2;
-        dunkin_id_init(ctx, &id2, SRC2);
+        struct dunkin_id  id2;
+        dunkin_id_init(&id2, SRC2);
         int  actual2 = dunkin_id_get_msdd(&id1, &id2);
         fail_unless(actual2 == expected,
                     "Unexpected MSDD: got %d, expected %d",
                     actual2, expected);
 
         //printf("<%s> <%s>: %d?\n", SRC1, SRC3, expected);
-        dunkin_id_t  id3;
-        dunkin_id_init(ctx, &id3, SRC3);
+        struct dunkin_id  id3;
+        dunkin_id_init(&id3, SRC3);
         int  actual3 = dunkin_id_get_msdd(&id1, &id3);
         fail_unless(actual3 == expected,
                     "Unexpected MSDD: got %d, expected %d",
                     actual3, expected);
     }
-
-    cork_context_free(ctx);
 }
 END_TEST
 

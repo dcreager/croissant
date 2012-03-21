@@ -17,14 +17,14 @@
 
 
 void
-dunkin_id_copy(cork_context_t *ctx, dunkin_id_t *id, const dunkin_id_t *src)
+dunkin_id_copy(struct dunkin_id *id, const struct dunkin_id *src)
 {
-    memcpy(id, src, sizeof(dunkin_id_t));
+    memcpy(id, src, sizeof(struct dunkin_id));
 }
 
 
 bool
-dunkin_id_init(cork_context_t *ctx, dunkin_id_t *id, const char *src)
+dunkin_id_init(struct dunkin_id *id, const char *src)
 {
     if (src == NULL) {
         return false;
@@ -33,7 +33,7 @@ dunkin_id_init(cork_context_t *ctx, dunkin_id_t *id, const char *src)
     unsigned int  id_idx = 0;
     unsigned int  str_idx = 0;
 
-    for (id_idx = 0; id_idx < sizeof(dunkin_id_t); id_idx++) {
+    for (id_idx = 0; id_idx < sizeof(struct dunkin_id); id_idx++) {
         uint8_t  digit;
 
 #define GET_DIGIT \
@@ -53,10 +53,10 @@ dunkin_id_init(cork_context_t *ctx, dunkin_id_t *id, const char *src)
         }
 
         GET_DIGIT;
-        id->u8[id_idx] = (digit << 4);
+        id->_.u8[id_idx] = (digit << 4);
         str_idx++;
         GET_DIGIT;
-        id->u8[id_idx] |= digit;
+        id->_.u8[id_idx] |= digit;
         str_idx++;
 
 #undef GET_DIGIT
@@ -67,33 +67,33 @@ dunkin_id_init(cork_context_t *ctx, dunkin_id_t *id, const char *src)
 
 
 void
-dunkin_id_to_raw_string(cork_context_t *ctx, const dunkin_id_t *id, char *str)
+dunkin_id_to_raw_string(const struct dunkin_id *id, char *str)
 {
     snprintf(str, DUNKIN_ID_STRING_LENGTH,
              "%08" PRIx32 "%08" PRIx32 "%08" PRIx32
              "%08" PRIx32 "%08" PRIx32,
-             CORK_UINT32_BIG_TO_HOST(id->u32[0]),
-             CORK_UINT32_BIG_TO_HOST(id->u32[1]),
-             CORK_UINT32_BIG_TO_HOST(id->u32[2]),
-             CORK_UINT32_BIG_TO_HOST(id->u32[3]),
-             CORK_UINT32_BIG_TO_HOST(id->u32[4]));
+             CORK_UINT32_BIG_TO_HOST(id->_.u32[0]),
+             CORK_UINT32_BIG_TO_HOST(id->_.u32[1]),
+             CORK_UINT32_BIG_TO_HOST(id->_.u32[2]),
+             CORK_UINT32_BIG_TO_HOST(id->_.u32[3]),
+             CORK_UINT32_BIG_TO_HOST(id->_.u32[4]));
 }
 
 
 bool
-dunkin_id_equals(const dunkin_id_t *id1, const dunkin_id_t *id2)
+dunkin_id_equals(const struct dunkin_id *id1, const struct dunkin_id *id2)
 {
     return
-        (id1->u32[0] == id2->u32[0]) &&
-        (id1->u32[1] == id2->u32[1]) &&
-        (id1->u32[2] == id2->u32[2]) &&
-        (id1->u32[3] == id2->u32[3]) &&
-        (id1->u32[4] == id2->u32[4]);
+        (id1->_.u32[0] == id2->_.u32[0]) &&
+        (id1->_.u32[1] == id2->_.u32[1]) &&
+        (id1->_.u32[2] == id2->_.u32[2]) &&
+        (id1->_.u32[3] == id2->_.u32[3]) &&
+        (id1->_.u32[4] == id2->_.u32[4]);
 }
 
 
 int
-dunkin_id_get_msdd(const dunkin_id_t *id1, const dunkin_id_t *id2)
+dunkin_id_get_msdd(const struct dunkin_id *id1, const struct dunkin_id *id2)
 {
     unsigned int  i;
     for (i = 0; i < DUNKIN_ID_NYBBLE_LENGTH; i++) {
