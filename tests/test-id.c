@@ -14,7 +14,7 @@
 #include <check.h>
 #include <libcork/core.h>
 
-#include "dunkin/id.h"
+#include "croissant/id.h"
 
 
 /*-----------------------------------------------------------------------
@@ -23,29 +23,29 @@
 
 START_TEST(test_id)
 {
-    struct dunkin_id  expected =
+    struct crs_id  expected =
     {{{ 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
         0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13 }}};
 
-    struct dunkin_id  actual;
+    struct crs_id  actual;
     static const char  *SRC1 = "000102030405060708090a0b0c0d0e0f10111213";
     static const char  *SRC2 = "000102030405060708090A0B0C0D0E0F10111213";
 
-    char  str[DUNKIN_ID_STRING_LENGTH];
+    char  str[CRS_ID_STRING_LENGTH];
 
-    fail_unless(dunkin_id_init(&actual, SRC1),
+    fail_unless(crs_id_init(&actual, SRC1),
                 "Cannot parse first identifier");
-    fail_unless(dunkin_id_equals(&actual, &expected),
+    fail_unless(crs_id_equals(&actual, &expected),
                 "Identifiers not equal");
-    dunkin_id_to_raw_string(&actual, str);
+    crs_id_to_raw_string(&actual, str);
     fail_unless(strcmp(str, SRC1) == 0,
                 "String representations not equal");
 
-    fail_unless(dunkin_id_init(&actual, SRC2),
+    fail_unless(crs_id_init(&actual, SRC2),
                 "Cannot parse second identifier");
-    fail_unless(dunkin_id_equals(&actual, &expected),
+    fail_unless(crs_id_equals(&actual, &expected),
                 "Identifiers not equal");
-    dunkin_id_to_raw_string(&actual, str);
+    crs_id_to_raw_string(&actual, str);
     fail_unless(strcmp(str, SRC1) == 0,
                 "String representations not equal");
 }
@@ -55,19 +55,19 @@ END_TEST
 START_TEST(test_get_nybble)
 {
     static const char  *SRC1 = "0123456789abcdef01233210fedcba9876543210";
-    struct dunkin_id  id;
-    dunkin_id_init(&id, SRC1);
+    struct crs_id  id;
+    crs_id_init(&id, SRC1);
 
     unsigned int  expected[] =
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3,
       3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
 
     unsigned int  i;
-    for (i = 0; i < DUNKIN_ID_NYBBLE_LENGTH; i++) {
-        fail_unless(dunkin_id_get_nybble(&id, i) == expected[i],
+    for (i = 0; i < CRS_ID_NYBBLE_LENGTH; i++) {
+        fail_unless(crs_id_get_nybble(&id, i) == expected[i],
                     "Unexpected value for nybble %u: "
                     "got 0x%x, expected 0x%x",
-                    i, dunkin_id_get_nybble(&id, i), expected[i]);
+                    i, crs_id_get_nybble(&id, i), expected[i]);
     }
 }
 END_TEST
@@ -76,34 +76,34 @@ END_TEST
 START_TEST(test_get_msdd)
 {
     static const char  *SRC1 = "0000000000000000000000000000000000000000";
-    struct dunkin_id  id1;
-    dunkin_id_init(&id1, SRC1);
+    struct crs_id  id1;
+    crs_id_init(&id1, SRC1);
 
-    char  SRC2[DUNKIN_ID_STRING_LENGTH];
-    char  SRC3[DUNKIN_ID_STRING_LENGTH];
+    char  SRC2[CRS_ID_STRING_LENGTH];
+    char  SRC3[CRS_ID_STRING_LENGTH];
 
     int  expected;
-    for (expected = -1; expected < DUNKIN_ID_NYBBLE_LENGTH; expected++) {
+    for (expected = -1; expected < CRS_ID_NYBBLE_LENGTH; expected++) {
         unsigned int  i;
-        for (i = 0; i < DUNKIN_ID_STRING_LENGTH-1; i++) {
+        for (i = 0; i < CRS_ID_STRING_LENGTH-1; i++) {
             SRC2[i] = (i >= expected)? '1': '0';
             SRC3[i] = (i == expected)? '1': '0';
         }
-        SRC2[DUNKIN_ID_STRING_LENGTH-1] = '\0';
-        SRC3[DUNKIN_ID_STRING_LENGTH-1] = '\0';
+        SRC2[CRS_ID_STRING_LENGTH-1] = '\0';
+        SRC3[CRS_ID_STRING_LENGTH-1] = '\0';
 
         //printf("<%s> <%s>: %d?\n", SRC1, SRC2, expected);
-        struct dunkin_id  id2;
-        dunkin_id_init(&id2, SRC2);
-        int  actual2 = dunkin_id_get_msdd(&id1, &id2);
+        struct crs_id  id2;
+        crs_id_init(&id2, SRC2);
+        int  actual2 = crs_id_get_msdd(&id1, &id2);
         fail_unless(actual2 == expected,
                     "Unexpected MSDD: got %d, expected %d",
                     actual2, expected);
 
         //printf("<%s> <%s>: %d?\n", SRC1, SRC3, expected);
-        struct dunkin_id  id3;
-        dunkin_id_init(&id3, SRC3);
-        int  actual3 = dunkin_id_get_msdd(&id1, &id3);
+        struct crs_id  id3;
+        crs_id_init(&id3, SRC3);
+        int  actual3 = crs_id_get_msdd(&id1, &id3);
         fail_unless(actual3 == expected,
                     "Unexpected MSDD: got %d, expected %d",
                     actual3, expected);

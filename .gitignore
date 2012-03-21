@@ -2,10 +2,10 @@
 /.build/
 
 RELEASE-VERSION
-dunkin.pc
+croissant.pc
 
-/dunkin*.tar.gz
-/dunkin*.tar.bz2
+/croissant*.tar.gz
+/croissant*.tar.bz2
 
 *.[oa]
 *.os

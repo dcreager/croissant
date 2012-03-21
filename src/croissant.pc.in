@@ -1,7 +1,7 @@
-Name: dunkin
+Name: croissant
 Description: C implementation of Pastry DHT and overlay network
 Version: @VERSION@
-URL: http://github.com/redjack/dunkin/
+URL: http://github.com/redjack/croissant/
 Requires: libcork
-Libs: -L@prefix@/lib -ldunkin
+Libs: -L@prefix@/lib -lcroissant
 Cflags: -I@prefix@/include

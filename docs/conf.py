@@ -5,8 +5,8 @@ import sys, os
 extensions = []
 source_suffix = '.rst'
 master_doc = 'index'
-project_name = u'Dunkin'
-project_slug = u'dunkin'
+project_name = u'Croissant'
+project_slug = u'croissant'
 company = u'RedJack, LLC'
 copyright_years = u'2011-2012'
 

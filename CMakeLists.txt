@@ -8,7 +8,7 @@
 # ----------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.6)
-set(PROJECT_NAME dunkin)
+set(PROJECT_NAME croissant)
 project(${PROJECT_NAME})
 enable_testing()
 
