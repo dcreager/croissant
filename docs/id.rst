@@ -31,10 +31,11 @@ The types and functions in this section can be used to interact with
 
    The number of bits and nybbles in a Pastry node identifier.
 
-.. function:: bool crs_id_init(struct crs_id \*id, const char \*src)
+.. function:: int crs_id_init(struct crs_id \*id, const char \*src)
 
-   Initialize a Pastry identifier from a string.  Returns whether the
-   string contained a valid identifier.
+   Initialize a Pastry identifier from a string.  If the string doesn't
+   contain a valid identifier, then we return ``-1`` and set the current
+   :ref:`libcork error condition <libcork:errors>`.
 
 .. function:: void crs_id_copy(struct crs_id \*dest, const struct crs_id \*src)
 
@@ -68,3 +69,10 @@ The types and functions in this section can be used to interact with
      char  buf[CRS_ID_STRING_LENGTH];
      struct crs_id  id;
      crs_id_to_raw_string(&id, buf);
+
+
+.. macro:: CRS_ID_ERROR
+           CRS_ID_PARSE_ERROR
+
+   The error class and codes used for the :ref:`error conditions
+   <libcork:errors>` described in this section.

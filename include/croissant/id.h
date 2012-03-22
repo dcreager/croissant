@@ -16,6 +16,23 @@
 #include <libcork/core.h>
 
 
+/*-----------------------------------------------------------------------
+ * Error handling
+ */
+
+/* hash of "crossaint/id.h" */
+#define CRS_ID_ERROR  0x091bdc56
+
+enum crs_parse_error {
+    /* A parse error while parsing an identifier. */
+    CRS_ID_PARSE_ERROR
+};
+
+
+/*-----------------------------------------------------------------------
+ * Pastry identifiers
+ */
+
 struct crs_id {
     union {
         uint8_t  u8[20];
@@ -31,7 +48,7 @@ struct crs_id {
 #define CRS_ID_STRING_LENGTH  (CRS_ID_NYBBLE_LENGTH + 1)
 
 
-bool
+int
 crs_id_init(struct crs_id *id, const char *src);
 
 #define crs_id_copy(id, src) \

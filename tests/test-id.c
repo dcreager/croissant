@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2011, RedJack, LLC.
+ * Copyright © 2011-2012, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -15,6 +15,7 @@
 #include <libcork/core.h>
 
 #include "croissant/id.h"
+#include "helpers.h"
 
 
 /*-----------------------------------------------------------------------
@@ -31,23 +32,31 @@ START_TEST(test_id)
     static const char  *SRC1 = "000102030405060708090a0b0c0d0e0f10111213";
     static const char  *SRC2 = "000102030405060708090A0B0C0D0E0F10111213";
 
+    /* too short */
+    static const char  *BAD_SRC1 = "000102030405060708090a0b0c0d0e0";
+    /* illegal character */
+    static const char  *BAD_SRC2 = "000102030405060x08090A0B0C0D0E0F10111213";
+
     char  str[CRS_ID_STRING_LENGTH];
 
-    fail_unless(crs_id_init(&actual, SRC1),
-                "Cannot parse first identifier");
+    fail_if_error(crs_id_init(&actual, SRC1));
     fail_unless(crs_id_equals(&actual, &expected),
                 "Identifiers not equal");
     crs_id_to_raw_string(&actual, str);
     fail_unless(strcmp(str, SRC1) == 0,
                 "String representations not equal");
 
-    fail_unless(crs_id_init(&actual, SRC2),
-                "Cannot parse second identifier");
+    fail_if_error(crs_id_init(&actual, SRC2));
     fail_unless(crs_id_equals(&actual, &expected),
                 "Identifiers not equal");
     crs_id_to_raw_string(&actual, str);
     fail_unless(strcmp(str, SRC1) == 0,
                 "String representations not equal");
+
+    fail_unless_error(crs_id_init(&actual, BAD_SRC1),
+                      "Expected parse error");
+    fail_unless_error(crs_id_init(&actual, BAD_SRC2),
+                      "Expected parse error");
 }
 END_TEST
 
@@ -56,7 +65,7 @@ START_TEST(test_get_nybble)
 {
     static const char  *SRC1 = "0123456789abcdef01233210fedcba9876543210";
     struct crs_id  id;
-    crs_id_init(&id, SRC1);
+    fail_if_error(crs_id_init(&id, SRC1));
 
     unsigned int  expected[] =
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3,
@@ -77,7 +86,7 @@ START_TEST(test_get_msdd)
 {
     static const char  *SRC1 = "0000000000000000000000000000000000000000";
     struct crs_id  id1;
-    crs_id_init(&id1, SRC1);
+    fail_if_error(crs_id_init(&id1, SRC1));
 
     char  SRC2[CRS_ID_STRING_LENGTH];
     char  SRC3[CRS_ID_STRING_LENGTH];
