@@ -18,10 +18,6 @@
 int
 crs_id_init(struct crs_id *id, const char *src)
 {
-    if (src == NULL) {
-        return false;
-    }
-
     unsigned int  id_idx = 0;
     unsigned int  str_idx = 0;
 
@@ -61,6 +57,13 @@ crs_id_init(struct crs_id *id, const char *src)
 #undef GET_DIGIT
     }
 
+    if (src[str_idx] != '\0') {
+        cork_error_set
+            (CRS_ID_ERROR, CRS_ID_PARSE_ERROR,
+             "Pastry identifier is too long");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -69,13 +72,11 @@ void
 crs_id_to_raw_string(const struct crs_id *id, char *str)
 {
     snprintf(str, CRS_ID_STRING_LENGTH,
-             "%08" PRIx32 "%08" PRIx32 "%08" PRIx32
-             "%08" PRIx32 "%08" PRIx32,
+             "%08" PRIx32 "%08" PRIx32 "%08" PRIx32 "%08" PRIx32,
              CORK_UINT32_BIG_TO_HOST(id->_.u32[0]),
              CORK_UINT32_BIG_TO_HOST(id->_.u32[1]),
              CORK_UINT32_BIG_TO_HOST(id->_.u32[2]),
-             CORK_UINT32_BIG_TO_HOST(id->_.u32[3]),
-             CORK_UINT32_BIG_TO_HOST(id->_.u32[4]));
+             CORK_UINT32_BIG_TO_HOST(id->_.u32[3]));
 }
 
 

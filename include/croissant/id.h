@@ -33,16 +33,16 @@ enum crs_parse_error {
  * Pastry identifiers
  */
 
+#define CRS_ID_BIT_LENGTH  128
+#define CRS_ID_NYBBLE_LENGTH  (CRS_ID_BIT_LENGTH / 4)
+
 struct crs_id {
     union {
-        uint8_t  u8[20];
-        uint32_t  u32[5];
+        uint8_t  u8[CRS_ID_BIT_LENGTH / 8];
+        uint32_t  u32[CRS_ID_BIT_LENGTH / 32];
     } _;
 };
 
-
-#define CRS_ID_BIT_LENGTH  160
-#define CRS_ID_NYBBLE_LENGTH  (CRS_ID_BIT_LENGTH / 4)
 
 /* includes NUL terminator */
 #define CRS_ID_STRING_LENGTH  (CRS_ID_NYBBLE_LENGTH + 1)
