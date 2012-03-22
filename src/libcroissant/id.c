@@ -9,18 +9,10 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 
 #include <libcork/core.h>
 
 #include "croissant/id.h"
-
-
-void
-crs_id_copy(struct crs_id *id, const struct crs_id *src)
-{
-    memcpy(id, src, sizeof(struct crs_id));
-}
 
 
 bool
@@ -77,18 +69,6 @@ crs_id_to_raw_string(const struct crs_id *id, char *str)
              CORK_UINT32_BIG_TO_HOST(id->_.u32[2]),
              CORK_UINT32_BIG_TO_HOST(id->_.u32[3]),
              CORK_UINT32_BIG_TO_HOST(id->_.u32[4]));
-}
-
-
-bool
-crs_id_equals(const struct crs_id *id1, const struct crs_id *id2)
-{
-    return
-        (id1->_.u32[0] == id2->_.u32[0]) &&
-        (id1->_.u32[1] == id2->_.u32[1]) &&
-        (id1->_.u32[2] == id2->_.u32[2]) &&
-        (id1->_.u32[3] == id2->_.u32[3]) &&
-        (id1->_.u32[4] == id2->_.u32[4]);
 }
 
 

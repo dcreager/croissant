@@ -11,6 +11,8 @@
 #ifndef CROISSANT_ID_H
 #define CROISSANT_ID_H
 
+#include <string.h>
+
 #include <libcork/core.h>
 
 
@@ -32,16 +34,16 @@ struct crs_id {
 bool
 crs_id_init(struct crs_id *id, const char *src);
 
-void
-crs_id_copy(struct crs_id *id, const struct crs_id *src);
+#define crs_id_copy(id, src) \
+    (memcpy((id), (src), sizeof(struct crs_id)))
 
 
 void
 crs_id_to_raw_string(const struct crs_id *id, char *str);
 
 
-bool
-crs_id_equals(const struct crs_id *id1, const struct crs_id *id2);
+#define crs_id_equals(id1, id2) \
+    (memcmp((id1), (id2), sizeof(struct crs_id)) == 0)
 
 #define crs_id_get_nybble(id, index) \
     (((index % 2) == 0)? \
