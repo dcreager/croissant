@@ -23,7 +23,7 @@
 /* hash of "crossaint/id.h" */
 #define CRS_ID_ERROR  0x091bdc56
 
-enum crs_parse_error {
+enum crs_id_error {
     /* A parse error while parsing an identifier. */
     CRS_ID_PARSE_ERROR
 };

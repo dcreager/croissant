@@ -24,6 +24,7 @@
 
 START_TEST(test_id)
 {
+    DESCRIBE_TEST;
     struct crs_id  expected =
     {{{ 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
         0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f }}};
@@ -65,6 +66,7 @@ END_TEST
 
 START_TEST(test_get_nybble)
 {
+    DESCRIBE_TEST;
     static const char  *SRC1 = "0123456789abcdef01233210fedcba98";
     struct crs_id  id;
     fail_if_error(crs_id_init(&id, SRC1));
@@ -86,6 +88,7 @@ END_TEST
 
 START_TEST(test_get_msdd)
 {
+    DESCRIBE_TEST;
     static const char  *SRC1 = "00000000000000000000000000000000";
     struct crs_id  id1;
     fail_if_error(crs_id_init(&id1, SRC1));
