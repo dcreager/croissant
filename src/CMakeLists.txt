@@ -28,6 +28,6 @@ install(TARGETS libcroissant LIBRARY DESTINATION lib)
 # Generate the pkg-config file
 
 set(prefix ${CMAKE_INSTALL_PREFIX})
-configure_file(croissant.pc.in croissant.pc)
+configure_file(croissant.pc.in croissant.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/croissant.pc
         DESTINATION lib/pkgconfig)
