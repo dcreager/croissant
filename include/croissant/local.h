@@ -25,16 +25,26 @@
 #define CRS_LOCAL_ERROR  0x795e9e28
 
 enum crs_local_error {
-    /* An unknown local node */
-    CRS_UNKNOWN_LOCAL_NODE,
     /* No messages */
-    CRS_EMPTY_LOCAL_NODE_QUEUE
+    CRS_EMPTY_LOCAL_NODE_QUEUE,
+    /* An unknown local node */
+    CRS_UNKNOWN_LOCAL_NODE
 };
+
+#define crs_set_local_error(code, ...) \
+    (cork_error_set(CRS_LOCAL_ERROR, code, __VA_ARGS__))
+#define crs_empty_local_node_queue(...) \
+    crs_set_local_error(CRS_EMPTY_LOCAL_NODE_QUEUE, __VA_ARGS__)
+#define crs_unknown_local_node(...) \
+    crs_set_local_error(CRS_UNKNOWN_LOCAL_NODE, __VA_ARGS__)
 
 
 /*-----------------------------------------------------------------------
  * Types
  */
+
+/* hash of "local" */
+#define CRS_LOCAL_NODE_TYPE_ID  0x01d3dfa1
 
 typedef uint32_t  crs_local_node_id;
 struct crs_local_node;

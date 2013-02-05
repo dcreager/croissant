@@ -123,9 +123,8 @@ crs_local_node_peek_message(struct crs_local_node *node)
                               struct crs_local_message, list);
         return &msg->content;
     } else {
-        cork_error_set
-            (CRS_LOCAL_ERROR, CRS_EMPTY_LOCAL_NODE_QUEUE,
-             "Local node %" PRIu32 " (%s) has no messages",
+        crs_empty_local_node_queue
+            ("Local node %" PRIu32 " (%s) has no messages",
              node->id, node->name);
         return NULL;
     }
@@ -142,9 +141,8 @@ crs_local_node_pop_message(struct crs_local_node *node)
         crs_local_message_free(msg);
         return 0;
     } else {
-        cork_error_set
-            (CRS_LOCAL_ERROR, CRS_EMPTY_LOCAL_NODE_QUEUE,
-             "Local node %" PRIu32 " (%s) has no messages",
+        crs_empty_local_node_queue
+            ("Local node %" PRIu32 " (%s) has no messages",
              node->id, node->name);
         return 1;
     }
@@ -195,6 +193,22 @@ crs_local_node_ctx__send_message(struct crs_node_ref *vdest,
     return 0;
 }
 
+#define CRS_LOCAL_ADDRESS_MAX_SIZE \
+    (sizeof(uint32_t) + sizeof(uint32_t))
+
+static int
+crs_local_node_ctx__encode_address(struct crs_node_ref *vref,
+                                   struct cork_buffer *dest)
+{
+    struct crs_local_node_ref  *ref =
+        cork_container_of(vref, struct crs_local_node_ref, parent);
+    crs_define_cursor(cursor, CRS_LOCAL_ADDRESS_MAX_SIZE);
+    crs_encode_uint32(cursor, CRS_LOCAL_NODE_TYPE_ID);
+    crs_encode_uint32(cursor, ref->id);
+    crs_message_append_cursor(dest, cursor);
+    return 0;
+}
+
 static void
 crs_local_node_ctx__print_address(struct crs_node_ref *vref,
                                   struct cork_buffer *dest)
@@ -226,6 +240,7 @@ crs_local_node_ctx_new(void)
     struct crs_local_node_ctx  *self = cork_new(struct crs_local_node_ctx);
     cork_array_init(&self->nodes);
     self->manager.send_message = crs_local_node_ctx__send_message;
+    self->manager.encode_address = crs_local_node_ctx__encode_address;
     self->manager.print_address = crs_local_node_ctx__print_address;
     self->manager.free_ref = crs_local_node_ctx__free_ref;
     self->manager.free_manager = crs_local_node_ctx__free_manager;
@@ -259,9 +274,7 @@ crs_local_node_ctx_get_node(struct crs_local_node_ctx *self,
     if (CORK_LIKELY(id < cork_array_size(&self->nodes))) {
         return cork_array_at(&self->nodes, id);
     } else {
-        cork_error_set
-            (CRS_LOCAL_ERROR, CRS_UNKNOWN_LOCAL_NODE,
-             "No local node with ID %" PRIu32, id);
+        crs_unknown_local_node("No local node with ID %" PRIu32, id);
         return NULL;
     }
 }

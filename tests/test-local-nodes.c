@@ -40,6 +40,12 @@ START_TEST(test_local_nodes)
     fail_unless(cork_buffer_equal(&address, &expected),
                 "Node address doesn't match");
 
+    cork_buffer_clear(&address);
+    cork_buffer_set(&expected, "\x01\xd3\xdf\xa1\x00\x00\x00\x00", 8);
+    fail_if_error(crs_node_ref_encode_address(ref, &address));
+    fail_unless(cork_buffer_equal(&address, &expected),
+                "Encoded node address doesn't match");
+
     cork_buffer_set_string(&send_buf, "awesome message");
     cork_buffer_set_string(&expected, "awesome message");
 
