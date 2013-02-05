@@ -26,11 +26,19 @@ struct crs_node_manager {
     int
     (*send_message)(struct crs_node_ref *dest, struct cork_buffer *msg);
 
+    struct crs_node_ref *
+    (*decode_address)(struct crs_node_manager *manager, const void *src,
+                      size_t size);
+
     int
     (*encode_address)(struct crs_node_ref *ref, struct cork_buffer *dest);
 
     void
     (*print_address)(struct crs_node_ref *ref, struct cork_buffer *dest);
+
+    bool
+    (*ref_equals)(const struct crs_node_ref *ref1,
+                  const struct crs_node_ref *ref2);
 
     void
     (*free_ref)(struct crs_node_ref *ref);
@@ -41,6 +49,8 @@ struct crs_node_manager {
 
 #define crs_node_ref_send_message(dest, msg) \
     ((dest)->manager->send_message((dest), (msg)))
+#define crs_node_manager_decode_address(manager, src, size) \
+    ((manager)->decode_address((manager), (src), (size)))
 #define crs_node_ref_encode_address(ref, dest) \
     ((ref)->manager->encode_address((ref), (dest)))
 #define crs_node_ref_print_address(ref, dest) \
@@ -49,6 +59,10 @@ struct crs_node_manager {
     ((ref)->manager->free_ref((ref)))
 #define crs_node_manager_free(manager) \
     ((manager)->free_manager((manager)))
+
+bool
+crs_node_ref_equals(const struct crs_node_ref *ref1,
+                    const struct crs_node_ref *ref2);
 
 
 /* a reference to another Pastry node */

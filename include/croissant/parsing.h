@@ -16,6 +16,71 @@
 
 
 /*-----------------------------------------------------------------------
+ * Error handling
+ */
+
+/* hash of "crossaint/parsing.h" */
+#define CRS_PARSE_ERROR  0x278ade13
+
+enum crs_parse_error {
+    /* Invalid message content */
+    CRS_INVALID_MESSAGE,
+    /* Ran out of space */
+    CRS_TRUNCATED_MESSAGE
+};
+
+#define crs_set_parse_error(code, ...) \
+    (cork_error_set(CRS_PARSE_ERROR, code, __VA_ARGS__))
+#define crs_invalid_message(...) \
+    crs_set_parse_error(CRS_INVALID_MESSAGE, __VA_ARGS__)
+#define crs_truncated_message(...) \
+    crs_set_parse_error(CRS_TRUNCATED_MESSAGE, __VA_ARGS__)
+
+
+/*-----------------------------------------------------------------------
+ * Decoding messages
+ */
+
+struct crs_decode_state {
+    const void  *cursor;
+    size_t  bytes_left;
+};
+
+#define CRS_DECODE_STATE_INIT(src, size)  { src, size }
+
+
+const void *
+crs_decode_bytes(struct crs_decode_state *state, size_t size,
+                 const char *description);
+
+
+int
+crs_decode_uint8(struct crs_decode_state *state, uint8_t *dest);
+
+int
+crs_decode_uint16(struct crs_decode_state *state, uint16_t *dest);
+
+int
+crs_decode_uint32(struct crs_decode_state *state, uint32_t *dest);
+
+int
+crs_decode_uint64(struct crs_decode_state *state, uint64_t *dest);
+
+
+int
+crs_decode_int8(struct crs_decode_state *state, int8_t *dest);
+
+int
+crs_decode_int16(struct crs_decode_state *state, int16_t *dest);
+
+int
+crs_decode_int32(struct crs_decode_state *state, int32_t *dest);
+
+int
+crs_decode_int64(struct crs_decode_state *state, int64_t *dest);
+
+
+/*-----------------------------------------------------------------------
  * Encoding messages
  */
 

@@ -28,8 +28,10 @@ START_TEST(test_local_nodes)
 {
     DESCRIBE_TEST;
     struct crs_local_node_ctx  *ctx = crs_local_node_ctx_new();
+    struct crs_node_manager  *manager = crs_local_node_ctx_get_manager(ctx);
     struct crs_local_node  *node = crs_local_node_ctx_add_node(ctx, "test");
     struct crs_node_ref  *ref = crs_local_node_get_ref(node);
+    struct crs_node_ref  *parsed_ref;
     struct cork_buffer  address = CORK_BUFFER_INIT();
     struct cork_buffer  send_buf = CORK_BUFFER_INIT();
     struct cork_buffer  expected = CORK_BUFFER_INIT();
@@ -45,6 +47,12 @@ START_TEST(test_local_nodes)
     fail_if_error(crs_node_ref_encode_address(ref, &address));
     fail_unless(cork_buffer_equal(&address, &expected),
                 "Encoded node address doesn't match");
+
+    cork_buffer_set(&address, "\x01\xd3\xdf\xa1\x00\x00\x00\x00", 8);
+    fail_if_error(parsed_ref = crs_node_manager_decode_address
+                  (manager, address.buf, address.size));
+    fail_unless(crs_node_ref_equals(ref, parsed_ref));
+    crs_node_ref_free(parsed_ref);
 
     cork_buffer_set_string(&send_buf, "awesome message");
     cork_buffer_set_string(&expected, "awesome message");

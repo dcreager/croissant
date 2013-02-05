@@ -193,6 +193,26 @@ crs_local_node_ctx__send_message(struct crs_node_ref *vdest,
     return 0;
 }
 
+static struct crs_node_ref *
+crs_local_node_ctx__decode_address(struct crs_node_manager *vmanager,
+                                   const void *src, size_t size)
+{
+    struct crs_local_node_ctx  *self =
+        cork_container_of(vmanager, struct crs_local_node_ctx, manager);
+    struct crs_decode_state  state = CRS_DECODE_STATE_INIT(src, size);
+    uint32_t  kind;
+    crs_local_node_id  id;
+    rpi_check(crs_decode_uint32(&state, &kind));
+    if (CORK_UNLIKELY(kind != CRS_LOCAL_NODE_TYPE_ID)) {
+        crs_invalid_message
+            ("Invalid node type 0x%08" PRIx32 " for local node reference",
+             kind);
+        return NULL;
+    }
+    rpi_check(crs_decode_uint32(&state, &id));
+    return crs_local_node_ref_new(self, id);
+}
+
 #define CRS_LOCAL_ADDRESS_MAX_SIZE \
     (sizeof(uint32_t) + sizeof(uint32_t))
 
@@ -218,6 +238,17 @@ crs_local_node_ctx__print_address(struct crs_node_ref *vref,
     cork_buffer_append_printf(dest, "local:%" PRIu32, ref->id);
 }
 
+static bool
+crs_local_node_ctx__ref_equals(const struct crs_node_ref *vref1,
+                               const struct crs_node_ref *vref2)
+{
+    const struct crs_local_node_ref  *ref1 =
+        cork_container_of(vref1, struct crs_local_node_ref, parent);
+    const struct crs_local_node_ref  *ref2 =
+        cork_container_of(vref2, struct crs_local_node_ref, parent);
+    return ref1->id == ref2->id;
+}
+
 static void
 crs_local_node_ctx__free_ref(struct crs_node_ref *vref)
 {
@@ -240,8 +271,10 @@ crs_local_node_ctx_new(void)
     struct crs_local_node_ctx  *self = cork_new(struct crs_local_node_ctx);
     cork_array_init(&self->nodes);
     self->manager.send_message = crs_local_node_ctx__send_message;
+    self->manager.decode_address = crs_local_node_ctx__decode_address;
     self->manager.encode_address = crs_local_node_ctx__encode_address;
     self->manager.print_address = crs_local_node_ctx__print_address;
+    self->manager.ref_equals = crs_local_node_ctx__ref_equals;
     self->manager.free_ref = crs_local_node_ctx__free_ref;
     self->manager.free_manager = crs_local_node_ctx__free_manager;
     return self;
@@ -256,6 +289,12 @@ crs_local_node_ctx_free(struct crs_local_node_ctx *self)
         crs_local_node_free(node);
     }
     free(self);
+}
+
+struct crs_node_manager *
+crs_local_node_ctx_get_manager(struct crs_local_node_ctx *ctx)
+{
+    return &ctx->manager;
 }
 
 struct crs_local_node *

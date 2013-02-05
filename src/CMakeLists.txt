@@ -15,6 +15,8 @@ include_directories(../include)
 set(LIBCROISSANT_SRC
     libcroissant/id.c
     libcroissant/local-nodes.c
+    libcroissant/nodes.c
+    libcroissant/parsing.c
 )
 
 # Update the VERSION and SOVERSION properties below according to the following
