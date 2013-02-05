@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2012, RedJack, LLC.
+ * Copyright © 2012-2013, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -33,12 +33,12 @@ struct crs_local_node {
 };
 
 struct crs_local_node_ctx {
+    struct crs_node_manager  manager;
     cork_array(struct crs_local_node *)  nodes;
 };
 
 struct crs_local_node_ref {
     struct crs_node_ref  parent;
-    struct crs_local_node_ctx  *context;
     crs_local_node_id  id;
 };
 
@@ -105,16 +105,19 @@ crs_local_node_queue_message(struct crs_local_node *self,
     cork_dllist_add(&self->message_queue, &msg->list);
 }
 
+#define crs_local_node_has_messages_priv(node) \
+    (!cork_dllist_is_empty(&(node)->message_queue))
+
 bool
 crs_local_node_has_messages(struct crs_local_node *node)
 {
-    return !cork_dllist_is_empty(&node->message_queue);
+    return crs_local_node_has_messages_priv(node);
 }
 
 struct cork_buffer *
 crs_local_node_peek_message(struct crs_local_node *node)
 {
-    if (CORK_LIKELY(crs_local_node_has_messages(node))) {
+    if (CORK_LIKELY(crs_local_node_has_messages_priv(node))) {
         struct crs_local_message  *msg =
             cork_container_of(cork_dllist_head(&node->message_queue),
                               struct crs_local_message, list);
@@ -122,7 +125,7 @@ crs_local_node_peek_message(struct crs_local_node *node)
     } else {
         cork_error_set
             (CRS_LOCAL_ERROR, CRS_EMPTY_LOCAL_NODE_QUEUE,
-             "Local node %zu (%s) has no messages",
+             "Local node %" PRIu32 " (%s) has no messages",
              node->id, node->name);
         return NULL;
     }
@@ -131,7 +134,7 @@ crs_local_node_peek_message(struct crs_local_node *node)
 int
 crs_local_node_pop_message(struct crs_local_node *node)
 {
-    if (CORK_LIKELY(crs_local_node_has_messages(node))) {
+    if (CORK_LIKELY(crs_local_node_has_messages_priv(node))) {
         struct crs_local_message  *msg =
             cork_container_of(cork_dllist_head(&node->message_queue),
                               struct crs_local_message, list);
@@ -141,7 +144,7 @@ crs_local_node_pop_message(struct crs_local_node *node)
     } else {
         cork_error_set
             (CRS_LOCAL_ERROR, CRS_EMPTY_LOCAL_NODE_QUEUE,
-             "Local node %zu (%s) has no messages",
+             "Local node %" PRIu32 " (%s) has no messages",
              node->id, node->name);
         return 1;
     }
@@ -149,14 +152,83 @@ crs_local_node_pop_message(struct crs_local_node *node)
 
 
 /*-----------------------------------------------------------------------
+ * Node references
+ */
+
+static struct crs_node_ref *
+crs_local_node_ref_new(struct crs_local_node_ctx *context, crs_local_node_id id)
+{
+    struct crs_local_node_ref  *ref = cork_new(struct crs_local_node_ref);
+    ref->parent.manager = &context->manager;
+    ref->id = id;
+    return &ref->parent;
+}
+
+static void
+crs_local_node_ref_free(struct crs_local_node_ref *ref)
+{
+    free(ref);
+}
+
+struct crs_node_ref *
+crs_local_node_get_ref(struct crs_local_node *node)
+{
+    return crs_local_node_ref_new(node->context, node->id);
+}
+
+
+/*-----------------------------------------------------------------------
  * Node contexts
  */
+
+static int
+crs_local_node_ctx__send_message(struct crs_node_ref *vdest,
+                                 struct cork_buffer *msg)
+{
+    struct crs_local_node_ref  *dest =
+        cork_container_of(vdest, struct crs_local_node_ref, parent);
+    struct crs_local_node_ctx  *ctx =
+        cork_container_of(vdest->manager, struct crs_local_node_ctx, manager);
+    struct crs_local_node  *node;
+    rip_check(node = crs_local_node_ctx_get_node(ctx, dest->id));
+    crs_local_node_queue_message(node, msg);
+    return 0;
+}
+
+static void
+crs_local_node_ctx__print_address(struct crs_node_ref *vref,
+                                  struct cork_buffer *dest)
+{
+    struct crs_local_node_ref  *ref =
+        cork_container_of(vref, struct crs_local_node_ref, parent);
+    cork_buffer_append_printf(dest, "local:%" PRIu32, ref->id);
+}
+
+static void
+crs_local_node_ctx__free_ref(struct crs_node_ref *vref)
+{
+    struct crs_local_node_ref  *ref =
+        cork_container_of(vref, struct crs_local_node_ref, parent);
+    crs_local_node_ref_free(ref);
+}
+
+static void
+crs_local_node_ctx__free_manager(struct crs_node_manager *vmanager)
+{
+    struct crs_local_node_ctx  *self =
+        cork_container_of(vmanager, struct crs_local_node_ctx, manager);
+    crs_local_node_ctx_free(self);
+}
 
 struct crs_local_node_ctx *
 crs_local_node_ctx_new(void)
 {
     struct crs_local_node_ctx  *self = cork_new(struct crs_local_node_ctx);
     cork_array_init(&self->nodes);
+    self->manager.send_message = crs_local_node_ctx__send_message;
+    self->manager.print_address = crs_local_node_ctx__print_address;
+    self->manager.free_ref = crs_local_node_ctx__free_ref;
+    self->manager.free_manager = crs_local_node_ctx__free_manager;
     return self;
 }
 
@@ -189,59 +261,7 @@ crs_local_node_ctx_get_node(struct crs_local_node_ctx *self,
     } else {
         cork_error_set
             (CRS_LOCAL_ERROR, CRS_UNKNOWN_LOCAL_NODE,
-             "No local node with ID %zu", id);
+             "No local node with ID %" PRIu32, id);
         return NULL;
     }
-}
-
-
-/*-----------------------------------------------------------------------
- * Node references
- */
-
-static int
-crs_local_node_send_message(struct crs_node_ref *vdest,
-                            struct cork_buffer *msg)
-{
-    struct crs_local_node_ref  *dest =
-        cork_container_of(vdest, struct crs_local_node_ref, parent);
-    struct crs_local_node  *node;
-    rip_check(node = crs_local_node_ctx_get_node(dest->context, dest->id));
-    crs_local_node_queue_message(node, msg);
-    return 0;
-}
-
-static void
-crs_local_node_print_address(struct crs_node_ref *vref,
-                             struct cork_buffer *dest)
-{
-    struct crs_local_node_ref  *ref =
-        cork_container_of(vref, struct crs_local_node_ref, parent);
-    cork_buffer_append_printf(dest, "local:%zu", ref->id);
-}
-
-static void
-crs_local_node_free_ref(struct crs_node_ref *vref)
-{
-    struct crs_local_node_ref  *ref =
-        cork_container_of(vref, struct crs_local_node_ref, parent);
-    free(ref);
-}
-
-static const struct crs_node_type  crs_local_node_type = {
-    "local",
-    crs_local_node_send_message,
-    crs_local_node_print_address,
-    crs_local_node_free_ref
-};
-
-
-struct crs_node_ref *
-crs_local_node_get_ref(struct crs_local_node *node)
-{
-    struct crs_local_node_ref  *ref = cork_new(struct crs_local_node_ref);
-    ref->parent.type = &crs_local_node_type;
-    ref->context = node->context;
-    ref->id = node->id;
-    return &ref->parent;
 }

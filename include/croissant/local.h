@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2012, RedJack, LLC.
+ * Copyright © 2012-2013, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -36,7 +36,7 @@ enum crs_local_error {
  * Types
  */
 
-typedef size_t  crs_local_node_id;
+typedef uint32_t  crs_local_node_id;
 struct crs_local_node;
 struct crs_local_node_ctx;
 
@@ -70,6 +70,9 @@ crs_local_node_ctx_new(void);
 
 void
 crs_local_node_ctx_free(struct crs_local_node_ctx *ctx);
+
+struct crs_node_manager *
+crs_local_node_ctx_get_manager(struct crs_local_node_ctx *ctx);
 
 struct crs_local_node *
 crs_local_node_ctx_add_node(struct crs_local_node_ctx *ctx, const char *name);
