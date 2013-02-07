@@ -48,6 +48,8 @@ struct crs_decode_state {
 
 #define CRS_DECODE_STATE_INIT(src, size)  { src, size }
 
+#define crs_decode_state_get(state)  (state)->cursor, (state)->bytes_left
+
 
 const void *
 crs_decode_bytes(struct crs_decode_state *state, size_t size,

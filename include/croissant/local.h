@@ -43,9 +43,6 @@ enum crs_local_error {
  * Types
  */
 
-/* hash of "local" */
-#define CRS_LOCAL_NODE_TYPE_ID  0x01d3dfa1
-
 typedef uint32_t  crs_local_node_id;
 struct crs_local_node;
 struct crs_local_node_ctx;

@@ -23,3 +23,13 @@ crs_node_ref_equals(const struct crs_node_ref *ref1,
         return false;
     }
 }
+
+
+int
+crs_node_ref_encode_address(struct crs_node_ref *ref, struct cork_buffer *dest)
+{
+    crs_define_cursor(cursor, sizeof(uint32_t));
+    crs_encode_uint32(cursor, ref->manager->id);
+    crs_message_append_cursor(dest, cursor);
+    return ref->manager->encode_address(ref, dest);
+}

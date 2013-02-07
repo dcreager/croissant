@@ -16,6 +16,10 @@
 #include "croissant/node.h"
 
 
+/* hash of "local" */
+#define CRS_LOCAL_NODE_TYPE_ID  0x01d3dfa1
+
+
 /*-----------------------------------------------------------------------
  * Types
  */
@@ -213,8 +217,9 @@ crs_local_node_ctx__decode_address(struct crs_node_manager *vmanager,
     return crs_local_node_ref_new(self, id);
 }
 
-#define CRS_LOCAL_ADDRESS_MAX_SIZE \
-    (sizeof(uint32_t) + sizeof(uint32_t))
+#define CRS_LOCAL_ADDRESS_MAX_SIZE ( \
+    sizeof(uint32_t)  /* id */ \
+)
 
 static int
 crs_local_node_ctx__encode_address(struct crs_node_ref *vref,
@@ -223,7 +228,6 @@ crs_local_node_ctx__encode_address(struct crs_node_ref *vref,
     struct crs_local_node_ref  *ref =
         cork_container_of(vref, struct crs_local_node_ref, parent);
     crs_define_cursor(cursor, CRS_LOCAL_ADDRESS_MAX_SIZE);
-    crs_encode_uint32(cursor, CRS_LOCAL_NODE_TYPE_ID);
     crs_encode_uint32(cursor, ref->id);
     crs_message_append_cursor(dest, cursor);
     return 0;
@@ -270,6 +274,7 @@ crs_local_node_ctx_new(void)
 {
     struct crs_local_node_ctx  *self = cork_new(struct crs_local_node_ctx);
     cork_array_init(&self->nodes);
+    self->manager.id = CRS_LOCAL_NODE_TYPE_ID;
     self->manager.send_message = crs_local_node_ctx__send_message;
     self->manager.decode_address = crs_local_node_ctx__decode_address;
     self->manager.encode_address = crs_local_node_ctx__encode_address;

@@ -13,6 +13,7 @@ include_directories(../include)
 # Build the library
 
 set(LIBCROISSANT_SRC
+    libcroissant/context.c
     libcroissant/id.c
     libcroissant/local-nodes.c
     libcroissant/nodes.c

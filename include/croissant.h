@@ -12,6 +12,7 @@
 #define CROISSANT_H
 
 /* include all the parts */
+#include <croissant/context.h>
 #include <croissant/id.h>
 #include <croissant/local.h>
 #include <croissant/node.h>
