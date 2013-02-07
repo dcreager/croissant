@@ -14,7 +14,7 @@
 #include <check.h>
 #include <libcork/core.h>
 
-#include "croissant/id.h"
+#include "croissant.h"
 #include "helpers.h"
 
 

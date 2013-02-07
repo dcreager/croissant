@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2011-2012, RedJack, LLC.
+ * Copyright © 2011-2013, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -12,7 +12,7 @@
 
 #include <libcork/core.h>
 
-#include "croissant/id.h"
+#include "croissant.h"
 
 
 int
@@ -27,9 +27,7 @@ crs_id_init(struct crs_id *id, const char *src)
 #define GET_DIGIT \
         if (src[str_idx] == '\0') { \
             /* String is too short! */ \
-            cork_error_set \
-                (CRS_ID_ERROR, CRS_ID_PARSE_ERROR, \
-                 "Pastry identifier is too short"); \
+            crs_id_parse_error("Pastry identifier is too short"); \
             return -1; \
         } \
         \
@@ -40,9 +38,8 @@ crs_id_init(struct crs_id *id, const char *src)
         } else if ((src[str_idx] >= 'A') && (src[str_idx] <= 'F')) { \
             digit = src[str_idx] - 'A' + 10; \
         } else { \
-            cork_error_set \
-                (CRS_ID_ERROR, CRS_ID_PARSE_ERROR, \
-                 "Pastry identifier contains invalid character " \
+            crs_id_parse_error \
+                ("Pastry identifier contains invalid character " \
                  "'%c' at position %u", src[str_idx], str_idx); \
             return -1; \
         }
@@ -58,9 +55,7 @@ crs_id_init(struct crs_id *id, const char *src)
     }
 
     if (src[str_idx] != '\0') {
-        cork_error_set
-            (CRS_ID_ERROR, CRS_ID_PARSE_ERROR,
-             "Pastry identifier is too long");
+        crs_id_parse_error("Pastry identifier is too long");
         return -1;
     }
 
