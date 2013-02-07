@@ -54,4 +54,38 @@
                  ", got " format ")", \
                  (what), (expected), (actual)))
 
+CORK_ATTR_UNUSED
+static void
+cork_buffer_print(struct cork_buffer *buf)
+{
+    size_t  i;
+    const uint8_t  *bytes = buf->buf;
+    for (i = 0; i < buf->size; i++) {
+        if (i > 0) {
+            if ((i % 16) == 0) {
+                fprintf(stderr, "\n  ");
+            } else if ((i % 8) == 0) {
+                fprintf(stderr, " ");
+            }
+        }
+        fprintf(stderr, " %02x", (unsigned int) bytes[i]);
+    }
+    fprintf(stderr, "\n");
+}
+
+CORK_ATTR_UNUSED
+static void
+fail_unless_buf_equal(struct cork_buffer *actual, struct cork_buffer *expected,
+                      const char *description)
+{
+    if (CORK_UNLIKELY(!cork_buffer_equal(actual, expected))) {
+
+        fprintf(stderr, "Expected:\n");
+        cork_buffer_print(expected);
+        fprintf(stderr, "Actual:\n");
+        cork_buffer_print(actual);
+        fail("Buffers don't match for %s", description);
+    }
+}
+
 #endif /* TESTS_HELPERS_H */

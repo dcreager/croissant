@@ -16,7 +16,7 @@
 
 
 /*-----------------------------------------------------------------------
- * Local nodes
+ * Message queues
  */
 
 typedef unsigned int  crs_local_node_id;
@@ -52,6 +52,20 @@ crs_local_message_queue_pop(struct crs_local_message_queue *queue);
 CORK_LOCAL struct crs_local_message_queue *
 crs_local_message_queue_get(crs_local_node_id id);
 
+
+/*-----------------------------------------------------------------------
+ * Local nodes
+ */
+
+CORK_LOCAL struct crs_node_address *
+crs_local_node_address_new(crs_local_node_id id);
+
+CORK_LOCAL struct crs_node_address *
+crs_local_node_address_decode(const void *message, size_t message_length);
+
+CORK_LOCAL void
+crs_local_node_address_encode(const struct crs_node_address *address,
+                              struct cork_buffer *dest);
 
 CORK_LOCAL void
 crs_local_node_print(const struct crs_node_address *address,

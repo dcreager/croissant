@@ -15,6 +15,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set(LIBCROISSANT_SRC
     libcroissant/id.c
+    libcroissant/local.c
     libcroissant/node.c
     libcroissant/queue.c
 )

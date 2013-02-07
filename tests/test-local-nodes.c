@@ -36,8 +36,12 @@ START_TEST(test_local_nodes)
 
     cork_buffer_set_string(&expected, "local:1");
     fail_if_error(crs_node_address_print(address, &actual));
-    fail_unless(cork_buffer_equal(&actual, &expected),
-                "Node address doesn't match");
+    fail_unless_buf_equal(&actual, &expected, "node addresses");
+
+    cork_buffer_set(&expected, "\x01\xd3\xdf\xa1\x00\x00\x00\x01", 8);
+    cork_buffer_clear(&actual);
+    fail_if_error(crs_node_address_encode(address, &actual));
+    fail_unless_buf_equal(&actual, &expected, "encoded node addresses");
 
     cork_buffer_set_string(&send_buf, "awesome message");
     cork_buffer_set_string(&expected, "awesome message");
@@ -54,8 +58,7 @@ START_TEST(test_local_nodes)
                 "Node should contain messages after send_message");
 
     fail_if_error(received = crs_node_peek_local_message(node));
-    fail_unless(cork_buffer_equal(received, &expected),
-                "Received message contents doesn't match");
+    fail_unless_buf_equal(received, &expected, "received message content");
     fail_if_error(crs_node_pop_local_message(node));
 
     fail_if(crs_node_has_local_messages(node),

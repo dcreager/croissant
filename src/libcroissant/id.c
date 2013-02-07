@@ -27,7 +27,7 @@ crs_id_init(struct crs_id *id, const char *src)
 #define GET_DIGIT \
         if (src[str_idx] == '\0') { \
             /* String is too short! */ \
-            crs_id_parse_error("Pastry identifier is too short"); \
+            crs_parse_error("Pastry identifier is too short"); \
             return -1; \
         } \
         \
@@ -38,7 +38,7 @@ crs_id_init(struct crs_id *id, const char *src)
         } else if ((src[str_idx] >= 'A') && (src[str_idx] <= 'F')) { \
             digit = src[str_idx] - 'A' + 10; \
         } else { \
-            crs_id_parse_error \
+            crs_parse_error \
                 ("Pastry identifier contains invalid character " \
                  "'%c' at position %u", src[str_idx], str_idx); \
             return -1; \
@@ -55,7 +55,7 @@ crs_id_init(struct crs_id *id, const char *src)
     }
 
     if (src[str_idx] != '\0') {
-        crs_id_parse_error("Pastry identifier is too long");
+        crs_parse_error("Pastry identifier is too long");
         return -1;
     }
 

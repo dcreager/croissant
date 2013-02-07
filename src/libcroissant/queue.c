@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2012, RedJack, LLC.
+ * Copyright © 2012-2013, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -77,7 +77,7 @@ crs_finalize_tests(void)
 
 
 /*-----------------------------------------------------------------------
- * Local nodes
+ * Message queues
  */
 
 struct crs_local_message {
@@ -157,23 +157,4 @@ crs_local_message_queue_add(struct crs_local_message_queue *queue,
     cork_buffer_init(&msg->content);
     cork_buffer_set(&msg->content, message, message_length);
     cork_dllist_add(&queue->message_queue, &msg->list);
-}
-
-
-CORK_LOCAL void
-crs_local_node_print(const struct crs_node_address *address,
-                     struct cork_buffer *dest)
-{
-    cork_buffer_append_printf(dest, "local:%u", address->local_id);
-}
-
-
-CORK_LOCAL int
-crs_local_node_send(const struct crs_node_address *address, const void *message,
-                    size_t message_length)
-{
-    struct crs_local_message_queue  *queue;
-    rip_check(queue = crs_local_message_queue_get(address->local_id));
-    crs_local_message_queue_add(queue, message, message_length);
-    return 0;
 }

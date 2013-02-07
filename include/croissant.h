@@ -27,10 +27,10 @@
 enum crs_error {
     /* No messages */
     CRS_EMPTY_LOCAL_NODE_QUEUE,
-    /* A parse error while parsing an identifier. */
-    CRS_ID_PARSE_ERROR,
     /* A transmission error while sending or receiving a message. */
     CRS_IO_ERROR,
+    /* A parse error while parsing an identifier or message. */
+    CRS_PARSE_ERROR,
     /* An unknown error */
     CRS_UNKNOWN_ERROR
 };
@@ -38,10 +38,10 @@ enum crs_error {
 #define crs_set_error(code, ...)  cork_error_set(CRS_ERROR, code, __VA_ARGS__)
 #define crs_empty_local_node_queue(...) \
     crs_set_error(CRS_EMPTY_LOCAL_NODE_QUEUE, __VA_ARGS__)
-#define crs_id_parse_error(...) \
-    crs_set_error(CRS_ID_PARSE_ERROR, __VA_ARGS__)
 #define crs_io_error(...) \
     crs_set_error(CRS_IO_ERROR, __VA_ARGS__)
+#define crs_parse_error(...) \
+    crs_set_error(CRS_PARSE_ERROR, __VA_ARGS__)
 #define crs_unknown_error(...) \
     crs_set_error(CRS_UNKNOWN_ERROR, __VA_ARGS__)
 
@@ -97,6 +97,13 @@ crs_node_address_print(const struct crs_node_address *address,
 
 void
 crs_node_address_free(const struct crs_node_address *address);
+
+const struct crs_node_address *
+crs_node_address_decode(const void *message, size_t message_length);
+
+void
+crs_node_address_encode(const struct crs_node_address *address,
+                        struct cork_buffer *dest);
 
 
 /*-----------------------------------------------------------------------

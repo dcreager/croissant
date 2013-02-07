@@ -19,7 +19,7 @@
 
 
 /*-----------------------------------------------------------------------
- * Node addresses
+ * Node types
  */
 
 /* We support several ways of addressing remote nodes, each with its own
@@ -27,8 +27,23 @@
 
 enum crs_node_type {
     /* A node that can only be accessed from within the current process */
-    CRS_LOCAL_NODE
+    CRS_NODE_TYPE_LOCAL
 };
+
+typedef uint32_t  crs_node_type_id;
+
+#define CRS_NODE_TYPE_ID_LOCAL  0x01d3dfa1  /* "local" */
+
+CORK_LOCAL crs_node_type_id
+crs_node_id_for_type(enum crs_node_type type);
+
+CORK_LOCAL enum crs_node_type
+crs_node_type_for_id(crs_node_type_id id);
+
+
+/*-----------------------------------------------------------------------
+ * Node addresses
+ */
 
 struct crs_node_address {
     enum crs_node_type  type;
