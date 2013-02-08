@@ -25,23 +25,31 @@
 #define CRS_ERROR  0x60b9b93f
 
 enum crs_error {
+    /* Tried to register two applications with the same ID. */
+    CRS_DUPLICATE_APPLICATION,
     /* No messages */
     CRS_EMPTY_LOCAL_NODE_QUEUE,
     /* A transmission error while sending or receiving a message. */
     CRS_IO_ERROR,
     /* A parse error while parsing an identifier or message. */
     CRS_PARSE_ERROR,
+    /* Received a message for an application that we can't to handle. */
+    CRS_UNKNOWN_APPLICATION,
     /* An unknown error */
     CRS_UNKNOWN_ERROR
 };
 
 #define crs_set_error(code, ...)  cork_error_set(CRS_ERROR, code, __VA_ARGS__)
+#define crs_duplicate_application(...) \
+    crs_set_error(CRS_DUPLICATE_APPLICATION, __VA_ARGS__)
 #define crs_empty_local_node_queue(...) \
     crs_set_error(CRS_EMPTY_LOCAL_NODE_QUEUE, __VA_ARGS__)
 #define crs_io_error(...) \
     crs_set_error(CRS_IO_ERROR, __VA_ARGS__)
 #define crs_parse_error(...) \
     crs_set_error(CRS_PARSE_ERROR, __VA_ARGS__)
+#define crs_unknown_application(...) \
+    crs_set_error(CRS_UNKNOWN_APPLICATION, __VA_ARGS__)
 #define crs_unknown_error(...) \
     crs_set_error(CRS_UNKNOWN_ERROR, __VA_ARGS__)
 
@@ -144,8 +152,32 @@ crs_node_get_address(struct crs_node *node);
 
 
 int
-crs_node_send_message(const struct crs_node_address *dest,
+crs_node_send_message(struct crs_node *src, const struct crs_node_address *dest,
                       const void *message, size_t message_length);
+
+
+/*-----------------------------------------------------------------------
+ * Applications
+ */
+
+typedef uint32_t  crs_application_id;
+
+typedef int
+(*crs_application_callback)(const struct crs_id *src, struct crs_node *dest,
+                            const void *message, size_t message_length,
+                            void *user_data);
+
+
+struct crs_application *
+crs_application_new(crs_application_id id, crs_application_callback callback,
+                    void *user_data);
+
+void
+crs_application_free(struct crs_application *app);
+
+/* Takes control of app */
+int
+crs_node_add_application(struct crs_node *node, struct crs_application *app);
 
 
 #endif  /* CROISSANT_H */

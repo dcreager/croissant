@@ -14,48 +14,19 @@
 #include <libcork/core.h>
 #include <libcork/ds.h>
 
+#include "croissant.h"
+
 
 /*-----------------------------------------------------------------------
- * Message queues
+ * Local nodes
  */
 
 typedef unsigned int  crs_local_node_id;
 
 #define CRS_LOCAL_NODE_ID_NONE  0
 
-struct crs_local_message_queue {
-    crs_local_node_id  id;
-    struct cork_dllist  message_queue;
-    struct crs_local_message_queue  *next;
-};
-
-
-CORK_LOCAL void
-crs_local_message_queue_init(struct crs_local_message_queue *queue);
-
-CORK_LOCAL void
-crs_local_message_queue_done(struct crs_local_message_queue *queue);
-
-#define crs_local_message_queue_is_empty(queue) \
-    (cork_dllist_is_empty(&(queue)->message_queue))
-
-CORK_LOCAL void
-crs_local_message_queue_add(struct crs_local_message_queue *queue,
-                            const void *message, size_t message_length);
-
-CORK_LOCAL struct cork_buffer *
-crs_local_message_queue_peek(struct crs_local_message_queue *queue);
-
-CORK_LOCAL int
-crs_local_message_queue_pop(struct crs_local_message_queue *queue);
-
-CORK_LOCAL struct crs_local_message_queue *
-crs_local_message_queue_get(crs_local_node_id id);
-
-
-/*-----------------------------------------------------------------------
- * Local nodes
- */
+CORK_LOCAL struct crs_node *
+crs_local_node_get(crs_local_node_id id);
 
 CORK_LOCAL struct crs_node_address *
 crs_local_node_address_new(crs_local_node_id id);
@@ -72,8 +43,8 @@ crs_local_node_print(const struct crs_node_address *address,
                      struct cork_buffer *dest);
 
 CORK_LOCAL int
-crs_local_node_send(const struct crs_node_address *address, const void *message,
-                    size_t message_length);
+crs_local_node_send(struct crs_node *src, const struct crs_node_address *dest,
+                    const void *message, size_t message_length);
 
 
 #endif  /* CROISSANT_LOCAL_H */

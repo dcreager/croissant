@@ -32,7 +32,10 @@ START_TEST(test_local_nodes)
     struct cork_buffer  actual = CORK_BUFFER_INIT();
     struct cork_buffer  send_buf = CORK_BUFFER_INIT();
     struct cork_buffer  expected = CORK_BUFFER_INIT();
-    struct cork_buffer  *received;
+    struct crs_application  *app =
+        crs_save_message_application_new(10, &actual);
+
+    fail_if_error(crs_node_add_application(node, app));
 
     cork_buffer_set_string(&expected, "local:1");
     fail_if_error(crs_node_address_print(address, &actual));
@@ -43,26 +46,13 @@ START_TEST(test_local_nodes)
     fail_if_error(crs_node_address_encode(address, &actual));
     fail_unless_buf_equal(&actual, &expected, "encoded node addresses");
 
-    cork_buffer_set_string(&send_buf, "awesome message");
+    cork_buffer_set(&send_buf, "\x00\x00\x00\x0a", 4);
+    cork_buffer_append_string(&send_buf, "awesome message");
     cork_buffer_set_string(&expected, "awesome message");
+    fail_if_error(crs_node_send_message
+                  (node, address, send_buf.buf, send_buf.size));
+    fail_unless_buf_equal(&actual, &expected, "received message content");
 
-    fail_if(crs_node_has_local_messages(node),
-            "Node should start off without messages");
-    fail_unless_error(crs_node_peek_local_message(node),
-                      "Shouldn't be able to peek nonexisting message");
-    fail_unless_error(crs_node_pop_local_message(node),
-                      "Shouldn't be able to pop nonexisting message");
-
-    fail_if_error(crs_node_send_message(address, send_buf.buf, send_buf.size));
-    fail_unless(crs_node_has_local_messages(node),
-                "Node should contain messages after send_message");
-
-    fail_if_error(received = crs_node_peek_local_message(node));
-    fail_unless_buf_equal(received, &expected, "received message content");
-    fail_if_error(crs_node_pop_local_message(node));
-
-    fail_if(crs_node_has_local_messages(node),
-            "Node shouldn't have messages after pop_message");
 
     cork_buffer_done(&actual);
     cork_buffer_done(&send_buf);

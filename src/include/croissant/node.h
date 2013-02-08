@@ -62,8 +62,13 @@ struct crs_node_address {
 struct crs_node {
     struct crs_id  id;
     struct crs_node_address  address;
-    struct crs_local_message_queue  local_messages;
+    struct cork_hash_table  applications;
+    struct crs_node  *next;
 };
+
+CORK_LOCAL int
+crs_node_process_message(struct crs_node *node, const struct crs_id *src,
+                         const void *message, size_t message_length);
 
 
 #endif  /* CROISSANT_NODE_H */

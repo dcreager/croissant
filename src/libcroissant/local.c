@@ -57,11 +57,11 @@ crs_local_node_print(const struct crs_node_address *address,
 
 
 CORK_LOCAL int
-crs_local_node_send(const struct crs_node_address *address, const void *message,
-                    size_t message_length)
+crs_local_node_send(struct crs_node *src, const struct crs_node_address *dest,
+                    const void *message, size_t message_length)
 {
-    struct crs_local_message_queue  *queue;
-    rip_check(queue = crs_local_message_queue_get(address->local_id));
-    crs_local_message_queue_add(queue, message, message_length);
-    return 0;
+    struct crs_node  *dest_node;
+    rip_check(dest_node = crs_local_node_get(dest->local_id));
+    return crs_node_process_message
+        (dest_node, &src->id, message, message_length);
 }

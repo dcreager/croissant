@@ -32,15 +32,13 @@ crs_test_node_new(const struct crs_id *id,
 int
 crs_finalize_tests(void);
 
-bool
-crs_node_has_local_messages(struct crs_node *node);
 
-struct cork_buffer *
-crs_node_peek_local_message(struct crs_node *node);
-
-int
-crs_node_pop_local_message(struct crs_node *node);
+/* Creates an application that saves each message received into a buffer.  This
+ * is mainly used to verify that the contents of the message survive being
+ * transported. */
+struct crs_application *
+crs_save_message_application_new(crs_application_id id,
+                                 struct cork_buffer *dest);
 
 
 #endif  /* CROISSANT_TESTS_H */
-

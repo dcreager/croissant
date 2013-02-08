@@ -61,7 +61,9 @@ cork_buffer_print(struct cork_buffer *buf)
     size_t  i;
     const uint8_t  *bytes = buf->buf;
     for (i = 0; i < buf->size; i++) {
-        if (i > 0) {
+        if (i == 0) {
+            fprintf(stderr, "  ");
+        } else {
             if ((i % 16) == 0) {
                 fprintf(stderr, "\n  ");
             } else if ((i % 8) == 0) {
