@@ -7,8 +7,9 @@
 # details.
 # ----------------------------------------------------------------------
 
-include_directories(../include)
-link_directories(${CMAKE_CURRENT_BINARY_DIR}/../src)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/src/include)
+link_directories(${CMAKE_BINARY_DIR}/src)
 
 #-----------------------------------------------------------------------
 # Check for prerequisite libraries

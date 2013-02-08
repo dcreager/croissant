@@ -15,8 +15,8 @@
 #include <libcork/core.h>
 #include <libcork/ds.h>
 
-#include "croissant/local.h"
-#include "croissant/node.h"
+#include "croissant.h"
+#include "croissant/tests.h"
 #include "helpers.h"
 
 
@@ -27,46 +27,39 @@
 START_TEST(test_local_nodes)
 {
     DESCRIBE_TEST;
-    struct crs_local_node_ctx  *ctx = crs_local_node_ctx_new();
-    struct crs_local_node  *node = crs_local_node_ctx_add_node(ctx, "test");
-    struct crs_node_ref  *ref = crs_local_node_get_ref(node);
-    struct cork_buffer  address = CORK_BUFFER_INIT();
+    struct crs_node  *node = crs_node_new(NULL);
+    const struct crs_node_address  *address = crs_node_get_address(node);
+    struct cork_buffer  actual = CORK_BUFFER_INIT();
     struct cork_buffer  send_buf = CORK_BUFFER_INIT();
     struct cork_buffer  expected = CORK_BUFFER_INIT();
-    struct cork_buffer  *received;
+    struct crs_application  *app =
+        crs_save_message_application_new(10, &actual);
 
-    cork_buffer_set_string(&expected, "local:0");
-    fail_if_error(crs_node_ref_print_address(ref, &address));
-    fail_unless(cork_buffer_equal(&address, &expected),
-                "Node address doesn't match");
+    fail_if_error(crs_node_add_application(node, app));
 
-    cork_buffer_set_string(&send_buf, "awesome message");
+    cork_buffer_set_string(&expected, "local:1");
+    fail_if_error(crs_node_address_print(address, &actual));
+    fail_unless_buf_equal(&actual, &expected, "node addresses");
+
+    cork_buffer_set(&expected, "\x01\xd3\xdf\xa1\x00\x00\x00\x01", 8);
+    cork_buffer_clear(&actual);
+    fail_if_error(crs_node_address_encode(address, &actual));
+    fail_unless_buf_equal(&actual, &expected, "encoded node addresses");
+
+    cork_buffer_set(&send_buf, "\x00\x00\x00\x0a", 4);
+    cork_buffer_append_string(&send_buf, "awesome message");
     cork_buffer_set_string(&expected, "awesome message");
+    fail_if_error(crs_node_send_message
+                  (node, address, send_buf.buf, send_buf.size));
+    fail_unless_buf_equal(&actual, &expected, "received message content");
 
-    fail_if(crs_local_node_has_messages(node),
-            "Node should start off without messages");
-    fail_unless_error(crs_local_node_peek_message(node),
-                      "Shouldn't be able to peek nonexisting message");
-    fail_unless_error(crs_local_node_pop_message(node),
-                      "Shouldn't be able to pop nonexisting message");
 
-    fail_if_error(crs_node_ref_send_message(ref, &send_buf));
-    fail_unless(crs_local_node_has_messages(node),
-                "Node should contain messages after send_message");
-
-    fail_if_error(received = crs_local_node_peek_message(node));
-    fail_unless(cork_buffer_equal(received, &expected),
-                "Received message contents doesn't match");
-    fail_if_error(crs_local_node_pop_message(node));
-
-    fail_if(crs_local_node_has_messages(node),
-            "Node shouldn't have messages after pop_message");
-
-    cork_buffer_done(&address);
+    cork_buffer_done(&actual);
     cork_buffer_done(&send_buf);
     cork_buffer_done(&expected);
-    crs_node_ref_free(ref);
-    crs_local_node_ctx_free(ctx);
+    crs_node_address_free(address);
+    crs_node_free(node);
+    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 

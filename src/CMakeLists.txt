@@ -7,14 +7,18 @@
 # details.
 # ----------------------------------------------------------------------
 
-include_directories(../include)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 #-----------------------------------------------------------------------
 # Build the library
 
 set(LIBCROISSANT_SRC
+    libcroissant/application.c
     libcroissant/id.c
-    libcroissant/local-nodes.c
+    libcroissant/local.c
+    libcroissant/node.c
+    libcroissant/tests.c
 )
 
 # Update the VERSION and SOVERSION properties below according to the following
