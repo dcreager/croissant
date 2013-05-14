@@ -49,8 +49,8 @@ crs_local_node_address_encode(const struct crs_node_address *address,
 }
 
 CORK_LOCAL void
-crs_local_node_print(const struct crs_node_address *address,
-                     struct cork_buffer *dest)
+crs_local_node_print(struct cork_buffer *dest,
+                     const struct crs_node_address *address)
 {
     cork_buffer_append_printf(dest, "local:%u", address->local_id);
 }

@@ -81,6 +81,9 @@ crs_id_init(struct crs_id *id, const char *src);
 void
 crs_id_to_raw_string(const struct crs_id *id, char *str);
 
+void
+crs_id_print(struct cork_buffer *dest, const struct crs_id *id);
+
 #define crs_id_equals(id1, id2) \
     (memcmp((id1), (id2), sizeof(struct crs_id)) == 0)
 
@@ -100,8 +103,8 @@ crs_id_get_msdd(const struct crs_id *id1, const struct crs_id *id2);
 struct crs_node_address;
 
 void
-crs_node_address_print(const struct crs_node_address *address,
-                       struct cork_buffer *dest);
+crs_node_address_print(struct cork_buffer *dest,
+                       const struct crs_node_address *address);
 
 void
 crs_node_address_free(const struct crs_node_address *address);
@@ -170,6 +173,50 @@ crs_node_ref_free(struct crs_node_ref *ref);
 int
 crs_node_ref_send(struct crs_node_ref *dest, const struct crs_node *src,
                   const void *message, size_t message_length);
+
+
+/*-----------------------------------------------------------------------
+ * Routing data
+ */
+
+#define CRS_ROUTING_TABLE_BIT_SIZE  4
+#define CRS_ROUTING_TABLE_COLUMN_COUNT \
+    (1 << CRS_ROUTING_TABLE_BIT_SIZE)
+#define CRS_ROUTING_TABLE_ROW_COUNT \
+    (CRS_ID_BIT_LENGTH / CRS_ROUTING_TABLE_BIT_SIZE)
+
+struct crs_routing_table;
+
+struct crs_routing_table *
+crs_routing_table_new(const struct crs_id *id);
+
+void
+crs_routing_table_free(struct crs_routing_table *table);
+
+bool
+crs_routing_table_has_entry(const struct crs_routing_table *table,
+                            unsigned int row, unsigned int column);
+
+struct crs_node_ref *
+crs_routing_table_get(const struct crs_routing_table *table,
+                      unsigned int row, unsigned int column);
+
+/* Returns NULL if id is the same as the routing table's id */
+struct crs_node_ref *
+crs_routing_table_get_closest(const struct crs_routing_table *table,
+                              const struct crs_id *id);
+
+void
+crs_routing_table_set(struct crs_routing_table *table,
+                      struct crs_node_ref *ref);
+
+void
+crs_routing_table_clear(struct crs_routing_table *table,
+                        unsigned int row, unsigned int column);
+
+void
+crs_routing_table_print(struct cork_buffer *dest,
+                        const struct crs_routing_table *table);
 
 
 /*-----------------------------------------------------------------------

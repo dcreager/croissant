@@ -74,6 +74,14 @@ crs_id_to_raw_string(const struct crs_id *id, char *str)
              CORK_UINT32_BIG_TO_HOST(id->_.u32[3]));
 }
 
+void
+crs_id_print(struct cork_buffer *dest, const struct crs_id *id)
+{
+    char  str[CRS_ID_STRING_LENGTH];
+    crs_id_to_raw_string(id, str);
+    cork_buffer_append_string(dest, str);
+}
+
 
 int
 crs_id_get_msdd(const struct crs_id *id1, const struct crs_id *id2)

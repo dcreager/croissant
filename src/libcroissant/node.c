@@ -42,7 +42,7 @@ crs_local_node_remove(struct crs_node *node)
 {
     struct crs_node  *prev = NULL;
     struct crs_node  *curr = nodes;
-    while (curr != NULL) {
+    for (curr = nodes; curr != NULL; curr = curr->next) {
         if (curr == node) {
             if (prev == NULL) {
                 nodes = curr->next;
@@ -64,18 +64,6 @@ crs_local_node_get(crs_local_node_id id)
         }
     }
     return NULL;
-}
-
-int
-crs_finalize_tests(void)
-{
-    if (CORK_LIKELY(nodes == NULL)) {
-        last_id = 0;
-        return 0;
-    } else {
-        crs_unknown_error("Some local nodes have not been freed");
-        return -1;
-    }
 }
 
 
@@ -113,12 +101,12 @@ crs_node_type_for_id(crs_node_type_id id)
  */
 
 void
-crs_node_address_print(const struct crs_node_address *address,
-                       struct cork_buffer *dest)
+crs_node_address_print(struct cork_buffer *dest,
+                       const struct crs_node_address *address)
 {
     switch (address->type) {
         case CRS_NODE_TYPE_LOCAL:
-            crs_local_node_print(address, dest);
+            crs_local_node_print(dest, address);
             return;
 
         default:
@@ -222,9 +210,7 @@ crs_node_get_id(struct crs_node *node)
 const struct crs_node_address *
 crs_node_get_address(struct crs_node *node)
 {
-    struct crs_node_address  *address = cork_new(struct crs_node_address);
-    *address = node->address;
-    return address;
+    return &node->address;
 }
 
 struct crs_node_ref *
@@ -290,7 +276,25 @@ struct crs_node *
 crs_test_node_new(const struct crs_id *id,
                   const struct crs_node_address *address)
 {
-    return crs_node_new_with_id(id, address);
+    if (id == NULL) {
+        struct crs_id  zero_id;
+        memset(&zero_id, 0, sizeof(struct crs_id));
+        return crs_node_new_with_id(&zero_id, address);
+    } else {
+        return crs_node_new_with_id(id, address);
+    }
+}
+
+int
+crs_finalize_tests(void)
+{
+    if (CORK_LIKELY(nodes == NULL)) {
+        last_id = 0;
+        return 0;
+    } else {
+        crs_unknown_error("Some local nodes have not been freed");
+        return -1;
+    }
 }
 
 

@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2011-2012, RedJack, LLC.
+ * Copyright © 2012-2013, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -27,7 +27,7 @@
 START_TEST(test_local_nodes)
 {
     DESCRIBE_TEST;
-    struct crs_node  *node = crs_node_new(NULL);
+    struct crs_node  *node = crs_test_node_new(NULL, NULL);
     const struct crs_node_address  *address = crs_node_get_address(node);
     struct cork_buffer  actual = CORK_BUFFER_INIT();
     struct cork_buffer  send_buf = CORK_BUFFER_INIT();
@@ -39,7 +39,7 @@ START_TEST(test_local_nodes)
     fail_if_error(crs_node_add_application(node, app));
 
     cork_buffer_set_string(&expected, "local:1");
-    fail_if_error(crs_node_address_print(address, &actual));
+    fail_if_error(crs_node_address_print(&actual, address));
     fail_unless_buf_equal(&actual, &expected, "node addresses");
 
     cork_buffer_set(&expected, "\x01\xd3\xdf\xa1\x00\x00\x00\x01", 8);
@@ -57,7 +57,6 @@ START_TEST(test_local_nodes)
     cork_buffer_done(&actual);
     cork_buffer_done(&send_buf);
     cork_buffer_done(&expected);
-    crs_node_address_free(address);
     crs_node_free(node);
     fail_if_error(crs_finalize_tests());
 }

@@ -17,6 +17,7 @@ set(LIBCROISSANT_SRC
     libcroissant/application.c
     libcroissant/id.c
     libcroissant/local.c
+    libcroissant/routing.c
     libcroissant/node.c
     libcroissant/node-ref.c
     libcroissant/tests.c
