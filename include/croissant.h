@@ -148,10 +148,10 @@ int
 crs_node_detach(struct crs_node *node);
 
 const struct crs_id *
-crs_node_get_id(struct crs_node *node);
+crs_node_get_id(const struct crs_node *node);
 
 const struct crs_node_address *
-crs_node_get_address(struct crs_node *node);
+crs_node_get_address(const struct crs_node *node);
 
 struct crs_node_ref *
 crs_node_get_ref(struct crs_node *node);
@@ -161,14 +161,30 @@ crs_node_get_ref(struct crs_node *node);
  * Node references
  */
 
+/* Larger values are "further away" */
+typedef unsigned long  crs_proximity;
+
 struct crs_node_ref;
 
 struct crs_node_ref *
 crs_node_ref_new(const struct crs_id *node_id,
-                 const struct crs_node_address *address);
+                 const struct crs_node_address *address,
+                 crs_proximity proximity);
 
 void
 crs_node_ref_free(struct crs_node_ref *ref);
+
+const struct crs_id *
+crs_node_ref_get_id(const struct crs_node_ref *ref);
+
+const struct crs_node_address *
+crs_node_ref_get_address(const struct crs_node_ref *ref);
+
+crs_proximity
+crs_node_ref_get_proximity(const struct crs_node_ref *ref);
+
+void
+crs_node_ref_set_proximity(struct crs_node_ref *ref, crs_proximity proximity);
 
 int
 crs_node_ref_send(struct crs_node_ref *dest, const struct crs_node *src,

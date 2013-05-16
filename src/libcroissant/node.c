@@ -202,13 +202,13 @@ crs_node_free(struct crs_node *node)
 }
 
 const struct crs_id *
-crs_node_get_id(struct crs_node *node)
+crs_node_get_id(const struct crs_node *node)
 {
     return &node->id;
 }
 
 const struct crs_node_address *
-crs_node_get_address(struct crs_node *node)
+crs_node_get_address(const struct crs_node *node)
 {
     return &node->address;
 }

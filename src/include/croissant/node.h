@@ -83,15 +83,18 @@ typedef int
 struct crs_node_ref {
     struct crs_id  id;
     struct crs_node_address  address;
+    crs_proximity  proximity;
     struct crs_node  *local_node;
     void  *user_data;
     cork_free_f  free_user_data;
     crs_node_ref_send_f  send;
+    char  id_str[CRS_ID_STRING_LENGTH];
 };
 
 CORK_LOCAL struct crs_node_ref *
 crs_node_ref_new_priv(const struct crs_id *node_id,
                       const struct crs_node_address *address,
+                      crs_proximity proximity,
                       struct crs_node *local_node,
                       void *user_data, cork_free_f free_user_data,
                       crs_node_ref_send_f send);

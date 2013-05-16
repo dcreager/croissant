@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <check.h>
 #include <libcork/core.h>
@@ -45,14 +46,20 @@ verify_routing_table(const struct crs_routing_table *table,
     struct cork_buffer  actual = CORK_BUFFER_INIT();
     cork_buffer_set(&actual, "", 0);
     crs_routing_table_print(&actual, table);
-    ck_assert_str_eq(actual.buf, expected);
-    cork_buffer_done(&actual);
+    if (strcmp(actual.buf, expected) != 0) {
+        fprintf(stderr, "Expected:\n%s\nGot:\n%s",
+                expected, (char *) actual.buf);
+        cork_buffer_done(&actual);
+        ck_abort_msg("Routing tables not equal");
+    } else {
+        cork_buffer_done(&actual);
+    }
 }
 
 /* Each ID_XX has one additional prefix digit in common with ID_SELF */
 static const char  *ID_SELF = "00000000000000000000000000000000";
 static const char  *ID_00   = "123456789abcdef123456789abcdef12";
-static const char  *ID_01   = "fedcba987654321fedcba987654321fe";
+static const char  *ID_01   = "edcba987654321fedcba987654321fed";
 
 static void
 create_test_id(struct crs_id *id, const char *id_template,
@@ -79,6 +86,23 @@ add_prefix_to_table(struct crs_routing_table *table,
     node = crs_test_node_new(&id, NULL);
     cork_array_append(&test_nodes, node);
     ref = crs_node_get_ref(node);
+    crs_routing_table_set(table, ref);
+}
+
+static void
+add_prefix_to_table_with_proximity(struct crs_routing_table *table,
+                                   const char *id_template,
+                                   unsigned int common_prefix,
+                                   crs_proximity proximity)
+{
+    struct crs_id  id;
+    struct crs_node  *node;
+    struct crs_node_ref  *ref;
+    create_test_id(&id, id_template, common_prefix);
+    node = crs_test_node_new(&id, NULL);
+    cork_array_append(&test_nodes, node);
+    ref = crs_node_get_ref(node);
+    crs_node_ref_set_proximity(ref, proximity);
     crs_routing_table_set(table, ref);
 }
 
@@ -182,67 +206,108 @@ START_TEST(test_routing_table_04)
     }
     verify_routing_table(table,
         "[ 0/1] 123456789abcdef123456789abcdef12 local:1\n"
-        "[ 0/f] fedcba987654321fedcba987654321fe local:2\n"
+        "[ 0/e] edcba987654321fedcba987654321fed local:2\n"
         "[ 1/2] 023456789abcdef123456789abcdef12 local:3\n"
-        "[ 1/e] 0edcba987654321fedcba987654321fe local:4\n"
+        "[ 1/d] 0dcba987654321fedcba987654321fed local:4\n"
         "[ 2/3] 003456789abcdef123456789abcdef12 local:5\n"
-        "[ 2/d] 00dcba987654321fedcba987654321fe local:6\n"
+        "[ 2/c] 00cba987654321fedcba987654321fed local:6\n"
         "[ 3/4] 000456789abcdef123456789abcdef12 local:7\n"
-        "[ 3/c] 000cba987654321fedcba987654321fe local:8\n"
+        "[ 3/b] 000ba987654321fedcba987654321fed local:8\n"
         "[ 4/5] 000056789abcdef123456789abcdef12 local:9\n"
-        "[ 4/b] 0000ba987654321fedcba987654321fe local:10\n"
+        "[ 4/a] 0000a987654321fedcba987654321fed local:10\n"
         "[ 5/6] 000006789abcdef123456789abcdef12 local:11\n"
-        "[ 5/a] 00000a987654321fedcba987654321fe local:12\n"
+        "[ 5/9] 00000987654321fedcba987654321fed local:12\n"
         "[ 6/7] 000000789abcdef123456789abcdef12 local:13\n"
-        "[ 6/9] 000000987654321fedcba987654321fe local:14\n"
-        "[ 7/8] 000000087654321fedcba987654321fe local:16\n"
-        "[ 8/7] 000000007654321fedcba987654321fe local:18\n"
+        "[ 6/8] 00000087654321fedcba987654321fed local:14\n"
+        "[ 7/7] 00000007654321fedcba987654321fed local:16\n"
+        "[ 7/8] 000000089abcdef123456789abcdef12 local:15\n"
+        "[ 8/6] 00000000654321fedcba987654321fed local:18\n"
         "[ 8/9] 000000009abcdef123456789abcdef12 local:17\n"
-        "[ 9/6] 000000000654321fedcba987654321fe local:20\n"
+        "[ 9/5] 00000000054321fedcba987654321fed local:20\n"
         "[ 9/a] 000000000abcdef123456789abcdef12 local:19\n"
-        "[10/5] 000000000054321fedcba987654321fe local:22\n"
+        "[10/4] 00000000004321fedcba987654321fed local:22\n"
         "[10/b] 0000000000bcdef123456789abcdef12 local:21\n"
-        "[11/4] 000000000004321fedcba987654321fe local:24\n"
+        "[11/3] 00000000000321fedcba987654321fed local:24\n"
         "[11/c] 00000000000cdef123456789abcdef12 local:23\n"
-        "[12/3] 000000000000321fedcba987654321fe local:26\n"
+        "[12/2] 00000000000021fedcba987654321fed local:26\n"
         "[12/d] 000000000000def123456789abcdef12 local:25\n"
-        "[13/2] 000000000000021fedcba987654321fe local:28\n"
+        "[13/1] 00000000000001fedcba987654321fed local:28\n"
         "[13/e] 0000000000000ef123456789abcdef12 local:27\n"
-        "[14/1] 000000000000001fedcba987654321fe local:30\n"
         "[14/f] 00000000000000f123456789abcdef12 local:29\n"
         "[15/1] 000000000000000123456789abcdef12 local:31\n"
-        "[15/f] 000000000000000fedcba987654321fe local:32\n"
+        "[15/e] 000000000000000edcba987654321fed local:32\n"
         "[16/2] 000000000000000023456789abcdef12 local:33\n"
-        "[16/e] 0000000000000000edcba987654321fe local:34\n"
+        "[16/d] 0000000000000000dcba987654321fed local:34\n"
         "[17/3] 000000000000000003456789abcdef12 local:35\n"
-        "[17/d] 00000000000000000dcba987654321fe local:36\n"
+        "[17/c] 00000000000000000cba987654321fed local:36\n"
         "[18/4] 000000000000000000456789abcdef12 local:37\n"
-        "[18/c] 000000000000000000cba987654321fe local:38\n"
+        "[18/b] 000000000000000000ba987654321fed local:38\n"
         "[19/5] 000000000000000000056789abcdef12 local:39\n"
-        "[19/b] 0000000000000000000ba987654321fe local:40\n"
+        "[19/a] 0000000000000000000a987654321fed local:40\n"
         "[20/6] 000000000000000000006789abcdef12 local:41\n"
-        "[20/a] 00000000000000000000a987654321fe local:42\n"
+        "[20/9] 00000000000000000000987654321fed local:42\n"
         "[21/7] 000000000000000000000789abcdef12 local:43\n"
-        "[21/9] 000000000000000000000987654321fe local:44\n"
-        "[22/8] 000000000000000000000087654321fe local:46\n"
-        "[23/7] 000000000000000000000007654321fe local:48\n"
+        "[21/8] 00000000000000000000087654321fed local:44\n"
+        "[22/7] 00000000000000000000007654321fed local:46\n"
+        "[22/8] 000000000000000000000089abcdef12 local:45\n"
+        "[23/6] 00000000000000000000000654321fed local:48\n"
         "[23/9] 000000000000000000000009abcdef12 local:47\n"
-        "[24/6] 000000000000000000000000654321fe local:50\n"
+        "[24/5] 00000000000000000000000054321fed local:50\n"
         "[24/a] 000000000000000000000000abcdef12 local:49\n"
-        "[25/5] 000000000000000000000000054321fe local:52\n"
+        "[25/4] 00000000000000000000000004321fed local:52\n"
         "[25/b] 0000000000000000000000000bcdef12 local:51\n"
-        "[26/4] 000000000000000000000000004321fe local:54\n"
+        "[26/3] 00000000000000000000000000321fed local:54\n"
         "[26/c] 00000000000000000000000000cdef12 local:53\n"
-        "[27/3] 000000000000000000000000000321fe local:56\n"
+        "[27/2] 00000000000000000000000000021fed local:56\n"
         "[27/d] 000000000000000000000000000def12 local:55\n"
-        "[28/2] 000000000000000000000000000021fe local:58\n"
+        "[28/1] 00000000000000000000000000001fed local:58\n"
         "[28/e] 0000000000000000000000000000ef12 local:57\n"
-        "[29/1] 000000000000000000000000000001fe local:60\n"
         "[29/f] 00000000000000000000000000000f12 local:59\n"
         "[30/1] 00000000000000000000000000000012 local:61\n"
-        "[30/f] 000000000000000000000000000000fe local:62\n"
+        "[30/e] 000000000000000000000000000000ed local:62\n"
         "[31/2] 00000000000000000000000000000002 local:63\n"
-        "[31/e] 0000000000000000000000000000000e local:64\n"
+        "[31/d] 0000000000000000000000000000000d local:64\n"
+    );
+    crs_routing_table_free(table);
+    test_nodes_done();
+    fail_if_error(crs_finalize_tests());
+}
+END_TEST
+
+
+START_TEST(test_routing_table_conflict_01)
+{
+    DESCRIBE_TEST;
+    struct crs_id  id;
+    struct crs_routing_table  *table;
+    test_nodes_init();
+    crs_id_init(&id, ID_SELF);
+    fail_if_error(table = crs_routing_table_new(&id));
+    add_prefix_to_table_with_proximity(table, ID_00, 2, 0);
+    add_prefix_to_table_with_proximity(table, ID_00, 2, 1);
+    /* The node with the smaller proximity metric should end up in the table */
+    verify_routing_table(table,
+        "[ 2/3] 003456789abcdef123456789abcdef12 local:1\n"
+    );
+    crs_routing_table_free(table);
+    test_nodes_done();
+    fail_if_error(crs_finalize_tests());
+}
+END_TEST
+
+START_TEST(test_routing_table_conflict_02)
+{
+    DESCRIBE_TEST;
+    struct crs_id  id;
+    struct crs_routing_table  *table;
+    test_nodes_init();
+    crs_id_init(&id, ID_SELF);
+    fail_if_error(table = crs_routing_table_new(&id));
+    add_prefix_to_table_with_proximity(table, ID_00, 2, 1);
+    add_prefix_to_table_with_proximity(table, ID_00, 2, 0);
+    /* The node with the smaller proximity metric should end up in the table */
+    verify_routing_table(table,
+        "[ 2/3] 003456789abcdef123456789abcdef12 local:2\n"
     );
     crs_routing_table_free(table);
     test_nodes_done();
@@ -265,6 +330,8 @@ test_suite()
     tcase_add_test(tc_routing, test_routing_table_02);
     tcase_add_test(tc_routing, test_routing_table_03);
     tcase_add_test(tc_routing, test_routing_table_04);
+    tcase_add_test(tc_routing, test_routing_table_conflict_01);
+    tcase_add_test(tc_routing, test_routing_table_conflict_02);
     suite_add_tcase(s, tc_routing);
 
     return s;
@@ -278,6 +345,7 @@ main(int argc, const char **argv)
     Suite  *suite = test_suite();
     SRunner  *runner = srunner_create(suite);
 
+    initialize_tests();
     srunner_run_all(runner, CK_NORMAL);
     number_failed = srunner_ntests_failed(runner);
     srunner_free(runner);

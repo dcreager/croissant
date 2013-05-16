@@ -56,6 +56,7 @@ set_target_properties(libcroissant PROPERTIES
     SOVERSION 0)
 target_link_libraries(libcroissant
     ${CORK_LIBRARIES}
+    ${CLOG_LIBRARIES}
 )
 
 install(TARGETS libcroissant DESTINATION lib)

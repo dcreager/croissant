@@ -10,10 +10,13 @@
 
 #include <string.h>
 
+#include <clogger.h>
 #include <libcork/core.h>
 
 #include "croissant.h"
 #include "croissant/node.h"
+
+#define CLOG_CHANNEL  "croissant:routing"
 
 
 /*-----------------------------------------------------------------------
@@ -97,9 +100,21 @@ void
 crs_routing_table_set(struct crs_routing_table *table,
                       struct crs_node_ref *ref)
 {
-    struct crs_routing_table_entry  *entry =
-        crs_routing_table_get_entry_for_id(table, &ref->id);
+    struct crs_routing_table_entry  *entry;
+    clog_debug("Adding %s to routing table", ref->id_str);
+    entry = crs_routing_table_get_entry_for_id(table, &ref->id);
     if (entry != NULL) {
+        if (entry->ref != NULL) {
+            /* If there's already a node reference in this entry, then we should
+             * keep the reference that's closer to the local process, according
+             * to whichever proximity metric is being used. */
+            if (entry->ref->proximity <= ref->proximity) {
+                clog_debug("Existing node %s is closer", entry->ref->id_str);
+                return;
+            } else {
+                clog_debug("Replacing node %s", entry->ref->id_str);
+            }
+        }
         entry->ref = ref;
     }
 }
