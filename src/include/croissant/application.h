@@ -23,9 +23,13 @@
 
 struct crs_application {
     crs_application_id  id;
-    crs_application_callback  callback;
     void  *user_data;
+    cork_free_f  free_user_data;
+    crs_application_process_f  process;
 };
+
+#define crs_application_process(a, s, d, m, ml) \
+    ((a)->process((a)->user_data, (s), (d), (m), (ml)))
 
 
 #endif  /* CROISSANT_APPLICATION_H */

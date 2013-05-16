@@ -278,7 +278,7 @@ crs_node_process_message(struct crs_node *node, const struct crs_id *src,
               (message_length, sizeof(uint32_t), "application ID"));
     id = crs_decode_uint32(&message, &message_length);
     rip_check(app = crs_node_get_application(node, id));
-    return app->callback(src, node, message, message_length, app->user_data);
+    return crs_application_process(app, src, node, message, message_length);
 }
 
 

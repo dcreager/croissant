@@ -179,14 +179,15 @@ crs_node_ref_send(struct crs_node_ref *dest, const struct crs_node *src,
 typedef uint32_t  crs_application_id;
 
 typedef int
-(*crs_application_callback)(const struct crs_id *src, struct crs_node *dest,
-                            const void *message, size_t message_length,
-                            void *user_data);
+(*crs_application_process_f)(void *user_data,
+                             const struct crs_id *src, struct crs_node *dest,
+                             const void *message, size_t message_length);
 
 
 struct crs_application *
-crs_application_new(crs_application_id id, crs_application_callback callback,
-                    void *user_data);
+crs_application_new(crs_application_id id,
+                    void *user_data, cork_free_f free_user_data,
+                    crs_application_process_f process);
 
 void
 crs_application_free(struct crs_application *app);
