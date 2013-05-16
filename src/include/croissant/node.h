@@ -63,6 +63,7 @@ struct crs_node {
     struct crs_ctx  *ctx;
     struct crs_id  id;
     struct crs_node_address  address;
+    struct crs_routing_table  *routing_table;
     struct cork_hash_table  applications;
     struct crs_node_ref  *ref;  /* A reference to the this node */
     struct crs_node_ref  *refs;  /* Other references this node has created */

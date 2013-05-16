@@ -39,8 +39,5 @@ crs_ctx_remove_node(struct crs_ctx *ctx, struct crs_node *node);
 CORK_LOCAL struct crs_node *
 crs_ctx_get_node(struct crs_ctx *ctx, crs_local_node_id id);
 
-CORK_LOCAL struct crs_node *
-crs_ctx_get_node_with_id(struct crs_ctx *ctx, const struct crs_id *id);
-
 
 #endif  /* CROISSANT_CONTEXT_H */

@@ -129,6 +129,9 @@ crs_ctx_new(void);
 void
 crs_ctx_free(struct crs_ctx *ctx);
 
+struct crs_node *
+crs_ctx_get_node_with_id(struct crs_ctx *ctx, const struct crs_id *id);
+
 
 /*-----------------------------------------------------------------------
  * Nodes
@@ -229,7 +232,7 @@ crs_node_ref_send(struct crs_node_ref *ref,
 struct crs_routing_table;
 
 struct crs_routing_table *
-crs_routing_table_new(const struct crs_id *id);
+crs_routing_table_new(struct crs_node *node);
 
 void
 crs_routing_table_free(struct crs_routing_table *table);
@@ -258,6 +261,10 @@ crs_routing_table_clear(struct crs_routing_table *table,
 void
 crs_routing_table_print(struct cork_buffer *dest,
                         const struct crs_routing_table *table);
+
+
+struct crs_routing_table *
+crs_node_get_routing_table(struct crs_node *node);
 
 
 /*-----------------------------------------------------------------------

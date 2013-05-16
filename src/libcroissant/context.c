@@ -76,8 +76,8 @@ crs_ctx_remove_node(struct crs_ctx *ctx, struct crs_node *node)
 CORK_LOCAL struct crs_node *
 crs_ctx_get_node(struct crs_ctx *ctx, crs_local_node_id id)
 {
-    struct crs_node  *curr = ctx->nodes;
-    while (curr != NULL) {
+    struct crs_node  *curr;
+    for (curr = ctx->nodes; curr != NULL; curr = curr->next) {
         if (curr->address.local_id == id) {
             return curr;
         }
@@ -85,11 +85,11 @@ crs_ctx_get_node(struct crs_ctx *ctx, crs_local_node_id id)
     return NULL;
 }
 
-CORK_LOCAL struct crs_node *
+struct crs_node *
 crs_ctx_get_node_with_id(struct crs_ctx *ctx, const struct crs_id *id)
 {
-    struct crs_node  *curr = ctx->nodes;
-    while (curr != NULL) {
+    struct crs_node  *curr;
+    for (curr = ctx->nodes; curr != NULL; curr = curr->next) {
         if (crs_id_equals(id, &curr->id)) {
             return curr;
         }

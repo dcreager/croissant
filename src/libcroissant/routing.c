@@ -32,7 +32,7 @@ struct crs_routing_table_entry {
 };
 
 struct crs_routing_table {
-    struct crs_id  self;
+    struct crs_node  *node;
     struct crs_routing_table_entry  entries[CRS_ROUTING_TABLE_ENTRY_COUNT];
 };
 
@@ -41,11 +41,12 @@ struct crs_routing_table {
 
 
 struct crs_routing_table *
-crs_routing_table_new(const struct crs_id *id)
+crs_routing_table_new(struct crs_node *node)
 {
     struct crs_routing_table  *table = cork_new(struct crs_routing_table);
     memset(table, 0, sizeof(struct crs_routing_table));
-    table->self = *id;
+    table->node = node;
+    clog_debug("[%s] New routing table", crs_node_get_address_str(node));
     return table;
 }
 
@@ -75,11 +76,18 @@ crs_routing_table_get(const struct crs_routing_table *table,
 
 static struct crs_routing_table_entry *
 crs_routing_table_get_entry_for_id(struct crs_routing_table *table,
-                                   const struct crs_id *id)
+                                   const struct crs_id *id,
+                                   int *row_out, unsigned int *column_out)
 {
-    int  row = crs_id_get_msdd(&table->self, id);
+    int  row = crs_id_get_msdd(&table->node->id, id);
     if (row >= 0) {
         unsigned int  column = crs_id_get_nybble(id, row);
+        if (row_out != NULL) {
+            *row_out = row;
+        }
+        if (column_out != NULL) {
+            *column_out = column;
+        }
         return crs_routing_table_get_entry(table, row, column);
     } else {
         return NULL;
@@ -92,7 +100,7 @@ crs_routing_table_get_closest(const struct crs_routing_table *table,
 {
     const struct crs_routing_table_entry  *entry =
         crs_routing_table_get_entry_for_id
-        ((struct crs_routing_table *) table, id);
+        ((struct crs_routing_table *) table, id, NULL, NULL);
     return (entry == NULL)? NULL: entry->ref;
 }
 
@@ -101,20 +109,26 @@ crs_routing_table_set(struct crs_routing_table *table,
                       struct crs_node_ref *ref)
 {
     struct crs_routing_table_entry  *entry;
-    clog_debug("Adding %s to routing table", crs_node_ref_get_id_str(ref));
-    entry = crs_routing_table_get_entry_for_id(table, &ref->id);
+    int  r;
+    unsigned int  c;
+    entry = crs_routing_table_get_entry_for_id(table, &ref->id, &r, &c);
     if (entry != NULL) {
+        clog_debug("[%s] (rtable) [%2d/%hx] %s",
+                   crs_node_get_address_str(table->node),
+                   r, c, crs_node_ref_get_id_str(ref));
         if (entry->ref != NULL) {
             /* If there's already a node reference in this entry, then we should
              * keep the reference that's closer to the local process, according
              * to whichever proximity metric is being used. */
             if (entry->ref->proximity <= ref->proximity) {
-                clog_debug("Existing node %s is closer",
-                           crs_node_ref_get_id_str(entry->ref));
+                clog_debug("[%s] (rtable) [%2d/%x] %s is closer",
+                           crs_node_get_address_str(table->node),
+                           r, c, crs_node_ref_get_id_str(entry->ref));
                 return;
             } else {
-                clog_debug("Replacing node %s",
-                           crs_node_ref_get_id_str(entry->ref));
+                clog_debug("[%s] (rtable) [%2d/%x] %s replaced",
+                           crs_node_get_address_str(table->node),
+                           r, c, crs_node_ref_get_id_str(entry->ref));
             }
         }
         entry->ref = ref;
