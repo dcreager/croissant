@@ -42,9 +42,15 @@ CORK_LOCAL void
 crs_local_node_print(const struct crs_node_address *address,
                      struct cork_buffer *dest);
 
-CORK_LOCAL int
-crs_local_node_send(struct crs_node *src, const struct crs_node_address *dest,
-                    const void *message, size_t message_length);
+
+/*-----------------------------------------------------------------------
+ * Local node references
+ */
+
+CORK_LOCAL struct crs_node_ref *
+crs_local_node_ref_new(const struct crs_id *node_id,
+                       const struct crs_node_address *address,
+                       struct crs_node *local_node);
 
 
 #endif  /* CROISSANT_LOCAL_H */

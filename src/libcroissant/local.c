@@ -56,12 +56,27 @@ crs_local_node_print(const struct crs_node_address *address,
 }
 
 
-CORK_LOCAL int
-crs_local_node_send(struct crs_node *src, const struct crs_node_address *dest,
-                    const void *message, size_t message_length)
+/*-----------------------------------------------------------------------
+ * Local node references
+ */
+
+static int
+crs_local_node_ref__send(struct crs_node_ref *dest, const struct crs_node *src,
+                         const void *message, size_t message_length)
 {
-    struct crs_node  *dest_node;
-    rip_check(dest_node = crs_local_node_get(dest->local_id));
-    return crs_node_process_message
-        (dest_node, &src->id, message, message_length);
+    /* We should never actually call the `send` method for a local node; the
+     * `crs_node_ref_send` method should have noticed that the node was local to
+     * the process, and sent the message to the node directly.  So if we ever
+     * make it here, something is wrong. */
+    crs_io_error("Should have already sent the message to this node");
+    return -1;
+}
+
+CORK_LOCAL struct crs_node_ref *
+crs_local_node_ref_new(const struct crs_id *node_id,
+                       const struct crs_node_address *address,
+                       struct crs_node *local_node)
+{
+    return crs_node_ref_new_priv
+        (node_id, address, local_node, NULL, NULL, crs_local_node_ref__send);
 }
