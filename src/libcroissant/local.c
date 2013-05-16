@@ -61,7 +61,8 @@ crs_local_node_print(struct cork_buffer *dest,
  */
 
 static int
-crs_local_node_ref__send(struct crs_node_ref *dest, const struct crs_node *src,
+crs_local_node_ref__send(struct crs_node_ref *ref,
+                         const struct crs_id *src, const struct crs_id *dest,
                          const void *message, size_t message_length)
 {
     /* We should never actually call the `send` method for a local node; the

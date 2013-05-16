@@ -255,7 +255,8 @@ crs_node_get_application(struct crs_node *node, crs_application_id id)
 }
 
 CORK_LOCAL int
-crs_node_process_message(struct crs_node *node, const struct crs_id *src,
+crs_node_process_message(struct crs_node *node,
+                         const struct crs_id *src, const struct crs_id *dest,
                          const void *message, size_t message_length)
 {
     crs_application_id  id;
@@ -264,7 +265,8 @@ crs_node_process_message(struct crs_node *node, const struct crs_id *src,
               (message_length, sizeof(uint32_t), "application ID"));
     id = crs_decode_uint32(&message, &message_length);
     rip_check(app = crs_node_get_application(node, id));
-    return crs_application_process(app, src, node, message, message_length);
+    return crs_application_process
+        (app, node, src, dest, message, message_length);
 }
 
 

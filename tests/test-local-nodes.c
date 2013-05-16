@@ -28,6 +28,7 @@ START_TEST(test_local_nodes)
 {
     DESCRIBE_TEST;
     struct crs_node  *node = crs_test_node_new(NULL, NULL);
+    const struct crs_id  *node_id = crs_node_get_id(node);
     const struct crs_node_address  *address = crs_node_get_address(node);
     struct cork_buffer  actual = CORK_BUFFER_INIT();
     struct cork_buffer  send_buf = CORK_BUFFER_INIT();
@@ -51,7 +52,8 @@ START_TEST(test_local_nodes)
     cork_buffer_append_string(&send_buf, "awesome message");
     cork_buffer_set_string(&expected, "awesome message");
     fail_if_error(ref = crs_node_get_ref(node));
-    fail_if_error(crs_node_ref_send(ref, node, send_buf.buf, send_buf.size));
+    fail_if_error(crs_node_ref_send
+                  (ref, node_id, node_id, send_buf.buf, send_buf.size));
     fail_unless_buf_equal(&actual, &expected, "received message content");
 
     cork_buffer_done(&actual);

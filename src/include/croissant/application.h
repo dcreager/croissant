@@ -28,8 +28,8 @@ struct crs_application {
     crs_application_process_f  process;
 };
 
-#define crs_application_process(a, s, d, m, ml) \
-    ((a)->process((a)->user_data, (s), (d), (m), (ml)))
+#define crs_application_process(a, n, s, d, m, ml) \
+    ((a)->process((a)->user_data, (n), (s), (d), (m), (ml)))
 
 
 #endif  /* CROISSANT_APPLICATION_H */

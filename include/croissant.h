@@ -186,8 +186,13 @@ crs_node_ref_get_proximity(const struct crs_node_ref *ref);
 void
 crs_node_ref_set_proximity(struct crs_node_ref *ref, crs_proximity proximity);
 
+/* This is not the main public function for sending a message.  (For that, use
+ * crs_node_send.)  This is used when you want to send a message directly to a
+ * particular node that we've already seen and know how to contact.  It is
+ * mostly used internally by the message routing functions. */
 int
-crs_node_ref_send(struct crs_node_ref *dest, const struct crs_node *src,
+crs_node_ref_send(struct crs_node_ref *ref,
+                  const struct crs_id *src, const struct crs_id *dest,
                   const void *message, size_t message_length);
 
 
@@ -242,8 +247,9 @@ crs_routing_table_print(struct cork_buffer *dest,
 typedef uint32_t  crs_application_id;
 
 typedef int
-(*crs_application_process_f)(void *user_data,
-                             const struct crs_id *src, struct crs_node *dest,
+(*crs_application_process_f)(void *user_data, struct crs_node *node,
+                             const struct crs_id *src,
+                             const struct crs_id *dest,
                              const void *message, size_t message_length);
 
 

@@ -16,8 +16,8 @@
 
 
 static int
-crs_save_message__callback(void *user_data,
-                           const struct crs_id *src, struct crs_node *dest,
+crs_save_message__callback(void *user_data, struct crs_node *node,
+                           const struct crs_id *src, const struct crs_id *dest,
                            const void *message, size_t message_length)
 {
     struct cork_buffer  *buf = user_data;

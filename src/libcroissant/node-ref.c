@@ -96,15 +96,16 @@ crs_node_ref_set_proximity(struct crs_node_ref *ref, crs_proximity proximity)
 }
 
 int
-crs_node_ref_send(struct crs_node_ref *dest, const struct crs_node *src,
+crs_node_ref_send(struct crs_node_ref *ref,
+                  const struct crs_id *src, const struct crs_id *dest,
                   const void *message, size_t message_length)
 {
     /* If the node in question is in the current process, just sent the message
      * directly. */
-    if (dest->local_node != NULL) {
+    if (ref->local_node != NULL) {
         return crs_node_process_message
-            (dest->local_node, &src->id, message, message_length);
+            (ref->local_node, src, dest, message, message_length);
     } else {
-        return dest->send(dest, src, message, message_length);
+        return ref->send(ref, src, dest, message, message_length);
     }
 }

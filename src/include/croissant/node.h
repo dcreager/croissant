@@ -68,7 +68,8 @@ struct crs_node {
 };
 
 CORK_LOCAL int
-crs_node_process_message(struct crs_node *node, const struct crs_id *src,
+crs_node_process_message(struct crs_node *node,
+                         const struct crs_id *src, const struct crs_id *dest,
                          const void *message, size_t message_length);
 
 
@@ -77,7 +78,8 @@ crs_node_process_message(struct crs_node *node, const struct crs_id *src,
  */
 
 typedef int
-(*crs_node_ref_send_f)(struct crs_node_ref *dest, const struct crs_node *src,
+(*crs_node_ref_send_f)(struct crs_node_ref *ref,
+                       const struct crs_id *src, const struct crs_id *dest,
                        const void *message, size_t message_length);
 
 struct crs_node_ref {
