@@ -34,6 +34,8 @@ crs_node_ref_new_priv(struct crs_node *owner, const struct crs_id *node_id,
     ref->id = *node_id;
     crs_id_to_raw_string(node_id, ref->id_str);
     ref->address = *address;
+    cork_buffer_init(&ref->address_str);
+    crs_node_address_print(&ref->address_str, address);
     ref->proximity = proximity;
     ref->local_node = local_node;
     ref->user_data = user_data;
@@ -70,6 +72,7 @@ void
 crs_node_ref_free(struct crs_node_ref *ref)
 {
     cork_free_user_data(ref);
+    cork_buffer_done(&ref->address_str);
     free(ref);
 }
 
@@ -79,10 +82,22 @@ crs_node_ref_get_id(const struct crs_node_ref *ref)
     return &ref->id;
 }
 
+const char *
+crs_node_ref_get_id_str(const struct crs_node_ref *ref)
+{
+    return ref->id_str;
+}
+
 const struct crs_node_address *
 crs_node_ref_get_address(const struct crs_node_ref *ref)
 {
     return &ref->address;
+}
+
+const char *
+crs_node_ref_get_address_str(const struct crs_node_ref *ref)
+{
+    return ref->address_str.buf;
 }
 
 crs_proximity

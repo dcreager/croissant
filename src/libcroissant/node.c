@@ -8,6 +8,7 @@
  * ----------------------------------------------------------------------
  */
 
+#include <clogger.h>
 #include <libcork/core.h>
 #include <libcork/ds.h>
 #include <libcork/helpers/errors.h>
@@ -19,6 +20,8 @@
 #include "croissant/node.h"
 #include "croissant/parse.h"
 #include "croissant/tests.h"
+
+#define CLOG_CHANNEL  "croissant:node"
 
 
 /*-----------------------------------------------------------------------
@@ -116,12 +119,16 @@ crs_node_new_with_id(struct crs_ctx *ctx, const struct crs_id *id,
 {
     struct crs_node  *node = cork_new(struct crs_node);
     node->id = *id;
+    crs_id_to_raw_string(id, node->id_str);
     if (address == NULL) {
         node->address.type = CRS_NODE_TYPE_LOCAL;
     } else {
         node->address = *address;
     }
     node->address.local_id = crs_ctx_next_node_id(ctx);
+    cork_buffer_init(&node->address_str);
+    crs_node_address_print(&node->address_str, &node->address);
+    clog_debug("[%s] New node %s", (char *) node->address_str.buf, node->id_str);
     crs_ctx_add_node(ctx, node);
     cork_pointer_hash_table_init(&node->applications, 0);
     node->ref = crs_local_node_ref_new(node, &node->id, &node->address, node);
@@ -154,6 +161,7 @@ crs_node_free(struct crs_node *node)
 {
     struct crs_node_ref  *curr;
     struct crs_node_ref  *next;
+    clog_debug("[%s] Free node", (char *) node->address_str.buf);
     crs_ctx_remove_node(node->ctx, node);
     cork_hash_table_map(&node->applications, free_application, NULL);
     cork_hash_table_done(&node->applications);
@@ -162,6 +170,7 @@ crs_node_free(struct crs_node *node)
         next = curr->next;
         crs_node_ref_free(curr);
     }
+    cork_buffer_done(&node->address_str);
     free(node);
 }
 
@@ -171,10 +180,22 @@ crs_node_get_id(const struct crs_node *node)
     return &node->id;
 }
 
+const char *
+crs_node_get_id_str(const struct crs_node *node)
+{
+    return node->id_str;
+}
+
 const struct crs_node_address *
 crs_node_get_address(const struct crs_node *node)
 {
     return &node->address;
+}
+
+const char *
+crs_node_get_address_str(const struct crs_node *node)
+{
+    return node->address_str.buf;
 }
 
 struct crs_node_ref *

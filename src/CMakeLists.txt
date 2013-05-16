@@ -69,3 +69,50 @@ set(prefix ${CMAKE_INSTALL_PREFIX})
 configure_file(croissant.pc.in ${CMAKE_CURRENT_BINARY_DIR}/croissant.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/croissant.pc
         DESTINATION lib/pkgconfig)
+
+#-----------------------------------------------------------------------
+# croissant
+
+set(CROISSANT_RAGEL
+    croissant/test.c.rl
+)
+
+set_property(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    PROPERTY CLEAN_NO_CUSTOM true
+)
+
+foreach(RAGEL_INPUT ${CROISSANT_RAGEL})
+    string(REGEX REPLACE "\\.rl$" "" RAGEL_OUTPUT "${RAGEL_INPUT}")
+    if (RAGEL)
+        add_custom_command(
+            OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/${RAGEL_OUTPUT}"
+            COMMAND ragel -G2 -o "${RAGEL_OUTPUT}" "${RAGEL_INPUT}"
+            MAIN_DEPENDENCY "${RAGEL_INPUT}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            COMMENT "Ragel ${RAGEL_INPUT}"
+        )
+    else (RAGEL)
+        # Ragel is not present; if the Ragel source files get out of date,
+        # that's an error.
+        add_custom_command(
+            OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/${RAGEL_OUTPUT}"
+            COMMAND false
+            MAIN_DEPENDENCY "${RAGEL_INPUT}"
+            COMMENT "Ragel not found; cannot update ${RAGEL_OUTPUT}"
+        )
+    endif (RAGEL)
+endforeach(RAGEL_INPUT)
+
+set(CROISSANT_SRC
+    croissant/root.c
+    croissant/test.c
+)
+
+add_executable(croissant ${CROISSANT_SRC})
+target_link_libraries(croissant
+    libcroissant
+    ${CORK_LIBRARIES}
+    ${CLOG_LIBRARIES}
+)
+install(TARGETS croissant DESTINATION bin)

@@ -101,7 +101,7 @@ crs_routing_table_set(struct crs_routing_table *table,
                       struct crs_node_ref *ref)
 {
     struct crs_routing_table_entry  *entry;
-    clog_debug("Adding %s to routing table", ref->id_str);
+    clog_debug("Adding %s to routing table", crs_node_ref_get_id_str(ref));
     entry = crs_routing_table_get_entry_for_id(table, &ref->id);
     if (entry != NULL) {
         if (entry->ref != NULL) {
@@ -109,10 +109,12 @@ crs_routing_table_set(struct crs_routing_table *table,
              * keep the reference that's closer to the local process, according
              * to whichever proximity metric is being used. */
             if (entry->ref->proximity <= ref->proximity) {
-                clog_debug("Existing node %s is closer", entry->ref->id_str);
+                clog_debug("Existing node %s is closer",
+                           crs_node_ref_get_id_str(entry->ref));
                 return;
             } else {
-                clog_debug("Replacing node %s", entry->ref->id_str);
+                clog_debug("Replacing node %s",
+                           crs_node_ref_get_id_str(entry->ref));
             }
         }
         entry->ref = ref;

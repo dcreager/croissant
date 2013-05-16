@@ -67,6 +67,8 @@ struct crs_node {
     struct crs_node_ref  *ref;  /* A reference to the this node */
     struct crs_node_ref  *refs;  /* Other references this node has created */
     struct crs_node  *next;  /* A linked list of the nodes in ctx */
+    char  id_str[CRS_ID_STRING_LENGTH];
+    struct cork_buffer  address_str;
 };
 
 CORK_LOCAL void
@@ -98,6 +100,7 @@ struct crs_node_ref {
     crs_node_ref_send_f  send;
     struct crs_node_ref  *next;  /* A linked list of references in owner */
     char  id_str[CRS_ID_STRING_LENGTH];
+    struct cork_buffer  address_str;
 };
 
 CORK_LOCAL struct crs_node_ref *
