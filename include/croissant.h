@@ -118,6 +118,19 @@ crs_node_address_encode(const struct crs_node_address *address,
 
 
 /*-----------------------------------------------------------------------
+ * Contexts
+ */
+
+struct crs_ctx;
+
+struct crs_ctx *
+crs_ctx_new(void);
+
+void
+crs_ctx_free(struct crs_ctx *ctx);
+
+
+/*-----------------------------------------------------------------------
  * Nodes
  */
 
@@ -129,12 +142,8 @@ struct crs_node;
  * is NULL, this node will only be accessible within the current process.  (This
  * is mostly useful for test cases.) */
 struct crs_node *
-crs_node_new(const struct crs_node_address *address);
-
-/* The node should not belong to a Pastry network; you should call
- * crs_node_detach to remove the node from its network before freeing it. */
-void
-crs_node_free(struct crs_node *node);
+crs_node_new(struct crs_ctx *ctx, const struct crs_id *id,
+             const struct crs_node_address *address);
 
 /* If bootstrap_node is NULL, create a new Pastry network with this node as the
  * only member.  Otherwise, add the node to the Pastry network that
@@ -153,9 +162,6 @@ crs_node_get_id(const struct crs_node *node);
 const struct crs_node_address *
 crs_node_get_address(const struct crs_node *node);
 
-struct crs_node_ref *
-crs_node_get_ref(struct crs_node *node);
-
 
 /*-----------------------------------------------------------------------
  * Node references
@@ -163,16 +169,18 @@ crs_node_get_ref(struct crs_node *node);
 
 /* Larger values are "further away" */
 typedef unsigned long  crs_proximity;
+#define CRS_PROXIMITY_UNKNOWN  LONG_MAX
 
 struct crs_node_ref;
 
-struct crs_node_ref *
-crs_node_ref_new(const struct crs_id *node_id,
-                 const struct crs_node_address *address,
-                 crs_proximity proximity);
+/* Each node maintains its own set of references to other nodes. */
 
-void
-crs_node_ref_free(struct crs_node_ref *ref);
+struct crs_node_ref *
+crs_node_get_ref(struct crs_node *node);
+
+struct crs_node_ref *
+crs_node_new_ref(struct crs_node *owner, const struct crs_id *node_id,
+                 const struct crs_node_address *address);
 
 const struct crs_id *
 crs_node_ref_get_id(const struct crs_node_ref *ref);
@@ -197,7 +205,7 @@ crs_node_ref_send(struct crs_node_ref *ref,
 
 
 /*-----------------------------------------------------------------------
- * Routing data
+ * Routing state
  */
 
 #define CRS_ROUTING_TABLE_BIT_SIZE  4

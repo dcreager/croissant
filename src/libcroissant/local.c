@@ -74,7 +74,7 @@ crs_local_node_ref__send(struct crs_node_ref *ref,
 }
 
 CORK_LOCAL struct crs_node_ref *
-crs_local_node_ref_new(const struct crs_id *node_id,
+crs_local_node_ref_new(struct crs_node *owner, const struct crs_id *node_id,
                        const struct crs_node_address *address,
                        struct crs_node *local_node)
 {
@@ -82,5 +82,6 @@ crs_local_node_ref_new(const struct crs_id *node_id,
      * to send a message to a node in the same local process than any other
      * communication mechanism. */
     return crs_node_ref_new_priv
-        (node_id, address, 0, local_node, NULL, NULL, crs_local_node_ref__send);
+        (owner, node_id, address, 0, local_node,
+         NULL, NULL, crs_local_node_ref__send);
 }

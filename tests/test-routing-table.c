@@ -25,20 +25,6 @@
  * Routing table
  */
 
-static cork_array(struct crs_node *)  test_nodes;
-
-static void
-test_nodes_init(void)
-{
-    cork_pointer_array_init(&test_nodes, (cork_free_f) crs_node_free);
-}
-
-static void
-test_nodes_done(void)
-{
-    cork_array_done(&test_nodes);
-}
-
 static void
 verify_routing_table(const struct crs_routing_table *table,
                      const char *expected)
@@ -76,21 +62,21 @@ create_test_id(struct crs_id *id, const char *id_template,
 }
 
 static void
-add_prefix_to_table(struct crs_routing_table *table,
+add_prefix_to_table(struct crs_ctx *ctx, struct crs_routing_table *table,
                     const char *id_template, unsigned int common_prefix)
 {
     struct crs_id  id;
     struct crs_node  *node;
     struct crs_node_ref  *ref;
     create_test_id(&id, id_template, common_prefix);
-    node = crs_test_node_new(&id, NULL);
-    cork_array_append(&test_nodes, node);
+    node = crs_node_new(ctx, &id, NULL);
     ref = crs_node_get_ref(node);
     crs_routing_table_set(table, ref);
 }
 
 static void
-add_prefix_to_table_with_proximity(struct crs_routing_table *table,
+add_prefix_to_table_with_proximity(struct crs_ctx *ctx,
+                                   struct crs_routing_table *table,
                                    const char *id_template,
                                    unsigned int common_prefix,
                                    crs_proximity proximity)
@@ -99,8 +85,7 @@ add_prefix_to_table_with_proximity(struct crs_routing_table *table,
     struct crs_node  *node;
     struct crs_node_ref  *ref;
     create_test_id(&id, id_template, common_prefix);
-    node = crs_test_node_new(&id, NULL);
-    cork_array_append(&test_nodes, node);
+    node = crs_node_new(ctx, &id, NULL);
     ref = crs_node_get_ref(node);
     crs_node_ref_set_proximity(ref, proximity);
     crs_routing_table_set(table, ref);
@@ -110,13 +95,14 @@ START_TEST(test_routing_table_01)
 {
     DESCRIBE_TEST;
     struct crs_id  id;
+    struct crs_ctx  *ctx;
     struct crs_routing_table  *table;
-    test_nodes_init();
+    ctx = crs_ctx_new();
     crs_id_init(&id, ID_SELF);
     fail_if_error(table = crs_routing_table_new(&id));
     verify_routing_table(table, "");
     crs_routing_table_free(table);
-    test_nodes_done();
+    crs_ctx_free(ctx);
     fail_if_error(crs_finalize_tests());
 }
 END_TEST
@@ -125,16 +111,17 @@ START_TEST(test_routing_table_02)
 {
     DESCRIBE_TEST;
     struct crs_id  id;
+    struct crs_ctx  *ctx;
     struct crs_routing_table  *table;
-    test_nodes_init();
+    ctx = crs_ctx_new();
     crs_id_init(&id, ID_SELF);
     fail_if_error(table = crs_routing_table_new(&id));
-    add_prefix_to_table(table, ID_00, 0);
+    add_prefix_to_table(ctx, table, ID_00, 0);
     verify_routing_table(table,
         "[ 0/1] 123456789abcdef123456789abcdef12 local:1\n"
     );
     crs_routing_table_free(table);
-    test_nodes_done();
+    crs_ctx_free(ctx);
     fail_if_error(crs_finalize_tests());
 }
 END_TEST
@@ -144,12 +131,13 @@ START_TEST(test_routing_table_03)
     DESCRIBE_TEST;
     size_t  i;
     struct crs_id  id;
+    struct crs_ctx  *ctx;
     struct crs_routing_table  *table;
-    test_nodes_init();
+    ctx = crs_ctx_new();
     crs_id_init(&id, ID_SELF);
     fail_if_error(table = crs_routing_table_new(&id));
     for (i = 0; i <= CRS_ROUTING_TABLE_ROW_COUNT; i++) {
-        add_prefix_to_table(table, ID_00, i);
+        add_prefix_to_table(ctx, table, ID_00, i);
     }
     verify_routing_table(table,
         "[ 0/1] 123456789abcdef123456789abcdef12 local:1\n"
@@ -186,7 +174,7 @@ START_TEST(test_routing_table_03)
         "[31/2] 00000000000000000000000000000002 local:32\n"
     );
     crs_routing_table_free(table);
-    test_nodes_done();
+    crs_ctx_free(ctx);
     fail_if_error(crs_finalize_tests());
 }
 END_TEST
@@ -196,13 +184,14 @@ START_TEST(test_routing_table_04)
     DESCRIBE_TEST;
     size_t  i;
     struct crs_id  id;
+    struct crs_ctx  *ctx;
     struct crs_routing_table  *table;
-    test_nodes_init();
+    ctx = crs_ctx_new();
     crs_id_init(&id, ID_SELF);
     fail_if_error(table = crs_routing_table_new(&id));
     for (i = 0; i <= CRS_ROUTING_TABLE_ROW_COUNT; i++) {
-        add_prefix_to_table(table, ID_00, i);
-        add_prefix_to_table(table, ID_01, i);
+        add_prefix_to_table(ctx, table, ID_00, i);
+        add_prefix_to_table(ctx, table, ID_01, i);
     }
     verify_routing_table(table,
         "[ 0/1] 123456789abcdef123456789abcdef12 local:1\n"
@@ -269,7 +258,7 @@ START_TEST(test_routing_table_04)
         "[31/d] 0000000000000000000000000000000d local:64\n"
     );
     crs_routing_table_free(table);
-    test_nodes_done();
+    crs_ctx_free(ctx);
     fail_if_error(crs_finalize_tests());
 }
 END_TEST
@@ -279,18 +268,19 @@ START_TEST(test_routing_table_conflict_01)
 {
     DESCRIBE_TEST;
     struct crs_id  id;
+    struct crs_ctx  *ctx;
     struct crs_routing_table  *table;
-    test_nodes_init();
+    ctx = crs_ctx_new();
     crs_id_init(&id, ID_SELF);
     fail_if_error(table = crs_routing_table_new(&id));
-    add_prefix_to_table_with_proximity(table, ID_00, 2, 0);
-    add_prefix_to_table_with_proximity(table, ID_00, 2, 1);
+    add_prefix_to_table_with_proximity(ctx, table, ID_00, 2, 0);
+    add_prefix_to_table_with_proximity(ctx, table, ID_00, 2, 1);
     /* The node with the smaller proximity metric should end up in the table */
     verify_routing_table(table,
         "[ 2/3] 003456789abcdef123456789abcdef12 local:1\n"
     );
     crs_routing_table_free(table);
-    test_nodes_done();
+    crs_ctx_free(ctx);
     fail_if_error(crs_finalize_tests());
 }
 END_TEST
@@ -299,18 +289,19 @@ START_TEST(test_routing_table_conflict_02)
 {
     DESCRIBE_TEST;
     struct crs_id  id;
+    struct crs_ctx  *ctx;
     struct crs_routing_table  *table;
-    test_nodes_init();
+    ctx = crs_ctx_new();
     crs_id_init(&id, ID_SELF);
     fail_if_error(table = crs_routing_table_new(&id));
-    add_prefix_to_table_with_proximity(table, ID_00, 2, 1);
-    add_prefix_to_table_with_proximity(table, ID_00, 2, 0);
+    add_prefix_to_table_with_proximity(ctx, table, ID_00, 2, 1);
+    add_prefix_to_table_with_proximity(ctx, table, ID_00, 2, 0);
     /* The node with the smaller proximity metric should end up in the table */
     verify_routing_table(table,
         "[ 2/3] 003456789abcdef123456789abcdef12 local:2\n"
     );
     crs_routing_table_free(table);
-    test_nodes_done();
+    crs_ctx_free(ctx);
     fail_if_error(crs_finalize_tests());
 }
 END_TEST

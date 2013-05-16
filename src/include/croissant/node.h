@@ -60,12 +60,17 @@ struct crs_node_address {
  */
 
 struct crs_node {
+    struct crs_ctx  *ctx;
     struct crs_id  id;
     struct crs_node_address  address;
     struct cork_hash_table  applications;
-    struct crs_node_ref  *ref;
-    struct crs_node  *next;
+    struct crs_node_ref  *ref;  /* A reference to the this node */
+    struct crs_node_ref  *refs;  /* Other references this node has created */
+    struct crs_node  *next;  /* A linked list of the nodes in ctx */
 };
+
+CORK_LOCAL void
+crs_node_free(struct crs_node *node);
 
 CORK_LOCAL int
 crs_node_process_message(struct crs_node *node,
@@ -83,6 +88,7 @@ typedef int
                        const void *message, size_t message_length);
 
 struct crs_node_ref {
+    struct crs_node  *owner;
     struct crs_id  id;
     struct crs_node_address  address;
     crs_proximity  proximity;
@@ -90,16 +96,24 @@ struct crs_node_ref {
     void  *user_data;
     cork_free_f  free_user_data;
     crs_node_ref_send_f  send;
+    struct crs_node_ref  *next;  /* A linked list of references in owner */
     char  id_str[CRS_ID_STRING_LENGTH];
 };
 
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new_priv(const struct crs_id *node_id,
+crs_node_ref_new_priv(struct crs_node *owner, const struct crs_id *node_id,
                       const struct crs_node_address *address,
                       crs_proximity proximity,
                       struct crs_node *local_node,
                       void *user_data, cork_free_f free_user_data,
                       crs_node_ref_send_f send);
+
+CORK_LOCAL struct crs_node_ref *
+crs_node_ref_new(struct crs_node *owner, const struct crs_id *node_id,
+                 const struct crs_node_address *address);
+
+CORK_LOCAL void
+crs_node_ref_free(struct crs_node_ref *ref);
 
 
 #endif  /* CROISSANT_NODE_H */

@@ -21,12 +21,6 @@
  * Test case helper functions
  */
 
-/* Creates a new Pastry node with a specific node ID.  This should *only* be
- * used for test cases. */
-struct crs_node *
-crs_test_node_new(const struct crs_id *id,
-                  const struct crs_node_address *address);
-
 /* Ensures that all local nodes have been freed, and resets the local node ID
  * counter.  Useful in test cases to get reproducible output. */
 int
