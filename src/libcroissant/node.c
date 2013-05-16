@@ -165,25 +165,6 @@ crs_node_address_encode(const struct crs_node_address *address,
 
 
 /*-----------------------------------------------------------------------
- * Sending messages
- */
-
-int
-crs_node_send_message(struct crs_node *src, const struct crs_node_address *dest,
-                      const void *message, size_t message_length)
-{
-    /* If the node in question is in the current process, just sent the message
-     * directly. */
-    if (dest->local_id != CRS_LOCAL_NODE_ID_NONE) {
-        return crs_local_node_send(src, dest, message, message_length);
-    } else {
-        crs_io_error("Don't know how to send to this node.");
-        return -1;
-    }
-}
-
-
-/*-----------------------------------------------------------------------
  * Nodes
  */
 
@@ -202,6 +183,7 @@ crs_node_new_with_id(const struct crs_id *id,
         node->address.local_id = crs_local_node_id_get_next();
     }
     cork_pointer_hash_table_init(&node->applications, 0);
+    node->ref = crs_local_node_ref_new(&node->id, &node->address, node);
     return node;
 }
 
@@ -227,6 +209,7 @@ crs_node_free(struct crs_node *node)
     crs_local_node_remove(node);
     cork_hash_table_map(&node->applications, free_application, NULL);
     cork_hash_table_done(&node->applications);
+    crs_node_ref_free(node->ref);
     free(node);
 }
 
@@ -242,6 +225,12 @@ crs_node_get_address(struct crs_node *node)
     struct crs_node_address  *address = cork_new(struct crs_node_address);
     *address = node->address;
     return address;
+}
+
+struct crs_node_ref *
+crs_node_get_ref(struct crs_node *node)
+{
+    return node->ref;
 }
 
 
@@ -289,7 +278,7 @@ crs_node_process_message(struct crs_node *node, const struct crs_id *src,
               (message_length, sizeof(uint32_t), "application ID"));
     id = crs_decode_uint32(&message, &message_length);
     rip_check(app = crs_node_get_application(node, id));
-    return app->callback(src, node, message, message_length, app->user_data);
+    return crs_application_process(app, src, node, message, message_length);
 }
 
 

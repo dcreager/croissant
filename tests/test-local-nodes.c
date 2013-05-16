@@ -34,6 +34,7 @@ START_TEST(test_local_nodes)
     struct cork_buffer  expected = CORK_BUFFER_INIT();
     struct crs_application  *app =
         crs_save_message_application_new(10, &actual);
+    struct crs_node_ref  *ref;
 
     fail_if_error(crs_node_add_application(node, app));
 
@@ -49,10 +50,9 @@ START_TEST(test_local_nodes)
     cork_buffer_set(&send_buf, "\x00\x00\x00\x0a", 4);
     cork_buffer_append_string(&send_buf, "awesome message");
     cork_buffer_set_string(&expected, "awesome message");
-    fail_if_error(crs_node_send_message
-                  (node, address, send_buf.buf, send_buf.size));
+    fail_if_error(ref = crs_node_get_ref(node));
+    fail_if_error(crs_node_ref_send(ref, node, send_buf.buf, send_buf.size));
     fail_unless_buf_equal(&actual, &expected, "received message content");
-
 
     cork_buffer_done(&actual);
     cork_buffer_done(&send_buf);

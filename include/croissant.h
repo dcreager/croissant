@@ -150,10 +150,26 @@ crs_node_get_id(struct crs_node *node);
 const struct crs_node_address *
 crs_node_get_address(struct crs_node *node);
 
+struct crs_node_ref *
+crs_node_get_ref(struct crs_node *node);
+
+
+/*-----------------------------------------------------------------------
+ * Node references
+ */
+
+struct crs_node_ref;
+
+struct crs_node_ref *
+crs_node_ref_new(const struct crs_id *node_id,
+                 const struct crs_node_address *address);
+
+void
+crs_node_ref_free(struct crs_node_ref *ref);
 
 int
-crs_node_send_message(struct crs_node *src, const struct crs_node_address *dest,
-                      const void *message, size_t message_length);
+crs_node_ref_send(struct crs_node_ref *dest, const struct crs_node *src,
+                  const void *message, size_t message_length);
 
 
 /*-----------------------------------------------------------------------
@@ -163,14 +179,15 @@ crs_node_send_message(struct crs_node *src, const struct crs_node_address *dest,
 typedef uint32_t  crs_application_id;
 
 typedef int
-(*crs_application_callback)(const struct crs_id *src, struct crs_node *dest,
-                            const void *message, size_t message_length,
-                            void *user_data);
+(*crs_application_process_f)(void *user_data,
+                             const struct crs_id *src, struct crs_node *dest,
+                             const void *message, size_t message_length);
 
 
 struct crs_application *
-crs_application_new(crs_application_id id, crs_application_callback callback,
-                    void *user_data);
+crs_application_new(crs_application_id id,
+                    void *user_data, cork_free_f free_user_data,
+                    crs_application_process_f process);
 
 void
 crs_application_free(struct crs_application *app);

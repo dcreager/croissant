@@ -63,12 +63,38 @@ struct crs_node {
     struct crs_id  id;
     struct crs_node_address  address;
     struct cork_hash_table  applications;
+    struct crs_node_ref  *ref;
     struct crs_node  *next;
 };
 
 CORK_LOCAL int
 crs_node_process_message(struct crs_node *node, const struct crs_id *src,
                          const void *message, size_t message_length);
+
+
+/*-----------------------------------------------------------------------
+ * Node references
+ */
+
+typedef int
+(*crs_node_ref_send_f)(struct crs_node_ref *dest, const struct crs_node *src,
+                       const void *message, size_t message_length);
+
+struct crs_node_ref {
+    struct crs_id  id;
+    struct crs_node_address  address;
+    struct crs_node  *local_node;
+    void  *user_data;
+    cork_free_f  free_user_data;
+    crs_node_ref_send_f  send;
+};
+
+CORK_LOCAL struct crs_node_ref *
+crs_node_ref_new_priv(const struct crs_id *node_id,
+                      const struct crs_node_address *address,
+                      struct crs_node *local_node,
+                      void *user_data, cork_free_f free_user_data,
+                      crs_node_ref_send_f send);
 
 
 #endif  /* CROISSANT_NODE_H */

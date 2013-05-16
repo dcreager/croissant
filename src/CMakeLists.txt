@@ -18,6 +18,7 @@ set(LIBCROISSANT_SRC
     libcroissant/id.c
     libcroissant/local.c
     libcroissant/node.c
+    libcroissant/node-ref.c
     libcroissant/tests.c
 )
 
