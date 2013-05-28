@@ -1,0 +1,8 @@
+name: croissant
+build_dependencies:
+  - pkg-config
+  - check
+dependencies:
+  - libcork >= 0.10.0
+  - clogger >= 0.1.1
+license: BSD
