@@ -90,6 +90,42 @@ crs_id_get_msdd(const struct crs_id *id1, const struct crs_id *id2);
 
 
 /*-----------------------------------------------------------------------
+ * Identifier arithmetic
+ */
+
+#ifndef CRS_DEBUG_ID_ARITHMETIC
+#define CRS_DEBUG_ID_ARITHMETIC  0
+#endif
+
+/* Returns if A is clockwise of B (A >= B).  An id is clockwise of itself. */
+CORK_ATTR_UNUSED
+static bool
+crs_id_is_cw(struct crs_id a, struct crs_id b)
+{
+    cork_u128  diff = cork_u128_sub(a.u128, b.u128);
+#if CRS_DEBUG_ID_ARITHMETIC
+    fprintf(stderr,
+            "%016" PRIx64 "%016" PRIx64 " >= "
+            "%016" PRIx64 "%016" PRIx64 "\n"
+            "%016" PRIx64 "%016" PRIx64 "\n",
+            a.u128._.be.hi, a.u128._.be.lo,
+            b.u128._.be.hi, b.u128._.be.lo,
+            diff._.be.hi, diff._.be.lo);
+#endif
+    return (cork_u128_be8(diff, 0) < 0x80);
+}
+
+/* Returns if A is counter-clockwise of B (A < B).  An id is clockwise of
+ * itself. */
+CORK_ATTR_UNUSED
+static bool
+crs_id_is_ccw(struct crs_id a, struct crs_id b)
+{
+    return !crs_id_is_cw(a, b);
+}
+
+
+/*-----------------------------------------------------------------------
  * Node addresses
  */
 

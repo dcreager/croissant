@@ -128,6 +128,133 @@ START_TEST(test_get_msdd)
 END_TEST
 
 
+static void
+test_one_cw(const char *a_str, const char *b_str, bool expected)
+{
+    bool  actual;
+    struct crs_id  a;
+    struct crs_id  b;
+    fail_if_error(crs_id_init(&a, a_str));
+    fail_if_error(crs_id_init(&b, b_str));
+    actual = crs_id_is_cw(a, b);
+    fail_unless(actual == expected,
+                "%s should %sbe clockwise of %s",
+                a_str, expected? "": "not ", b_str);
+}
+
+static void
+test_one_ccw(const char *a_str, const char *b_str, bool expected)
+{
+    bool  actual;
+    struct crs_id  a;
+    struct crs_id  b;
+    fail_if_error(crs_id_init(&a, a_str));
+    fail_if_error(crs_id_init(&b, b_str));
+    actual = crs_id_is_ccw(a, b);
+    fail_unless(actual == expected,
+                "%s should %sbe counter-clockwise of %s",
+                a_str, expected? "": "not ", b_str);
+}
+
+struct compare_test {
+    const char  *minus2;
+    const char  *minus1;
+    const char  *base;
+    const char  *plus1;
+    const char  *plus2;
+
+    const char  *dual_minus2;
+    const char  *dual_minus1;
+    const char  *dual;
+    const char  *dual_plus1;
+    const char  *dual_plus2;
+};
+
+static void
+test_one_compare(struct compare_test *compare)
+{
+    test_one_cw(compare->base, compare->minus2,      true);
+    test_one_cw(compare->base, compare->minus1,      true);
+    test_one_cw(compare->base, compare->base,        true);
+    test_one_cw(compare->base, compare->plus1,       false);
+    test_one_cw(compare->base, compare->plus2,       false);
+    test_one_cw(compare->base, compare->dual_minus2, false);
+    test_one_cw(compare->base, compare->dual_minus1, false);
+    test_one_cw(compare->base, compare->dual,        false);
+    test_one_cw(compare->base, compare->dual_plus1,  true);
+    test_one_cw(compare->base, compare->dual_plus2,  true);
+
+    test_one_ccw(compare->base, compare->minus2,      false);
+    test_one_ccw(compare->base, compare->minus1,      false);
+    test_one_ccw(compare->base, compare->base,        false);
+    test_one_ccw(compare->base, compare->plus1,       true);
+    test_one_ccw(compare->base, compare->plus2,       true);
+    test_one_ccw(compare->base, compare->dual_minus2, true);
+    test_one_ccw(compare->base, compare->dual_minus1, true);
+    test_one_ccw(compare->base, compare->dual,        true);
+    test_one_ccw(compare->base, compare->dual_plus1,  false);
+    test_one_ccw(compare->base, compare->dual_plus2,  false);
+}
+
+#define test_compare(id) \
+static struct compare_test  TEST_##id; \
+\
+START_TEST(test_compare_##id) \
+{ \
+    DESCRIBE_TEST; \
+    test_one_compare(&TEST_##id); \
+} \
+END_TEST \
+\
+static struct compare_test  TEST_##id =
+
+
+test_compare(id_00) {
+    /* base */
+    "fffffffffffffffffffffffffffffffe",
+    "ffffffffffffffffffffffffffffffff",
+    "00000000000000000000000000000000",
+    "00000000000000000000000000000001",
+    "00000000000000000000000000000002",
+    /* dual */
+    "7ffffffffffffffffffffffffffffffe",
+    "7fffffffffffffffffffffffffffffff",
+    "80000000000000000000000000000000",
+    "80000000000000000000000000000001",
+    "80000000000000000000000000000002"
+};
+
+test_compare(id_08) {
+    /* base */
+    "00000000000000007ffffffffffffffe",
+    "00000000000000007fffffffffffffff",
+    "00000000000000008000000000000000",
+    "00000000000000008000000000000001",
+    "00000000000000008000000000000002",
+    /* dual */
+    "80000000000000007ffffffffffffffe",
+    "80000000000000007fffffffffffffff",
+    "80000000000000008000000000000000",
+    "80000000000000008000000000000001",
+    "80000000000000008000000000000002"
+};
+
+test_compare(id_80) {
+    /* base */
+    "7ffffffffffffffffffffffffffffffe",
+    "7fffffffffffffffffffffffffffffff",
+    "80000000000000000000000000000000",
+    "80000000000000000000000000000001",
+    "80000000000000000000000000000002",
+    /* dual */
+    "fffffffffffffffffffffffffffffffe",
+    "ffffffffffffffffffffffffffffffff",
+    "00000000000000000000000000000000",
+    "00000000000000000000000000000001",
+    "00000000000000000000000000000002"
+};
+
+
 /*-----------------------------------------------------------------------
  * Testing harness
  */
@@ -141,6 +268,9 @@ test_suite()
     tcase_add_test(tc_id, test_id);
     tcase_add_test(tc_id, test_get_nybble);
     tcase_add_test(tc_id, test_get_msdd);
+    tcase_add_test(tc_id, test_compare_id_00);
+    tcase_add_test(tc_id, test_compare_id_08);
+    tcase_add_test(tc_id, test_compare_id_80);
     suite_add_tcase(s, tc_id);
 
     return s;
