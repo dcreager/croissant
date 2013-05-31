@@ -26,8 +26,7 @@ START_TEST(test_id)
 {
     DESCRIBE_TEST;
     struct crs_id  expected =
-    {{{ 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f }}};
+    { cork_u128_from_32(0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f) };
 
     struct crs_id  actual;
     static const char  *SRC1 = "000102030405060708090a0b0c0d0e0f";
@@ -70,6 +69,9 @@ START_TEST(test_get_nybble)
     static const char  *SRC1 = "0123456789abcdef01233210fedcba98";
     struct crs_id  id;
     fail_if_error(crs_id_init(&id, SRC1));
+
+    char  str[CRS_ID_STRING_LENGTH];
+    crs_id_to_raw_string(&id, str);
 
     unsigned int  expected[] =
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,

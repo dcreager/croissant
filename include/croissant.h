@@ -11,8 +11,6 @@
 #ifndef CROISSANT_H
 #define CROISSANT_H
 
-#include <string.h>
-
 #include <libcork/core.h>
 #include <libcork/ds.h>
 
@@ -62,35 +60,30 @@ enum crs_error {
 #define CRS_ID_NYBBLE_LENGTH  (CRS_ID_BIT_LENGTH / 4)
 
 struct crs_id {
-    union {
-        uint8_t  u8[CRS_ID_BIT_LENGTH / 8];
-        uint32_t  u32[CRS_ID_BIT_LENGTH / 32];
-    } _;
+    cork_u128  u128;
 };
 
 
 int
 crs_id_init(struct crs_id *id, const char *src);
 
-#define crs_id_copy(id, src) \
-    (memcpy((id), (src), sizeof(struct crs_id)))
+#define crs_id_copy(id, src)  ((id)->u128 = (src)->u128)
 
 /* includes NUL terminator */
-#define CRS_ID_STRING_LENGTH  (CRS_ID_NYBBLE_LENGTH + 1)
+#define CRS_ID_STRING_LENGTH  CORK_U128_HEX_LENGTH
 
-void
+const char *
 crs_id_to_raw_string(const struct crs_id *id, char *str);
 
 void
 crs_id_print(struct cork_buffer *dest, const struct crs_id *id);
 
-#define crs_id_equals(id1, id2) \
-    (memcmp((id1), (id2), sizeof(struct crs_id)) == 0)
+#define crs_id_equals(id1, id2) (cork_u128_eq((id1)->u128, (id2)->u128))
 
 #define crs_id_get_nybble(id, index) \
     (((index % 2) == 0)? \
-     (((id)->_.u8[index/2] & 0xf0) >> 4):  /* an even index */ \
-      ((id)->_.u8[index/2] & 0x0f))        /* an odd index */
+     ((cork_u128_be8((id)->u128, index / 2) & 0xf0) >> 4):  /* even index */ \
+      (cork_u128_be8((id)->u128, index / 2) & 0x0f))        /* odd index */
 
 int
 crs_id_get_msdd(const struct crs_id *id1, const struct crs_id *id2);

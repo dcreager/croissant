@@ -22,21 +22,21 @@ crs_id_init(struct crs_id *id, const char *src)
     unsigned int  str_idx = 0;
 
     for (id_idx = 0; id_idx < sizeof(struct crs_id); id_idx++) {
-        uint8_t  digit;
+        uint8_t  digit = 0;
 
 #define GET_DIGIT \
-        if (src[str_idx] == '\0') { \
+        if (CORK_UNLIKELY(src[str_idx] == '\0')) { \
             /* String is too short! */ \
             crs_parse_error("Pastry identifier is too short"); \
             return -1; \
         } \
         \
         if ((src[str_idx] >= '0') && (src[str_idx] <= '9')) { \
-            digit = src[str_idx] - '0'; \
+            digit |= src[str_idx] - '0'; \
         } else if ((src[str_idx] >= 'a') && (src[str_idx] <= 'f')) { \
-            digit = src[str_idx] - 'a' + 10; \
+            digit |= src[str_idx] - 'a' + 10; \
         } else if ((src[str_idx] >= 'A') && (src[str_idx] <= 'F')) { \
-            digit = src[str_idx] - 'A' + 10; \
+            digit |= src[str_idx] - 'A' + 10; \
         } else { \
             crs_parse_error \
                 ("Pastry identifier contains invalid character " \
@@ -45,10 +45,10 @@ crs_id_init(struct crs_id *id, const char *src)
         }
 
         GET_DIGIT;
-        id->_.u8[id_idx] = (digit << 4);
+        digit <<= 4;
         str_idx++;
         GET_DIGIT;
-        id->_.u8[id_idx] |= digit;
+        cork_u128_be8(id->u128, id_idx) = digit;
         str_idx++;
 
 #undef GET_DIGIT
@@ -63,15 +63,11 @@ crs_id_init(struct crs_id *id, const char *src)
 }
 
 
-void
+const char *
 crs_id_to_raw_string(const struct crs_id *id, char *str)
 {
-    snprintf(str, CRS_ID_STRING_LENGTH,
-             "%08" PRIx32 "%08" PRIx32 "%08" PRIx32 "%08" PRIx32,
-             CORK_UINT32_BIG_TO_HOST(id->_.u32[0]),
-             CORK_UINT32_BIG_TO_HOST(id->_.u32[1]),
-             CORK_UINT32_BIG_TO_HOST(id->_.u32[2]),
-             CORK_UINT32_BIG_TO_HOST(id->_.u32[3]));
+    cork_u128_to_padded_hex(str, &id->u128);
+    return str;
 }
 
 void
