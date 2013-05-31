@@ -128,6 +128,10 @@ START_TEST(test_get_msdd)
 END_TEST
 
 
+/*-----------------------------------------------------------------------
+ * Comparing identifiers
+ */
+
 static void
 test_one_cw(const char *a_str, const char *b_str, bool expected)
 {
@@ -256,6 +260,51 @@ test_compare(id_80) {
 
 
 /*-----------------------------------------------------------------------
+ * Distances
+ */
+
+static void
+test_one_distance(const char *a_str, const char *b_str, uint64_t expected64)
+{
+    cork_u128  actual;
+    cork_u128  expected = cork_u128_from_64(0, expected64);
+    struct crs_id  a;
+    struct crs_id  b;
+    char  str[CORK_U128_DECIMAL_LENGTH];
+    fail_if_error(crs_id_init(&a, a_str));
+    fail_if_error(crs_id_init(&b, b_str));
+
+    actual = crs_id_distance_between(a, b);
+    cork_u128_to_decimal(str, &actual);
+    fail_unless(cork_u128_eq(actual, expected),
+                "|%s-%s| should be %" PRIu64 ", not %s",
+                a_str, b_str, expected64, str);
+
+    actual = crs_id_distance_between(b, a);
+    cork_u128_to_decimal(str, &actual);
+    fail_unless(cork_u128_eq(actual, expected),
+                "|%s-%s| should be %" PRIu64 ", not %s",
+                b_str, a_str, expected64, str);
+}
+
+START_TEST(test_distance)
+{
+    DESCRIBE_TEST;
+    test_one_distance("00000000000000000000000000000000",
+                      "fffffffffffffffffffffffffffffffe", 2);
+    test_one_distance("00000000000000000000000000000000",
+                      "ffffffffffffffffffffffffffffffff", 1);
+    test_one_distance("00000000000000000000000000000000",
+                      "00000000000000000000000000000000", 0);
+    test_one_distance("00000000000000000000000000000000",
+                      "00000000000000000000000000000001", 1);
+    test_one_distance("00000000000000000000000000000000",
+                      "00000000000000000000000000000002", 2);
+}
+END_TEST
+
+
+/*-----------------------------------------------------------------------
  * Testing harness
  */
 
@@ -271,6 +320,7 @@ test_suite()
     tcase_add_test(tc_id, test_compare_id_00);
     tcase_add_test(tc_id, test_compare_id_08);
     tcase_add_test(tc_id, test_compare_id_80);
+    tcase_add_test(tc_id, test_distance);
     suite_add_tcase(s, tc_id);
 
     return s;

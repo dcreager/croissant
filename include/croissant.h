@@ -125,6 +125,20 @@ crs_id_is_ccw(struct crs_id a, struct crs_id b)
 }
 
 
+CORK_ATTR_UNUSED
+static cork_u128
+crs_id_distance_between(struct crs_id a, struct crs_id b)
+{
+    cork_u128  diff = cork_u128_sub(a.u128, b.u128);
+    if (cork_u128_be8(diff, 0) >= 0x80) {
+        cork_u128  zero = cork_u128_from_64(0, 0);
+        return cork_u128_sub(zero, diff);
+    } else {
+        return diff;
+    }
+}
+
+
 /*-----------------------------------------------------------------------
  * Node addresses
  */
