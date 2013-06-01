@@ -142,7 +142,7 @@ START_TEST(test_routing_table_03)
     crs_id_init(&id, ID_SELF);
     node = crs_node_new(ctx, &id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
-    for (i = 0; i <= CRS_ROUTING_TABLE_ROW_COUNT; i++) {
+    for (i = 0; i < CRS_ROUTING_TABLE_ROW_COUNT; i++) {
         add_prefix_to_table(ctx, table, ID_00, i);
     }
     verify_routing_table(table,
@@ -197,7 +197,7 @@ START_TEST(test_routing_table_04)
     crs_id_init(&id, ID_SELF);
     node = crs_node_new(ctx, &id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
-    for (i = 0; i <= CRS_ROUTING_TABLE_ROW_COUNT; i++) {
+    for (i = 0; i < CRS_ROUTING_TABLE_ROW_COUNT; i++) {
         add_prefix_to_table(ctx, table, ID_00, i);
         add_prefix_to_table(ctx, table, ID_01, i);
     }
@@ -326,7 +326,7 @@ END_TEST
 Suite *
 test_suite()
 {
-    Suite  *s = suite_create("routing");
+    Suite  *s = suite_create("routing-table");
 
     TCase  *tc_routing = tcase_create("routing");
     tcase_add_test(tc_routing, test_routing_table_01);

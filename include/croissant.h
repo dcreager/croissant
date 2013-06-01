@@ -228,6 +228,8 @@ crs_node_get_address_str(const struct crs_node *node);
  * Node references
  */
 
+#define CRS_NODE_REF_SELF  ((struct crs_node_ref *) (intptr_t) 1)
+
 /* Larger values are "further away" */
 typedef unsigned long  crs_proximity;
 #define CRS_PROXIMITY_UNKNOWN  LONG_MAX
@@ -297,11 +299,12 @@ struct crs_node_ref *
 crs_routing_table_get(const struct crs_routing_table *table,
                       unsigned int row, unsigned int column);
 
-/* Returns NULL if id is the same as the routing table's id */
+/* id must not be equal to the leaf set's node's ID. */
 struct crs_node_ref *
 crs_routing_table_get_closest(const struct crs_routing_table *table,
                               const struct crs_id *id);
 
+/* ref's ID must not be equal to the leaf set's node's ID. */
 void
 crs_routing_table_set(struct crs_routing_table *table,
                       struct crs_node_ref *ref);
@@ -314,6 +317,35 @@ void
 crs_routing_table_print(struct cork_buffer *dest,
                         const struct crs_routing_table *table);
 
+
+/* This is l/2 from the Pastry papers — i.e., the size of one half of the leaf
+ * set. */
+#define CRS_LEAF_SET_SIZE  16
+
+struct crs_leaf_set;
+
+struct crs_leaf_set *
+crs_leaf_set_new(struct crs_node *node);
+
+void
+crs_leaf_set_free(struct crs_leaf_set *set);
+
+/* ref must not refer to the local node. */
+void
+crs_leaf_set_add(struct crs_leaf_set *set, struct crs_node_ref *ref);
+
+/* Returns NULL if id isn't in the range of entries in the leaf set.  Returns
+ * CRS_NODE_REF_SELF if the local node is closest. */
+struct crs_node_ref *
+crs_leaf_set_get_closest(const struct crs_leaf_set *set,
+                         const struct crs_id *id);
+
+void
+crs_leaf_set_print(struct cork_buffer *dest, const struct crs_leaf_set *set);
+
+
+struct crs_leaf_set *
+crs_node_get_leaf_set(struct crs_node *node);
 
 struct crs_routing_table *
 crs_node_get_routing_table(struct crs_node *node);
