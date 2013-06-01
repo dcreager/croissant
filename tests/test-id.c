@@ -160,6 +160,23 @@ test_one_ccw(const char *a_str, const char *b_str, bool expected)
                 a_str, expected? "": "not ", b_str);
 }
 
+static void
+test_one_between(const char *a_str, const char *lo_str, const char *hi_str,
+                 bool expected)
+{
+    bool  actual;
+    struct crs_id  a;
+    struct crs_id  lo;
+    struct crs_id  hi;
+    fail_if_error(crs_id_init(&a, a_str));
+    fail_if_error(crs_id_init(&lo, lo_str));
+    fail_if_error(crs_id_init(&hi, hi_str));
+    actual = crs_id_is_between(a, lo, hi);
+    fail_unless(actual == expected,
+                "%s should %sbe in between %s and %s",
+                a_str, expected? "": "not ", lo_str, hi_str);
+}
+
 struct compare_test {
     const char  *minus2;
     const char  *minus1;
@@ -198,6 +215,11 @@ test_one_compare(struct compare_test *compare)
     test_one_ccw(compare->base, compare->dual,        true);
     test_one_ccw(compare->base, compare->dual_plus1,  false);
     test_one_ccw(compare->base, compare->dual_plus2,  false);
+
+    test_one_between(compare->base, compare->minus2, compare->plus2, true);
+    test_one_between(compare->base, compare->base,   compare->plus2, true);
+    test_one_between(compare->base, compare->minus2, compare->base,  true);
+    test_one_between(compare->base, compare->plus1,  compare->plus2, false);
 }
 
 #define test_compare(id) \

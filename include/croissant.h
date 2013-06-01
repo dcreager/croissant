@@ -125,6 +125,15 @@ crs_id_is_ccw(struct crs_id a, struct crs_id b)
 }
 
 
+/* Returns whether A is within [lo, hi] (inclusive). */
+CORK_ATTR_UNUSED
+static bool
+crs_id_is_between(struct crs_id a, struct crs_id lo, struct crs_id hi)
+{
+    return crs_id_is_cw(a, lo) && crs_id_is_cw(hi, a);
+}
+
+
 CORK_ATTR_UNUSED
 static cork_u128
 crs_id_distance_between(struct crs_id a, struct crs_id b)
