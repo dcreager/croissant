@@ -112,6 +112,7 @@ execute(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    cork_buffer_set(&buf, "", 0);
     consumer = cork_buffer_to_stream_consumer(&buf);
     if (cork_consume_file(consumer, stdin) != 0) {
         fprintf(stderr, "%s\n", cork_error_message());
