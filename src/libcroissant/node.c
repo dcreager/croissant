@@ -8,75 +8,20 @@
  * ----------------------------------------------------------------------
  */
 
+#include <clogger.h>
 #include <libcork/core.h>
 #include <libcork/ds.h>
 #include <libcork/helpers/errors.h>
 
 #include "croissant.h"
 #include "croissant/application.h"
+#include "croissant/context.h"
 #include "croissant/local.h"
 #include "croissant/node.h"
 #include "croissant/parse.h"
 #include "croissant/tests.h"
 
-
-/*-----------------------------------------------------------------------
- * Local node registry
- */
-
-static crs_local_node_id  last_id = 0;
-static struct crs_node  *nodes = NULL;
-
-#define crs_local_node_id_get_next() \
-    (++last_id)
-
-static void
-crs_local_node_save(struct crs_node *node)
-{
-    node->next = nodes;
-    nodes = node;
-}
-
-static void
-crs_local_node_remove(struct crs_node *node)
-{
-    struct crs_node  *prev = NULL;
-    struct crs_node  *curr = nodes;
-    while (curr != NULL) {
-        if (curr == node) {
-            if (prev == NULL) {
-                nodes = curr->next;
-            } else {
-                prev->next = curr->next;
-            }
-            return;
-        }
-    }
-}
-
-CORK_LOCAL struct crs_node *
-crs_local_node_get(crs_local_node_id id)
-{
-    struct crs_node  *curr = nodes;
-    while (curr != NULL) {
-        if (curr->address.local_id == id) {
-            return curr;
-        }
-    }
-    return NULL;
-}
-
-int
-crs_finalize_tests(void)
-{
-    if (CORK_LIKELY(nodes == NULL)) {
-        last_id = 0;
-        return 0;
-    } else {
-        crs_unknown_error("Some local nodes have not been freed");
-        return -1;
-    }
-}
+#define CLOG_CHANNEL  "croissant:node"
 
 
 /*-----------------------------------------------------------------------
@@ -113,12 +58,12 @@ crs_node_type_for_id(crs_node_type_id id)
  */
 
 void
-crs_node_address_print(const struct crs_node_address *address,
-                       struct cork_buffer *dest)
+crs_node_address_print(struct cork_buffer *dest,
+                       const struct crs_node_address *address)
 {
     switch (address->type) {
         case CRS_NODE_TYPE_LOCAL:
-            crs_local_node_print(address, dest);
+            crs_local_node_print(dest, address);
             return;
 
         default:
@@ -169,30 +114,39 @@ crs_node_address_encode(const struct crs_node_address *address,
  */
 
 static struct crs_node *
-crs_node_new_with_id(const struct crs_id *id,
+crs_node_new_with_id(struct crs_ctx *ctx, const struct crs_id *id,
                      const struct crs_node_address *address)
 {
     struct crs_node  *node = cork_new(struct crs_node);
     node->id = *id;
-    crs_local_node_save(node);
+    crs_id_to_raw_string(id, node->id_str);
     if (address == NULL) {
         node->address.type = CRS_NODE_TYPE_LOCAL;
-        node->address.local_id = crs_local_node_id_get_next();
     } else {
         node->address = *address;
-        node->address.local_id = crs_local_node_id_get_next();
     }
+    node->address.local_id = crs_ctx_next_node_id(ctx);
+    cork_buffer_init(&node->address_str);
+    crs_node_address_print(&node->address_str, &node->address);
+    clog_debug("[%s] New node %s", (char *) node->address_str.buf, node->id_str);
+    crs_ctx_add_node(ctx, node);
     cork_pointer_hash_table_init(&node->applications, 0);
-    node->ref = crs_local_node_ref_new(&node->id, &node->address, node);
+    node->ref = crs_local_node_ref_new(node, &node->id, &node->address, node);
+    node->refs = NULL;
+    node->routing_table = crs_routing_table_new(node);
     return node;
 }
 
 struct crs_node *
-crs_node_new(const struct crs_node_address *address)
+crs_node_new(struct crs_ctx *ctx, const struct crs_id *id,
+             const struct crs_node_address *address)
 {
-    struct crs_id  id;
-    memset(&id, 0, sizeof(struct crs_id));
-    return crs_node_new_with_id(&id, address);
+    if (id == NULL) {
+        struct crs_id  zero_id;
+        memset(&zero_id, 0, sizeof(struct crs_id));
+        id = &zero_id;
+    }
+    return crs_node_new_with_id(ctx, id, address);
 }
 
 static enum cork_hash_table_map_result
@@ -203,34 +157,84 @@ free_application(struct cork_hash_table_entry *entry, void *user_data)
     return CORK_HASH_TABLE_MAP_DELETE;
 }
 
-void
+CORK_LOCAL void
 crs_node_free(struct crs_node *node)
 {
-    crs_local_node_remove(node);
+    struct crs_node_ref  *curr;
+    struct crs_node_ref  *next;
+    clog_debug("[%s] Free node", (char *) node->address_str.buf);
+    crs_ctx_remove_node(node->ctx, node);
     cork_hash_table_map(&node->applications, free_application, NULL);
     cork_hash_table_done(&node->applications);
     crs_node_ref_free(node->ref);
+    for (curr = node->refs; curr != NULL; curr = next) {
+        next = curr->next;
+        crs_node_ref_free(curr);
+    }
+    cork_buffer_done(&node->address_str);
+    crs_routing_table_free(node->routing_table);
     free(node);
 }
 
 const struct crs_id *
-crs_node_get_id(struct crs_node *node)
+crs_node_get_id(const struct crs_node *node)
 {
     return &node->id;
 }
 
-const struct crs_node_address *
-crs_node_get_address(struct crs_node *node)
+const char *
+crs_node_get_id_str(const struct crs_node *node)
 {
-    struct crs_node_address  *address = cork_new(struct crs_node_address);
-    *address = node->address;
-    return address;
+    return node->id_str;
+}
+
+const struct crs_node_address *
+crs_node_get_address(const struct crs_node *node)
+{
+    return &node->address;
+}
+
+const char *
+crs_node_get_address_str(const struct crs_node *node)
+{
+    return node->address_str.buf;
 }
 
 struct crs_node_ref *
 crs_node_get_ref(struct crs_node *node)
 {
     return node->ref;
+}
+
+struct crs_routing_table *
+crs_node_get_routing_table(struct crs_node *node)
+{
+    return node->routing_table;
+}
+
+struct crs_node_ref *
+crs_node_new_ref(struct crs_node *owner, const struct crs_id *node_id,
+                 const struct crs_node_address *address)
+{
+    struct crs_node_ref  *ref;
+
+    /* First see if node_id refers to the current node, or to a node that we've
+     * already created a reference to. */
+    if (crs_id_equals(node_id, &owner->id)) {
+        return owner->ref;
+    }
+
+    for (ref = owner->refs; ref != NULL; ref = ref->next) {
+        if (crs_id_equals(node_id, &ref->id)) {
+            return ref;
+        }
+    }
+
+    /* Otherwise create a new node reference. */
+    ref = crs_node_ref_new(owner, node_id, address);
+    ref->next = owner->refs;
+    owner->refs = ref;
+    return ref;
 }
 
 
@@ -269,7 +273,8 @@ crs_node_get_application(struct crs_node *node, crs_application_id id)
 }
 
 CORK_LOCAL int
-crs_node_process_message(struct crs_node *node, const struct crs_id *src,
+crs_node_process_message(struct crs_node *node,
+                         const struct crs_id *src, const struct crs_id *dest,
                          const void *message, size_t message_length)
 {
     crs_application_id  id;
@@ -278,7 +283,8 @@ crs_node_process_message(struct crs_node *node, const struct crs_id *src,
               (message_length, sizeof(uint32_t), "application ID"));
     id = crs_decode_uint32(&message, &message_length);
     rip_check(app = crs_node_get_application(node, id));
-    return crs_application_process(app, src, node, message, message_length);
+    return crs_application_process
+        (app, node, src, dest, message, message_length);
 }
 
 
@@ -286,11 +292,10 @@ crs_node_process_message(struct crs_node *node, const struct crs_id *src,
  * Test case helper functions
  */
 
-struct crs_node *
-crs_test_node_new(const struct crs_id *id,
-                  const struct crs_node_address *address)
+int
+crs_finalize_tests(void)
 {
-    return crs_node_new_with_id(id, address);
+    return 0;
 }
 
 

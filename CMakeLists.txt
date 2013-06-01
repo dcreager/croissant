@@ -32,10 +32,15 @@ string(REGEX REPLACE "-dev.*" "-dev" BASE_VERSION "${VERSION}")
 # Check for prerequisite libraries
 
 find_package(PkgConfig)
+find_program(RAGEL ragel)
 
 pkg_check_modules(CORK REQUIRED libcork)
 include_directories(${CORK_INCLUDE_DIRS})
 link_directories(${CORK_LIBRARY_DIRS})
+
+pkg_check_modules(CLOG REQUIRED clogger)
+include_directories(${CLOG_INCLUDE_DIRS})
+link_directories(${CLOG_LIBRARY_DIRS})
 
 #-----------------------------------------------------------------------
 # Set some options

@@ -30,7 +30,9 @@ macro(make_test test_name)
 endmacro(make_test)
 
 make_test("test-id")
+make_test("test-leaf-set")
 make_test("test-local-nodes")
+make_test("test-routing-table")
 
 #-----------------------------------------------------------------------
 # Command-line tests

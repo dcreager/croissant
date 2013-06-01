@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2011-2012, RedJack, LLC.
+ * Copyright © 2012-2013, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -27,7 +27,9 @@
 START_TEST(test_local_nodes)
 {
     DESCRIBE_TEST;
-    struct crs_node  *node = crs_node_new(NULL);
+    struct crs_ctx  *ctx = crs_ctx_new();
+    struct crs_node  *node = crs_node_new(ctx, NULL, NULL);
+    const struct crs_id  *node_id = crs_node_get_id(node);
     const struct crs_node_address  *address = crs_node_get_address(node);
     struct cork_buffer  actual = CORK_BUFFER_INIT();
     struct cork_buffer  send_buf = CORK_BUFFER_INIT();
@@ -39,7 +41,7 @@ START_TEST(test_local_nodes)
     fail_if_error(crs_node_add_application(node, app));
 
     cork_buffer_set_string(&expected, "local:1");
-    fail_if_error(crs_node_address_print(address, &actual));
+    fail_if_error(crs_node_address_print(&actual, address));
     fail_unless_buf_equal(&actual, &expected, "node addresses");
 
     cork_buffer_set(&expected, "\x01\xd3\xdf\xa1\x00\x00\x00\x01", 8);
@@ -51,14 +53,14 @@ START_TEST(test_local_nodes)
     cork_buffer_append_string(&send_buf, "awesome message");
     cork_buffer_set_string(&expected, "awesome message");
     fail_if_error(ref = crs_node_get_ref(node));
-    fail_if_error(crs_node_ref_send(ref, node, send_buf.buf, send_buf.size));
+    fail_if_error(crs_node_ref_send
+                  (ref, node_id, node_id, send_buf.buf, send_buf.size));
     fail_unless_buf_equal(&actual, &expected, "received message content");
 
     cork_buffer_done(&actual);
     cork_buffer_done(&send_buf);
     cork_buffer_done(&expected);
-    crs_node_address_free(address);
-    crs_node_free(node);
+    crs_ctx_free(ctx);
     fail_if_error(crs_finalize_tests());
 }
 END_TEST
@@ -88,6 +90,7 @@ main(int argc, const char **argv)
     Suite  *suite = test_suite();
     SRunner  *runner = srunner_create(suite);
 
+    initialize_tests();
     srunner_run_all(runner, CK_NORMAL);
     number_failed = srunner_ntests_failed(runner);
     srunner_free(runner);

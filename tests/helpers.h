@@ -11,6 +11,7 @@
 #ifndef TESTS_HELPERS_H
 #define TESTS_HELPERS_H
 
+#include <clogger.h>
 #include <libcork/core.h>
 
 #if !defined(PRINT_EXPECTED_FAILURES)
@@ -89,5 +90,15 @@ fail_unless_buf_equal(struct cork_buffer *actual, struct cork_buffer *expected,
         fail("Buffers don't match for %s", description);
     }
 }
+
+static void
+initialize_tests(void)
+{
+    if (clog_setup_logging() != 0) {
+        fprintf(stderr, "Warning: %s\n", cork_error_message());
+        cork_error_clear();
+    }
+}
+
 
 #endif /* TESTS_HELPERS_H */

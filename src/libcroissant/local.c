@@ -49,8 +49,8 @@ crs_local_node_address_encode(const struct crs_node_address *address,
 }
 
 CORK_LOCAL void
-crs_local_node_print(const struct crs_node_address *address,
-                     struct cork_buffer *dest)
+crs_local_node_print(struct cork_buffer *dest,
+                     const struct crs_node_address *address)
 {
     cork_buffer_append_printf(dest, "local:%u", address->local_id);
 }
@@ -61,7 +61,8 @@ crs_local_node_print(const struct crs_node_address *address,
  */
 
 static int
-crs_local_node_ref__send(struct crs_node_ref *dest, const struct crs_node *src,
+crs_local_node_ref__send(struct crs_node_ref *ref,
+                         const struct crs_id *src, const struct crs_id *dest,
                          const void *message, size_t message_length)
 {
     /* We should never actually call the `send` method for a local node; the
@@ -73,10 +74,14 @@ crs_local_node_ref__send(struct crs_node_ref *dest, const struct crs_node *src,
 }
 
 CORK_LOCAL struct crs_node_ref *
-crs_local_node_ref_new(const struct crs_id *node_id,
+crs_local_node_ref_new(struct crs_node *owner, const struct crs_id *node_id,
                        const struct crs_node_address *address,
                        struct crs_node *local_node)
 {
+    /* We always use a proximity of 0 for local nodes, since it should be faster
+     * to send a message to a node in the same local process than any other
+     * communication mechanism. */
     return crs_node_ref_new_priv
-        (node_id, address, local_node, NULL, NULL, crs_local_node_ref__send);
+        (owner, node_id, address, 0, local_node,
+         NULL, NULL, crs_local_node_ref__send);
 }
