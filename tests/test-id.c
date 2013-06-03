@@ -297,13 +297,13 @@ test_one_distance(const char *a_str, const char *b_str, uint64_t expected64)
     fail_if_error(crs_id_init(&b, b_str));
 
     actual = crs_id_distance_between(a, b);
-    cork_u128_to_decimal(str, &actual);
+    cork_u128_to_decimal(str, actual);
     fail_unless(cork_u128_eq(actual, expected),
                 "|%s-%s| should be %" PRIu64 ", not %s",
                 a_str, b_str, expected64, str);
 
     actual = crs_id_distance_between(b, a);
-    cork_u128_to_decimal(str, &actual);
+    cork_u128_to_decimal(str, actual);
     fail_unless(cork_u128_eq(actual, expected),
                 "|%s-%s| should be %" PRIu64 ", not %s",
                 b_str, a_str, expected64, str);

@@ -66,7 +66,7 @@ crs_id_init(struct crs_id *id, const char *src)
 const char *
 crs_id_to_raw_string(const struct crs_id *id, char *str)
 {
-    cork_u128_to_padded_hex(str, &id->u128);
+    cork_u128_to_padded_hex(str, id->u128);
     return str;
 }
 
