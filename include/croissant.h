@@ -134,6 +134,7 @@ crs_id_is_between(struct crs_id a, struct crs_id lo, struct crs_id hi)
 }
 
 
+/* The shortest distance that you travel on the ring from `a` to `b` */
 CORK_ATTR_UNUSED
 static cork_u128
 crs_id_distance_between(struct crs_id a, struct crs_id b)
@@ -145,6 +146,14 @@ crs_id_distance_between(struct crs_id a, struct crs_id b)
     } else {
         return diff;
     }
+}
+
+/* The clockwise distance that you travel on the ring from `a` to `b` */
+CORK_ATTR_UNUSED
+static cork_u128
+crs_id_cw_distance_between(struct crs_id a, struct crs_id b)
+{
+    return cork_u128_sub(b.u128, a.u128);
 }
 
 

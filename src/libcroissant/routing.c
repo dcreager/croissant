@@ -212,10 +212,13 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
 {
     unsigned int  i;
     unsigned int  j;
+    cork_u128  ref_dist = crs_id_cw_distance_between(ref->id, set->node->id);
 
-    /* Find the first entry that is <= the new reference. */
+    /* Find the first entry that is further away from the local node than ref */
     for (i = 0; i < CRS_LEAF_SET_SIZE; i++) {
         struct crs_node_ref  *curr = set->below[i].ref;
+        cork_u128  curr_dist;
+
         if (curr == NULL) {
             /* We've reached the end of the array, and the array is not full, so
              * just insert the new element here. */
@@ -224,7 +227,13 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
                        i+1, crs_node_ref_get_id_str(ref));
             set->below[i].ref = ref;
             return;
-        } else if (crs_id_is_cw(ref->id, curr->id)) {
+        }
+
+        curr_dist = crs_id_cw_distance_between(curr->id, set->node->id);
+        if (cork_u128_ge(curr_dist, ref_dist)) {
+            clog_debug("[%s] (leafset) [-%2u] Found spot for %s",
+                       crs_node_get_address_str(set->node),
+                       i+1, crs_node_ref_get_id_str(ref));
             break;
         }
     }
@@ -234,14 +243,16 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
     for (j = CRS_LEAF_SET_SIZE; --j > i; ) {
         struct crs_node_ref  *bubble = set->below[j-1].ref;
         set->below[j].ref = bubble;
-        clog_debug("[%s] (leafset) [-%2u] Bubble up %s",
-                   crs_node_get_address_str(set->node),
-                   j+1, crs_node_ref_get_id_str(bubble));
+        if (bubble != NULL) {
+            clog_debug("[%s] (leafset) [-%2u] Bubble down %s",
+                       crs_node_get_address_str(set->node),
+                       j+1, crs_node_ref_get_id_str(bubble));
+        }
     }
 
     if (i == CRS_LEAF_SET_SIZE) {
         /* We ran out of space in the array. */
-        clog_debug("[%s] (leafset)      Skip %s",
+        clog_debug("[%s] (leafset)       Skip %s",
                    crs_node_get_address_str(set->node),
                    crs_node_ref_get_id_str(ref));
     } else {
@@ -257,10 +268,13 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
 {
     unsigned int  i;
     unsigned int  j;
+    cork_u128  ref_dist = crs_id_cw_distance_between(set->node->id, ref->id);
 
     /* Find the first entry that is <= the new reference. */
     for (i = 0; i < CRS_LEAF_SET_SIZE; i++) {
         struct crs_node_ref  *curr = set->above[i].ref;
+        cork_u128  curr_dist;
+
         if (curr == NULL) {
             /* We've reached the end of the array, and the array is not full, so
              * just insert the new element here. */
@@ -269,7 +283,13 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
                        i+1, crs_node_ref_get_id_str(ref));
             set->above[i].ref = ref;
             return;
-        } else if (crs_id_is_cw(curr->id, ref->id)) {
+        }
+
+        curr_dist = crs_id_cw_distance_between(set->node->id, curr->id);
+        if (cork_u128_ge(curr_dist, ref_dist)) {
+            clog_debug("[%s] (leafset) [+%2u] Found spot for %s",
+                       crs_node_get_address_str(set->node),
+                       i+1, crs_node_ref_get_id_str(ref));
             break;
         }
     }
@@ -279,14 +299,16 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
     for (j = CRS_LEAF_SET_SIZE; --j > i; ) {
         struct crs_node_ref  *bubble = set->above[j-1].ref;
         set->above[j].ref = bubble;
-        clog_debug("[%s] (leafset) [+%2u] Bubble up %s",
-                   crs_node_get_address_str(set->node),
-                   j+1, crs_node_ref_get_id_str(bubble));
+        if (bubble != NULL) {
+            clog_debug("[%s] (leafset) [+%2u] Bubble up %s",
+                       crs_node_get_address_str(set->node),
+                       j+1, crs_node_ref_get_id_str(bubble));
+        }
     }
 
     if (i == CRS_LEAF_SET_SIZE) {
         /* We ran out of space in the array. */
-        clog_debug("[%s] (leafset)      Skip %s",
+        clog_debug("[%s] (leafset)       Skip %s",
                    crs_node_get_address_str(set->node),
                    crs_node_ref_get_id_str(ref));
     } else {
@@ -301,12 +323,12 @@ void
 crs_leaf_set_add(struct crs_leaf_set *set, struct crs_node_ref *ref)
 {
     assert(!crs_id_equals(&ref->id, &set->node->id));
-    /* Choose which array to insert into based on the node ID. */
-    if (crs_id_is_cw(ref->id, set->node->id)) {
-        crs_leaf_set_add_above(set, ref);
-    } else {
-        crs_leaf_set_add_below(set, ref);
-    }
+    /* Try to insert the new node into both both arrays.  Note that both
+     * insertions might succeed; if there are fewer than CRS_LEAF_SET_SIZE nodes
+     * in the overlay network, then a node will both be one of the closest nodes
+     * below and one of the closest nodes above. */
+    crs_leaf_set_add_above(set, ref);
+    crs_leaf_set_add_below(set, ref);
 }
 
 /* Returns NULL if id is the same as the routing table's id, or if id isn't in
