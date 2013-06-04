@@ -134,6 +134,7 @@ crs_node_new_with_id(struct crs_ctx *ctx, const struct crs_id *id,
     node->ref = crs_local_node_ref_new(node, &node->id, &node->address, node);
     node->refs = NULL;
     node->routing_table = crs_routing_table_new(node);
+    node->leaf_set = crs_leaf_set_new(node);
     return node;
 }
 
@@ -173,6 +174,7 @@ crs_node_free(struct crs_node *node)
     }
     cork_buffer_done(&node->address_str);
     crs_routing_table_free(node->routing_table);
+    crs_leaf_set_free(node->leaf_set);
     free(node);
 }
 
@@ -210,6 +212,12 @@ struct crs_routing_table *
 crs_node_get_routing_table(struct crs_node *node)
 {
     return node->routing_table;
+}
+
+struct crs_leaf_set *
+crs_node_get_leaf_set(struct crs_node *node)
+{
+    return node->leaf_set;
 }
 
 struct crs_node_ref *

@@ -39,44 +39,89 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
     const char  *start;
 
     struct cork_buffer  buf = CORK_BUFFER_INIT();
-    struct crs_id  id;
+    struct cork_buffer  output = CORK_BUFFER_INIT();
     struct crs_id  id1;
-    struct crs_node  *node;
-    struct crs_node  *node1;
-    struct crs_node_ref  *ref;
-    struct crs_routing_table  *table;
+    struct crs_id  id2;
 
     %%{
         machine crs_command;
 
         hex_digit = digit | 'a'..'f' | 'A'..'F';
+        id = hex_digit{32}
+           >{ start = fpc; } %{ cork_buffer_set(&buf, start, fpc - start); };
 
-        id = hex_digit{32} >{ start = fpc; }
+        id1 = id %{ rii_check(crs_id_init(&id1, buf.buf)); };
+        id2 = id %{ rii_check(crs_id_init(&id2, buf.buf)); };
+
+        new_node = "new" space+ "node" space+ id1
             %{
-                cork_buffer_set(&buf, start, fpc - start);
-                rii_check(crs_id_init(&id, buf.buf));
+                rip_check(crs_node_new(ctx, &id1, NULL));
             };
 
-        new_node = "new" space+ "node" space+ id
+        add_leaf_set_entry =
+            space* "add" space+ "leaf" space+ "set" space+ "entry"
+            space+ id1 space+ id2
             %{
-                rip_check(node = crs_node_new(ctx, &id, NULL));
+                struct crs_node  *from_node;
+                struct crs_leaf_set  *from_set;
+                struct crs_node  *to_node;
+                struct crs_node_ref  *to_ref;
+                rip_check(from_node = crs_ctx_require_node(ctx, &id1));
+                rip_check(to_node = crs_ctx_require_node(ctx, &id2));
+                from_set = crs_node_get_leaf_set(from_node);
+                to_ref = crs_node_get_ref(to_node);
+                crs_leaf_set_add(from_set, to_ref);
             };
 
         add_routing_table_entry =
             space* "add" space+ "routing" space+ "table" space+ "entry"
-            space+ (id %{ id1 = id; }) space+ id
+            space+ id1 space+ id2
             %{
-                rip_check(node1 = crs_ctx_require_node(ctx, &id1));
-                rip_check(node = crs_ctx_require_node(ctx, &id));
+                struct crs_node  *from_node;
+                struct crs_routing_table  *from_table;
+                struct crs_node  *to_node;
+                struct crs_node_ref  *to_ref;
+                rip_check(from_node = crs_ctx_require_node(ctx, &id1));
+                rip_check(to_node = crs_ctx_require_node(ctx, &id2));
+                from_table = crs_node_get_routing_table(from_node);
+                to_ref = crs_node_get_ref(to_node);
+                crs_routing_table_set(from_table, to_ref);
+            };
 
-                table = crs_node_get_routing_table(node1);
-                ref = crs_node_get_ref(node);
-                crs_routing_table_set(table, ref);
+        print_leaf_set =
+            space* "print" space+ "leaf" space+ "set" space+ id1
+            %{
+                struct crs_node  *node;
+                struct crs_leaf_set  *set;
+                rip_check(node = crs_ctx_require_node(ctx, &id1));
+                set = crs_node_get_leaf_set(node);
+                cork_buffer_set_string(&output, "Leaf set for ");
+                crs_id_print(&output, &id1);
+                cork_buffer_append(&output, "\n", 1);
+                crs_leaf_set_print(&output, set);
+                fwrite(output.buf, output.size, 1, stdout);
+            };
+
+        print_routing_table =
+            space* "print" space+ "routing" space+ "table" space+ id1
+            %{
+                struct crs_node  *node;
+                struct crs_routing_table  *table;
+                rip_check(node = crs_ctx_require_node(ctx, &id1));
+                table = crs_node_get_routing_table(node);
+                cork_buffer_set_string(&output, "Routing table for ");
+                crs_id_print(&output, &id1);
+                cork_buffer_append(&output, "\n", 1);
+                crs_routing_table_print(&output, table);
+                fwrite(output.buf, output.size, 1, stdout);
             };
 
         command =
-              add_routing_table_entry
+              add_leaf_set_entry
+            | add_routing_table_entry
             | new_node
+            | print_leaf_set
+            | print_routing_table
             ;
 
         main := (space* command space* ";")* space*;
@@ -92,10 +137,12 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
     if (CORK_UNLIKELY(cs < %%{ write first_final; }%%)) {
         crs_parse_error("Invalid command");
         cork_buffer_done(&buf);
+        cork_buffer_done(&output);
         return -1;
     }
 
     cork_buffer_done(&buf);
+    cork_buffer_done(&output);
     return 0;
 }
 
