@@ -60,7 +60,7 @@ target_link_libraries(libcroissant
     ${CLOG_LIBRARIES}
 )
 
-install(TARGETS libcroissant DESTINATION lib)
+install(TARGETS libcroissant DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 #-----------------------------------------------------------------------
 # Generate the pkg-config file
@@ -68,7 +68,7 @@ install(TARGETS libcroissant DESTINATION lib)
 set(prefix ${CMAKE_INSTALL_PREFIX})
 configure_file(croissant.pc.in ${CMAKE_CURRENT_BINARY_DIR}/croissant.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/croissant.pc
-        DESTINATION lib/pkgconfig)
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 #-----------------------------------------------------------------------
 # croissant
