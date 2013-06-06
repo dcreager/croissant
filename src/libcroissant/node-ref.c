@@ -120,7 +120,7 @@ crs_node_ref_send(struct crs_node_ref *ref,
     /* If the node in question is in the current process, just sent the message
      * directly. */
     if (ref->local_node != NULL) {
-        return crs_node_process_message
+        return crs_node_route_message
             (ref->local_node, src, dest, message, message_length);
     } else {
         return ref->send(ref, src, dest, message, message_length);

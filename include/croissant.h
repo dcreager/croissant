@@ -85,8 +85,20 @@ crs_id_print(struct cork_buffer *dest, const struct crs_id *id);
      ((cork_u128_be8((id)->u128, index / 2) & 0xf0) >> 4):  /* even index */ \
       (cork_u128_be8((id)->u128, index / 2) & 0x0f))        /* odd index */
 
-int
-crs_id_get_msdd(const struct crs_id *id1, const struct crs_id *id2);
+CORK_ATTR_UNUSED
+static int
+crs_id_get_msdd(const struct crs_id *id1, const struct crs_id *id2)
+{
+    unsigned int  i;
+    for (i = 0; i < CRS_ID_NYBBLE_LENGTH; i++) {
+        unsigned int  digit1 = crs_id_get_nybble(id1, i);
+        unsigned int  digit2 = crs_id_get_nybble(id2, i);
+        if (digit1 != digit2) {
+            return i;
+        }
+    }
+    return -1;
+}
 
 
 /*-----------------------------------------------------------------------
@@ -232,6 +244,15 @@ crs_node_get_address(const struct crs_node *node);
 const char *
 crs_node_get_address_str(const struct crs_node *node);
 
+int
+crs_node_route_message(struct crs_node *node,
+                       const struct crs_id *src, const struct crs_id *dest,
+                       const void *message, size_t message_length);
+
+int
+crs_node_send_message(struct crs_node *node, const struct crs_id *dest,
+                      const void *message, size_t message_length);
+
 
 /*-----------------------------------------------------------------------
  * Node references
@@ -313,6 +334,11 @@ struct crs_node_ref *
 crs_routing_table_get_closest(const struct crs_routing_table *table,
                               const struct crs_id *id);
 
+/* id must not be equal to the leaf set's node's ID. */
+struct crs_node_ref *
+crs_routing_table_get_fallback(const struct crs_routing_table *table,
+                               const struct crs_id *id);
+
 /* ref's ID must not be equal to the leaf set's node's ID. */
 void
 crs_routing_table_set(struct crs_routing_table *table,
@@ -349,6 +375,10 @@ struct crs_node_ref *
 crs_leaf_set_get_closest(const struct crs_leaf_set *set,
                          const struct crs_id *id);
 
+struct crs_node_ref *
+crs_leaf_set_get_fallback(const struct crs_leaf_set *set,
+                          const struct crs_id *id);
+
 void
 crs_leaf_set_print(struct cork_buffer *dest, const struct crs_leaf_set *set);
 
@@ -358,6 +388,9 @@ crs_node_get_leaf_set(struct crs_node *node);
 
 struct crs_routing_table *
 crs_node_get_routing_table(struct crs_node *node);
+
+struct crs_node_ref *
+crs_node_get_next_hop(struct crs_node *node, const struct crs_id *key);
 
 
 /*-----------------------------------------------------------------------

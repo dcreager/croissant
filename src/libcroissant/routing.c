@@ -104,6 +104,27 @@ crs_routing_table_get_closest(const struct crs_routing_table *table,
     return (entry == NULL)? NULL: entry->ref;
 }
 
+struct crs_node_ref *
+crs_routing_table_get_fallback(const struct crs_routing_table *table,
+                               const struct crs_id *id)
+{
+    unsigned int  i;
+    int  local_msdd = crs_id_get_msdd(&table->node->id, id);
+    cork_u128  local_distance = crs_id_distance_between(table->node->id, *id);
+    for (i = 0; i < CRS_ROUTING_TABLE_ENTRY_COUNT; i++) {
+        struct crs_node_ref  *curr = table->entries[i].ref;
+        if (curr != NULL) {
+            int  curr_msdd = crs_id_get_msdd(&curr->id, id);
+            cork_u128  curr_distance = crs_id_distance_between(curr->id, *id);
+            if (curr_msdd >= local_msdd &&
+                cork_u128_lt(curr_distance, local_distance)) {
+                return curr;
+            }
+        }
+    }
+    return NULL;
+}
+
 void
 crs_routing_table_set(struct crs_routing_table *table,
                       struct crs_node_ref *ref)
@@ -226,6 +247,7 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
                        crs_node_get_address_str(set->node),
                        i+1, crs_node_ref_get_id_str(ref));
             set->below[i].ref = ref;
+            set->below_least = ref->id;
             return;
         }
 
@@ -240,6 +262,7 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
 
     /* We now have the index of where the new reference should go.  Bubble up
      * any remaining elements to make room for the new one. */
+    set->below_least = set->node->id;
     for (j = CRS_LEAF_SET_SIZE; --j > i; ) {
         struct crs_node_ref  *bubble = set->below[j-1].ref;
         set->below[j].ref = bubble;
@@ -247,6 +270,9 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
             clog_debug("[%s] (leafset) [-%2u] Bubble down %s",
                        crs_node_get_address_str(set->node),
                        j+1, crs_node_ref_get_id_str(bubble));
+            if (crs_id_is_cw(set->below_least, bubble->id)) {
+                set->below_least = bubble->id;
+            }
         }
     }
 
@@ -260,6 +286,9 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
                    crs_node_get_address_str(set->node),
                    i+1, crs_node_ref_get_id_str(ref));
         set->below[i].ref = ref;
+        if (crs_id_is_cw(set->below_least, ref->id)) {
+            set->below_least = ref->id;
+        }
     }
 }
 
@@ -282,6 +311,7 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
                        crs_node_get_address_str(set->node),
                        i+1, crs_node_ref_get_id_str(ref));
             set->above[i].ref = ref;
+            set->above_most = ref->id;
             return;
         }
 
@@ -296,6 +326,7 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
 
     /* We now have the index of where the new reference should go.  Bubble up
      * any remaining elements to make room for the new one. */
+    set->above_most = set->node->id;
     for (j = CRS_LEAF_SET_SIZE; --j > i; ) {
         struct crs_node_ref  *bubble = set->above[j-1].ref;
         set->above[j].ref = bubble;
@@ -303,6 +334,9 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
             clog_debug("[%s] (leafset) [+%2u] Bubble up %s",
                        crs_node_get_address_str(set->node),
                        j+1, crs_node_ref_get_id_str(bubble));
+            if (crs_id_is_cw(bubble->id, set->above_most)) {
+                set->above_most = bubble->id;
+            }
         }
     }
 
@@ -316,6 +350,9 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
                    crs_node_get_address_str(set->node),
                    i+1, crs_node_ref_get_id_str(ref));
         set->above[i].ref = ref;
+        if (crs_id_is_cw(ref->id, set->above_most)) {
+            set->above_most = ref->id;
+        }
     }
 }
 
@@ -323,12 +360,13 @@ void
 crs_leaf_set_add(struct crs_leaf_set *set, struct crs_node_ref *ref)
 {
     assert(!crs_id_equals(&ref->id, &set->node->id));
-    /* Try to insert the new node into both both arrays.  Note that both
-     * insertions might succeed; if there are fewer than CRS_LEAF_SET_SIZE nodes
-     * in the overlay network, then a node will both be one of the closest nodes
-     * below and one of the closest nodes above. */
-    crs_leaf_set_add_above(set, ref);
-    crs_leaf_set_add_below(set, ref);
+    /* Try to insert the new node into one of the arrays, depending on whether
+     * the new ID is larger or smaller than the local node's. */
+    if (crs_id_is_cw(ref->id, set->node->id)) {
+        crs_leaf_set_add_above(set, ref);
+    } else {
+        crs_leaf_set_add_below(set, ref);
+    }
 }
 
 /* Returns NULL if id is the same as the routing table's id, or if id isn't in
@@ -404,10 +442,45 @@ crs_leaf_set_get_closest(const struct crs_leaf_set *set,
     return closest;
 }
 
+struct crs_node_ref *
+crs_leaf_set_get_fallback(const struct crs_leaf_set *set,
+                          const struct crs_id *id)
+{
+    unsigned int  i;
+    int  local_msdd = crs_id_get_msdd(&set->node->id, id);
+    cork_u128  local_distance = crs_id_distance_between(set->node->id, *id);
+    for (i = 0; i < CRS_LEAF_SET_SIZE; i++) {
+        struct crs_node_ref  *curr = set->below[i].ref;
+        if (curr != NULL) {
+            int  curr_msdd = crs_id_get_msdd(&curr->id, id);
+            cork_u128  curr_distance = crs_id_distance_between(curr->id, *id);
+            if (curr_msdd >= local_msdd &&
+                cork_u128_lt(curr_distance, local_distance)) {
+                return curr;
+            }
+        }
+    }
+    for (i = 0; i < CRS_LEAF_SET_SIZE; i++) {
+        struct crs_node_ref  *curr = set->above[i].ref;
+        if (curr != NULL) {
+            int  curr_msdd = crs_id_get_msdd(&curr->id, id);
+            cork_u128  curr_distance = crs_id_distance_between(curr->id, *id);
+            if (curr_msdd >= local_msdd &&
+                cork_u128_lt(curr_distance, local_distance)) {
+                return curr;
+            }
+        }
+    }
+    return NULL;
+}
+
 void
 crs_leaf_set_print(struct cork_buffer *dest, const struct crs_leaf_set *set)
 {
     unsigned int  i;
+    cork_buffer_append(dest, "[min] ", 6);
+    crs_id_print(dest, &set->below_least);
+    cork_buffer_append(dest, "\n", 1);
     for (i = CRS_LEAF_SET_SIZE; i-- > 0; ) {
         struct crs_node_ref  *ref = set->below[i].ref;
         if (ref != NULL) {
@@ -435,4 +508,7 @@ crs_leaf_set_print(struct cork_buffer *dest, const struct crs_leaf_set *set)
             );
         }
     }
+    cork_buffer_append(dest, "[max] ", 6);
+    crs_id_print(dest, &set->above_most);
+    cork_buffer_append(dest, "\n", 1);
 }

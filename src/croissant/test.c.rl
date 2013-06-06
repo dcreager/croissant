@@ -17,6 +17,7 @@
 #include <libcork/helpers/errors.h>
 
 #include "croissant.h"
+#include "croissant/tests.h"
 
 static struct crs_node *
 crs_ctx_require_node(struct crs_ctx *ctx, const struct crs_id *id)
@@ -39,6 +40,7 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
     const char  *start;
 
     struct cork_buffer  buf = CORK_BUFFER_INIT();
+    struct cork_buffer  message = CORK_BUFFER_INIT();
     struct cork_buffer  output = CORK_BUFFER_INIT();
     struct crs_node  *node;
     struct crs_id  id1;
@@ -52,9 +54,16 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
 
         id1 = id %{ rii_check(crs_id_init(&id1, buf.buf)); };
 
+        word = alnum+
+             >{ start = fpc; }
+             %{ cork_buffer_set(&message, start, fpc - start); };
+
         new_node = "new" space+ "node" space+ id1
             %{
-                rip_check(crs_node_new(ctx, &id1, NULL));
+                struct crs_application  *printer;
+                rip_check(node = crs_node_new(ctx, &id1, NULL));
+                printer = crs_print_message_application_new();
+                rii_check(crs_node_add_application(node, printer));
             };
 
         add_leaf_set_entry =
@@ -94,6 +103,27 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
                 fwrite(output.buf, output.size, 1, stdout);
             };
 
+        print_next_hop =
+            "print" space+ "next" space+ "hop" space+ "for"
+            space+ id1
+            %{
+                struct crs_node_ref  *next_hop;
+                rip_check(next_hop = crs_node_get_next_hop(node, &id1));
+                cork_buffer_printf
+                    (&output,
+                     "Next hop from %s\n"
+                     "           to ",
+                     crs_node_get_id_str(node));
+                crs_id_print(&output, &id1);
+                cork_buffer_append_printf
+                    (&output,
+                     "\n"
+                     "           is %s\n",
+                     (next_hop == CRS_NODE_REF_SELF)? "local delivery":
+                         crs_node_ref_get_id_str(next_hop));
+                fwrite(output.buf, output.size, 1, stdout);
+            };
+
         print_routing_table =
             "print" space+ "routing" space+ "table"
             %{
@@ -106,11 +136,19 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
                 fwrite(output.buf, output.size, 1, stdout);
             };
 
+        send =
+            "send" space+ word space+ "to" space+ id1
+            %{
+                rii_check(crs_send_print_message(node, &id1, message.buf));
+            };
+
         node_command =
               add_leaf_set_entry
             | add_routing_table_entry
             | print_leaf_set
+            | print_next_hop
             | print_routing_table
+            | send
             ;
 
         node_statement = space* node_command space* ";";
@@ -137,14 +175,19 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
 
     if (CORK_UNLIKELY(cs < %%{ write first_final; }%%)) {
         crs_parse_error("Invalid command");
-        cork_buffer_done(&buf);
-        cork_buffer_done(&output);
-        return -1;
+        goto error;
     }
 
     cork_buffer_done(&buf);
+    cork_buffer_done(&message);
     cork_buffer_done(&output);
     return 0;
+
+error:
+    cork_buffer_done(&buf);
+    cork_buffer_done(&message);
+    cork_buffer_done(&output);
+    return -1;
 }
 
 static void
