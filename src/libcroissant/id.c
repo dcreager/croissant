@@ -77,20 +77,3 @@ crs_id_print(struct cork_buffer *dest, const struct crs_id *id)
     crs_id_to_raw_string(id, str);
     cork_buffer_append_string(dest, str);
 }
-
-
-int
-crs_id_get_msdd(const struct crs_id *id1, const struct crs_id *id2)
-{
-    unsigned int  i;
-    for (i = 0; i < CRS_ID_NYBBLE_LENGTH; i++) {
-        unsigned int  digit1 = crs_id_get_nybble(id1, i);
-        unsigned int  digit2 = crs_id_get_nybble(id2, i);
-
-        if (digit1 != digit2) {
-            return i;
-        }
-    }
-
-    return -1;
-}

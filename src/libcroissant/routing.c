@@ -104,6 +104,27 @@ crs_routing_table_get_closest(const struct crs_routing_table *table,
     return (entry == NULL)? NULL: entry->ref;
 }
 
+struct crs_node_ref *
+crs_routing_table_get_fallback(const struct crs_routing_table *table,
+                               const struct crs_id *id)
+{
+    unsigned int  i;
+    int  local_msdd = crs_id_get_msdd(&table->node->id, id);
+    cork_u128  local_distance = crs_id_distance_between(table->node->id, *id);
+    for (i = 0; i < CRS_ROUTING_TABLE_ENTRY_COUNT; i++) {
+        struct crs_node_ref  *curr = table->entries[i].ref;
+        if (curr != NULL) {
+            int  curr_msdd = crs_id_get_msdd(&curr->id, id);
+            cork_u128  curr_distance = crs_id_distance_between(curr->id, *id);
+            if (curr_msdd >= local_msdd &&
+                cork_u128_lt(curr_distance, local_distance)) {
+                return curr;
+            }
+        }
+    }
+    return NULL;
+}
+
 void
 crs_routing_table_set(struct crs_routing_table *table,
                       struct crs_node_ref *ref)
@@ -419,6 +440,38 @@ crs_leaf_set_get_closest(const struct crs_leaf_set *set,
     /* If we fall through the loop, then the final entry in the array is the
      * closest. */
     return closest;
+}
+
+struct crs_node_ref *
+crs_leaf_set_get_fallback(const struct crs_leaf_set *set,
+                          const struct crs_id *id)
+{
+    unsigned int  i;
+    int  local_msdd = crs_id_get_msdd(&set->node->id, id);
+    cork_u128  local_distance = crs_id_distance_between(set->node->id, *id);
+    for (i = 0; i < CRS_LEAF_SET_SIZE; i++) {
+        struct crs_node_ref  *curr = set->below[i].ref;
+        if (curr != NULL) {
+            int  curr_msdd = crs_id_get_msdd(&curr->id, id);
+            cork_u128  curr_distance = crs_id_distance_between(curr->id, *id);
+            if (curr_msdd >= local_msdd &&
+                cork_u128_lt(curr_distance, local_distance)) {
+                return curr;
+            }
+        }
+    }
+    for (i = 0; i < CRS_LEAF_SET_SIZE; i++) {
+        struct crs_node_ref  *curr = set->above[i].ref;
+        if (curr != NULL) {
+            int  curr_msdd = crs_id_get_msdd(&curr->id, id);
+            cork_u128  curr_distance = crs_id_distance_between(curr->id, *id);
+            if (curr_msdd >= local_msdd &&
+                cork_u128_lt(curr_distance, local_distance)) {
+                return curr;
+            }
+        }
+    }
+    return NULL;
 }
 
 void

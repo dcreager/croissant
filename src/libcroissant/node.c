@@ -246,6 +246,60 @@ crs_node_new_ref(struct crs_node *owner, const struct crs_id *node_id,
 }
 
 
+struct crs_node_ref *
+crs_node_get_next_hop(struct crs_node *node, const struct crs_id *key)
+{
+    struct crs_node_ref  *ref;
+    char  key_str[CRS_ID_STRING_LENGTH];
+
+    /* First try the node's leaf set */
+    ref = crs_leaf_set_get_closest(node->leaf_set, key);
+    if (ref != NULL) {
+        clog_debug("[%s] Next hop for %s is %s (leaf set)",
+                   (char *) node->address_str.buf,
+                   crs_id_to_raw_string(key, key_str),
+                   (ref == CRS_NODE_REF_SELF)? "self":
+                       crs_node_ref_get_id_str(ref));
+        return ref;
+    }
+
+    /* Then try the routing table */
+    ref = crs_routing_table_get_closest(node->routing_table, key);
+    if (ref != NULL) {
+        clog_debug("[%s] Next hop for %s is %s (routing table)",
+                   (char *) node->address_str.buf,
+                   crs_id_to_raw_string(key, key_str),
+                   crs_node_ref_get_id_str(ref));
+        return ref;
+    }
+
+    /* Then look for a fallback */
+    ref = crs_leaf_set_get_fallback(node->leaf_set, key);
+    if (ref != NULL) {
+        clog_debug("[%s] Next hop for %s is %s (leaf set fallback)",
+                   (char *) node->address_str.buf,
+                   crs_id_to_raw_string(key, key_str),
+                   crs_node_ref_get_id_str(ref));
+        return ref;
+    }
+
+    ref = crs_routing_table_get_fallback(node->routing_table, key);
+    if (ref != NULL) {
+        clog_debug("[%s] Next hop for %s is %s (routing table fallback)",
+                   (char *) node->address_str.buf,
+                   crs_id_to_raw_string(key, key_str),
+                   crs_node_ref_get_id_str(ref));
+        return ref;
+    }
+
+    /* And if none of those worked, deliver to the local node */
+    clog_debug("[%s] Next hop for %s is self (last resort)",
+               (char *) node->address_str.buf,
+               crs_id_to_raw_string(key, key_str));
+    return CRS_NODE_REF_SELF;
+}
+
+
 /*-----------------------------------------------------------------------
  * Node applications
  */
