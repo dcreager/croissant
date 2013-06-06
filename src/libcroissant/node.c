@@ -299,6 +299,38 @@ crs_node_get_next_hop(struct crs_node *node, const struct crs_id *key)
     return CRS_NODE_REF_SELF;
 }
 
+int
+crs_node_route_message(struct crs_node *node,
+                       const struct crs_id *src, const struct crs_id *dest,
+                       const void *message, size_t message_length)
+{
+    struct crs_node_ref  *next_hop;
+    rip_check(next_hop = crs_node_get_next_hop(node, dest));
+    if (next_hop == CRS_NODE_REF_SELF) {
+        char  dest_str[CRS_ID_STRING_LENGTH];
+        clog_debug("[%s] Delivering %s locally",
+                   (char *) node->address_str.buf,
+                   crs_id_to_raw_string(dest, dest_str));
+        return crs_node_process_message
+            (node, src, dest, message, message_length);
+    } else {
+        char  dest_str[CRS_ID_STRING_LENGTH];
+        clog_debug("[%s] Sending %s to %s",
+                   (char *) node->address_str.buf,
+                   crs_id_to_raw_string(dest, dest_str),
+                   crs_node_ref_get_address_str(next_hop));
+        return crs_node_ref_send(next_hop, src, dest, message, message_length);
+    }
+}
+
+int
+crs_node_send_message(struct crs_node *node, const struct crs_id *dest,
+                      const void *message, size_t message_length)
+{
+    return crs_node_route_message
+        (node, &node->id, dest, message, message_length);
+}
+
 
 /*-----------------------------------------------------------------------
  * Node applications

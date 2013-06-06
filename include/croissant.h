@@ -244,6 +244,15 @@ crs_node_get_address(const struct crs_node *node);
 const char *
 crs_node_get_address_str(const struct crs_node *node);
 
+int
+crs_node_route_message(struct crs_node *node,
+                       const struct crs_id *src, const struct crs_id *dest,
+                       const void *message, size_t message_length);
+
+int
+crs_node_send_message(struct crs_node *node, const struct crs_id *dest,
+                      const void *message, size_t message_length);
+
 
 /*-----------------------------------------------------------------------
  * Node references
