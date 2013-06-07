@@ -24,7 +24,7 @@
 
 static int
 crs_save_message__callback(void *user_data, struct crs_node *node,
-                           const struct crs_id *src, const struct crs_id *dest,
+                           crs_id src, crs_id dest,
                            const void *message, size_t message_length)
 {
     struct cork_buffer  *buf = user_data;
@@ -46,7 +46,7 @@ crs_save_message_application_new(crs_application_id id,
 
 static int
 crs_print_message__callback(void *user_data, struct crs_node *node,
-                            const struct crs_id *src, const struct crs_id *dest,
+                            crs_id src, crs_id dest,
                             const void *message, size_t message_length)
 {
     struct cork_buffer  *buf = user_data;
@@ -69,8 +69,7 @@ crs_print_message_application_new(void)
 }
 
 int
-crs_send_print_message(struct crs_node *node, const struct crs_id *dest,
-                       const char *message)
+crs_send_print_message(struct crs_node *node, crs_id dest, const char *message)
 {
     int  rc;
     struct cork_buffer  buf = CORK_BUFFER_INIT();

@@ -42,20 +42,22 @@ verify_leaf_set(const struct crs_leaf_set *set, const char *expected)
 }
 
 
-static void
-create_test_id(struct crs_id *id, unsigned int value)
+static crs_id
+create_test_id(unsigned int value)
 {
-    id->u128 = cork_u128_from_64(0, value);
+    crs_id  id;
+    id.u128 = cork_u128_from_64(0, value);
+    return id;
 }
 
 static void
 add_to_set(struct crs_ctx *ctx, struct crs_leaf_set *set, unsigned int value)
 {
-    struct crs_id  id;
+    crs_id  id;
     struct crs_node  *node;
     struct crs_node_ref  *ref;
-    create_test_id(&id, value);
-    node = crs_node_new(ctx, &id, NULL);
+    id = create_test_id(value);
+    node = crs_node_new(ctx, id, NULL);
     ref = crs_node_get_ref(node);
     crs_leaf_set_add(set, ref);
 }
@@ -63,13 +65,13 @@ add_to_set(struct crs_ctx *ctx, struct crs_leaf_set *set, unsigned int value)
 START_TEST(test_leaf_set_01)
 {
     DESCRIBE_TEST;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_leaf_set  *set;
     ctx = crs_ctx_new();
-    create_test_id(&id, 100);
-    node = crs_node_new(ctx, &id, NULL);
+    id = create_test_id(100);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(set = crs_leaf_set_new(node));
     verify_leaf_set(set,
         "[min] 00000000000000000000000000000064\n"
@@ -85,13 +87,13 @@ END_TEST
 START_TEST(test_leaf_set_02)
 {
     DESCRIBE_TEST;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_leaf_set  *set;
     ctx = crs_ctx_new();
-    create_test_id(&id, 100);
-    node = crs_node_new(ctx, &id, NULL);
+    id = create_test_id(100);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(set = crs_leaf_set_new(node));
     add_to_set(ctx, set, 99);
     add_to_set(ctx, set, 101);
@@ -111,13 +113,13 @@ END_TEST
 START_TEST(test_leaf_set_03)
 {
     DESCRIBE_TEST;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_leaf_set  *set;
     ctx = crs_ctx_new();
-    create_test_id(&id, 100);
-    node = crs_node_new(ctx, &id, NULL);
+    id = create_test_id(100);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(set = crs_leaf_set_new(node));
     /* Insert the closest items last, so that we can test bubbling up existing
      * entries. */
@@ -162,13 +164,13 @@ START_TEST(test_leaf_set_04)
 {
     DESCRIBE_TEST;
     unsigned int  i;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_leaf_set  *set;
     ctx = crs_ctx_new();
-    create_test_id(&id, 100);
-    node = crs_node_new(ctx, &id, NULL);
+    id = create_test_id(100);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(set = crs_leaf_set_new(node));
     /* Test inserting into a full set */
     for (i = 100 - CRS_LEAF_SET_SIZE - 3; i < 100; i++) {

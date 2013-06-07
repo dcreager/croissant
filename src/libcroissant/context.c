@@ -86,11 +86,11 @@ crs_ctx_get_node(struct crs_ctx *ctx, crs_local_node_id id)
 }
 
 struct crs_node *
-crs_ctx_get_node_with_id(struct crs_ctx *ctx, const struct crs_id *id)
+crs_ctx_get_node_with_id(struct crs_ctx *ctx, crs_id id)
 {
     struct crs_node  *curr;
     for (curr = ctx->nodes; curr != NULL; curr = curr->next) {
-        if (crs_id_equals(id, &curr->id)) {
+        if (crs_id_equals(id, curr->id)) {
             return curr;
         }
     }

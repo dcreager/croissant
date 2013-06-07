@@ -61,7 +61,7 @@ struct crs_node_address {
 
 struct crs_node {
     struct crs_ctx  *ctx;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_node_address  address;
     struct crs_routing_table  *routing_table;
     struct crs_leaf_set  *leaf_set;
@@ -77,8 +77,7 @@ CORK_LOCAL void
 crs_node_free(struct crs_node *node);
 
 CORK_LOCAL int
-crs_node_process_message(struct crs_node *node,
-                         const struct crs_id *src, const struct crs_id *dest,
+crs_node_process_message(struct crs_node *node, crs_id src, crs_id dest,
                          const void *message, size_t message_length);
 
 
@@ -87,13 +86,12 @@ crs_node_process_message(struct crs_node *node,
  */
 
 typedef int
-(*crs_node_ref_send_f)(struct crs_node_ref *ref,
-                       const struct crs_id *src, const struct crs_id *dest,
+(*crs_node_ref_send_f)(struct crs_node_ref *ref, crs_id src, crs_id dest,
                        const void *message, size_t message_length);
 
 struct crs_node_ref {
     struct crs_node  *owner;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_node_address  address;
     crs_proximity  proximity;
     struct crs_node  *local_node;
@@ -106,7 +104,7 @@ struct crs_node_ref {
 };
 
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new_priv(struct crs_node *owner, const struct crs_id *node_id,
+crs_node_ref_new_priv(struct crs_node *owner, crs_id node_id,
                       const struct crs_node_address *address,
                       crs_proximity proximity,
                       struct crs_node *local_node,
@@ -114,7 +112,7 @@ crs_node_ref_new_priv(struct crs_node *owner, const struct crs_id *node_id,
                       crs_node_ref_send_f send);
 
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new(struct crs_node *owner, const struct crs_id *node_id,
+crs_node_ref_new(struct crs_node *owner, crs_id node_id,
                  const struct crs_node_address *address);
 
 CORK_LOCAL void

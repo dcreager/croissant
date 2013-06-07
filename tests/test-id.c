@@ -25,10 +25,10 @@
 START_TEST(test_id)
 {
     DESCRIBE_TEST;
-    struct crs_id  expected =
+    crs_id  expected =
     { cork_u128_from_32(0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f) };
 
-    struct crs_id  actual;
+    crs_id  actual;
     static const char  *SRC1 = "000102030405060708090a0b0c0d0e0f";
     static const char  *SRC2 = "000102030405060708090A0B0C0D0E0F";
 
@@ -39,25 +39,25 @@ START_TEST(test_id)
 
     char  str[CRS_ID_STRING_LENGTH];
 
-    fail_if_error(crs_id_init(&actual, SRC1));
-    fail_unless(crs_id_equals(&actual, &expected),
+    fail_if_error(actual = crs_id_init(SRC1));
+    fail_unless(crs_id_equals(actual, expected),
                 "Identifiers not equal");
-    crs_id_to_raw_string(&actual, str);
+    crs_id_to_raw_string(str, actual);
     fail_unless(strcmp(str, SRC1) == 0,
                 "String representations not equal\nExpected %s\nGot      %s",
                 SRC1, str);
 
-    fail_if_error(crs_id_init(&actual, SRC2));
-    fail_unless(crs_id_equals(&actual, &expected),
+    fail_if_error(actual = crs_id_init(SRC2));
+    fail_unless(crs_id_equals(actual, expected),
                 "Identifiers not equal");
-    crs_id_to_raw_string(&actual, str);
+    crs_id_to_raw_string(str, actual);
     fail_unless(strcmp(str, SRC1) == 0,
                 "String representations not equal\nExpected %s\nGot      %s",
                 SRC1, str);
 
-    fail_unless_error(crs_id_init(&actual, BAD_SRC1),
+    fail_unless_error(actual = crs_id_init(BAD_SRC1),
                       "Expected parse error");
-    fail_unless_error(crs_id_init(&actual, BAD_SRC2),
+    fail_unless_error(actual = crs_id_init(BAD_SRC2),
                       "Expected parse error");
 }
 END_TEST
@@ -67,11 +67,11 @@ START_TEST(test_get_nybble)
 {
     DESCRIBE_TEST;
     static const char  *SRC1 = "0123456789abcdef01233210fedcba98";
-    struct crs_id  id;
-    fail_if_error(crs_id_init(&id, SRC1));
+    crs_id  id;
+    fail_if_error(id = crs_id_init(SRC1));
 
     char  str[CRS_ID_STRING_LENGTH];
-    crs_id_to_raw_string(&id, str);
+    crs_id_to_raw_string(str, id);
 
     unsigned int  expected[] =
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -79,10 +79,10 @@ START_TEST(test_get_nybble)
 
     unsigned int  i;
     for (i = 0; i < CRS_ID_NYBBLE_LENGTH; i++) {
-        fail_unless(crs_id_get_nybble(&id, i) == expected[i],
+        fail_unless(crs_id_get_nybble(id, i) == expected[i],
                     "Unexpected value for nybble %u: "
                     "got 0x%x, expected 0x%x",
-                    i, crs_id_get_nybble(&id, i), expected[i]);
+                    i, crs_id_get_nybble(id, i), expected[i]);
     }
 }
 END_TEST
@@ -92,8 +92,8 @@ START_TEST(test_get_msdd)
 {
     DESCRIBE_TEST;
     static const char  *SRC1 = "00000000000000000000000000000000";
-    struct crs_id  id1;
-    fail_if_error(crs_id_init(&id1, SRC1));
+    crs_id  id1;
+    fail_if_error(id1 = crs_id_init(SRC1));
 
     char  SRC2[CRS_ID_STRING_LENGTH];
     char  SRC3[CRS_ID_STRING_LENGTH];
@@ -109,17 +109,17 @@ START_TEST(test_get_msdd)
         SRC3[CRS_ID_STRING_LENGTH-1] = '\0';
 
         //printf("<%s> <%s>: %d?\n", SRC1, SRC2, expected);
-        struct crs_id  id2;
-        fail_if_error(crs_id_init(&id2, SRC2));
-        int  actual2 = crs_id_get_msdd(&id1, &id2);
+        crs_id  id2;
+        fail_if_error(id2 = crs_id_init(SRC2));
+        int  actual2 = crs_id_get_msdd(id1, id2);
         fail_unless(actual2 == expected,
                     "Unexpected MSDD: got %d, expected %d",
                     actual2, expected);
 
         //printf("<%s> <%s>: %d?\n", SRC1, SRC3, expected);
-        struct crs_id  id3;
-        fail_if_error(crs_id_init(&id3, SRC3));
-        int  actual3 = crs_id_get_msdd(&id1, &id3);
+        crs_id  id3;
+        fail_if_error(id3 = crs_id_init(SRC3));
+        int  actual3 = crs_id_get_msdd(id1, id3);
         fail_unless(actual3 == expected,
                     "Unexpected MSDD: got %d, expected %d",
                     actual3, expected);
@@ -136,10 +136,10 @@ static void
 test_one_cw(const char *a_str, const char *b_str, bool expected)
 {
     bool  actual;
-    struct crs_id  a;
-    struct crs_id  b;
-    fail_if_error(crs_id_init(&a, a_str));
-    fail_if_error(crs_id_init(&b, b_str));
+    crs_id  a;
+    crs_id  b;
+    fail_if_error(a = crs_id_init(a_str));
+    fail_if_error(b = crs_id_init(b_str));
     actual = crs_id_is_cw(a, b);
     fail_unless(actual == expected,
                 "%s should %sbe clockwise of %s",
@@ -150,10 +150,10 @@ static void
 test_one_ccw(const char *a_str, const char *b_str, bool expected)
 {
     bool  actual;
-    struct crs_id  a;
-    struct crs_id  b;
-    fail_if_error(crs_id_init(&a, a_str));
-    fail_if_error(crs_id_init(&b, b_str));
+    crs_id  a;
+    crs_id  b;
+    fail_if_error(a = crs_id_init(a_str));
+    fail_if_error(b = crs_id_init(b_str));
     actual = crs_id_is_ccw(a, b);
     fail_unless(actual == expected,
                 "%s should %sbe counter-clockwise of %s",
@@ -165,12 +165,12 @@ test_one_between(const char *a_str, const char *lo_str, const char *hi_str,
                  bool expected)
 {
     bool  actual;
-    struct crs_id  a;
-    struct crs_id  lo;
-    struct crs_id  hi;
-    fail_if_error(crs_id_init(&a, a_str));
-    fail_if_error(crs_id_init(&lo, lo_str));
-    fail_if_error(crs_id_init(&hi, hi_str));
+    crs_id  a;
+    crs_id  lo;
+    crs_id  hi;
+    fail_if_error(a = crs_id_init(a_str));
+    fail_if_error(lo = crs_id_init(lo_str));
+    fail_if_error(hi = crs_id_init(hi_str));
     actual = crs_id_is_between(a, lo, hi);
     fail_unless(actual == expected,
                 "%s should %sbe in between %s and %s",
@@ -290,11 +290,11 @@ test_one_distance(const char *a_str, const char *b_str, uint64_t expected64)
 {
     cork_u128  actual;
     cork_u128  expected = cork_u128_from_64(0, expected64);
-    struct crs_id  a;
-    struct crs_id  b;
+    crs_id  a;
+    crs_id  b;
     char  str[CORK_U128_DECIMAL_LENGTH];
-    fail_if_error(crs_id_init(&a, a_str));
-    fail_if_error(crs_id_init(&b, b_str));
+    fail_if_error(a = crs_id_init(a_str));
+    fail_if_error(b = crs_id_init(b_str));
 
     actual = crs_id_distance_between(a, b);
     cork_u128_to_decimal(str, actual);

@@ -47,9 +47,8 @@ static const char  *ID_SELF = "00000000000000000000000000000000";
 static const char  *ID_00   = "123456789abcdef123456789abcdef12";
 static const char  *ID_01   = "edcba987654321fedcba987654321fed";
 
-static void
-create_test_id(struct crs_id *id, const char *id_template,
-               unsigned int common_prefix)
+static crs_id
+create_test_id(const char *id_template, unsigned int common_prefix)
 {
     unsigned int  i;
     char  id_str[CRS_ID_STRING_LENGTH];
@@ -58,18 +57,18 @@ create_test_id(struct crs_id *id, const char *id_template,
     for (i = 0; i < common_prefix; i++) {
         id_str[i] = ID_SELF[i];
     }
-    crs_id_init(id, id_str);
+    return crs_id_init(id_str);
 }
 
 static void
 add_prefix_to_table(struct crs_ctx *ctx, struct crs_routing_table *table,
                     const char *id_template, unsigned int common_prefix)
 {
-    struct crs_id  id;
+    crs_id  id;
     struct crs_node  *node;
     struct crs_node_ref  *ref;
-    create_test_id(&id, id_template, common_prefix);
-    node = crs_node_new(ctx, &id, NULL);
+    id = create_test_id(id_template, common_prefix);
+    node = crs_node_new(ctx, id, NULL);
     ref = crs_node_get_ref(node);
     crs_routing_table_set(table, ref);
 }
@@ -81,11 +80,11 @@ add_prefix_to_table_with_proximity(struct crs_ctx *ctx,
                                    unsigned int common_prefix,
                                    crs_proximity proximity)
 {
-    struct crs_id  id;
+    crs_id  id;
     struct crs_node  *node;
     struct crs_node_ref  *ref;
-    create_test_id(&id, id_template, common_prefix);
-    node = crs_node_new(ctx, &id, NULL);
+    id = create_test_id(id_template, common_prefix);
+    node = crs_node_new(ctx, id, NULL);
     ref = crs_node_get_ref(node);
     crs_node_ref_set_proximity(ref, proximity);
     crs_routing_table_set(table, ref);
@@ -94,13 +93,13 @@ add_prefix_to_table_with_proximity(struct crs_ctx *ctx,
 START_TEST(test_routing_table_01)
 {
     DESCRIBE_TEST;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_routing_table  *table;
     ctx = crs_ctx_new();
-    crs_id_init(&id, ID_SELF);
-    node = crs_node_new(ctx, &id, NULL);
+    id = crs_id_init(ID_SELF);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
     verify_routing_table(table, "");
     crs_routing_table_free(table);
@@ -112,13 +111,13 @@ END_TEST
 START_TEST(test_routing_table_02)
 {
     DESCRIBE_TEST;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_routing_table  *table;
     ctx = crs_ctx_new();
-    crs_id_init(&id, ID_SELF);
-    node = crs_node_new(ctx, &id, NULL);
+    id = crs_id_init(ID_SELF);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
     add_prefix_to_table(ctx, table, ID_00, 0);
     verify_routing_table(table,
@@ -134,13 +133,13 @@ START_TEST(test_routing_table_03)
 {
     DESCRIBE_TEST;
     size_t  i;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_routing_table  *table;
     ctx = crs_ctx_new();
-    crs_id_init(&id, ID_SELF);
-    node = crs_node_new(ctx, &id, NULL);
+    id = crs_id_init(ID_SELF);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
     for (i = 0; i < CRS_ROUTING_TABLE_ROW_COUNT; i++) {
         add_prefix_to_table(ctx, table, ID_00, i);
@@ -189,13 +188,13 @@ START_TEST(test_routing_table_04)
 {
     DESCRIBE_TEST;
     size_t  i;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_routing_table  *table;
     ctx = crs_ctx_new();
-    crs_id_init(&id, ID_SELF);
-    node = crs_node_new(ctx, &id, NULL);
+    id = crs_id_init(ID_SELF);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
     for (i = 0; i < CRS_ROUTING_TABLE_ROW_COUNT; i++) {
         add_prefix_to_table(ctx, table, ID_00, i);
@@ -275,13 +274,13 @@ END_TEST
 START_TEST(test_routing_table_conflict_01)
 {
     DESCRIBE_TEST;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_routing_table  *table;
     ctx = crs_ctx_new();
-    crs_id_init(&id, ID_SELF);
-    node = crs_node_new(ctx, &id, NULL);
+    id = crs_id_init(ID_SELF);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
     add_prefix_to_table_with_proximity(ctx, table, ID_00, 2, 0);
     add_prefix_to_table_with_proximity(ctx, table, ID_00, 2, 1);
@@ -298,13 +297,13 @@ END_TEST
 START_TEST(test_routing_table_conflict_02)
 {
     DESCRIBE_TEST;
-    struct crs_id  id;
+    crs_id  id;
     struct crs_ctx  *ctx;
     struct crs_node  *node;
     struct crs_routing_table  *table;
     ctx = crs_ctx_new();
-    crs_id_init(&id, ID_SELF);
-    node = crs_node_new(ctx, &id, NULL);
+    id = crs_id_init(ID_SELF);
+    node = crs_node_new(ctx, id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
     add_prefix_to_table_with_proximity(ctx, table, ID_00, 2, 1);
     add_prefix_to_table_with_proximity(ctx, table, ID_00, 2, 0);

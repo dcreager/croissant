@@ -43,8 +43,7 @@ struct crs_application *
 crs_print_message_application_new(void);
 
 int
-crs_send_print_message(struct crs_node *node, const struct crs_id *dest,
-                       const char *message);
+crs_send_print_message(struct crs_node *node, crs_id dest, const char *message);
 
 
 #endif  /* CROISSANT_TESTS_H */

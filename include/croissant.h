@@ -59,35 +59,35 @@ enum crs_error {
 #define CRS_ID_BIT_LENGTH  128
 #define CRS_ID_NYBBLE_LENGTH  (CRS_ID_BIT_LENGTH / 4)
 
-struct crs_id {
+typedef struct {
     cork_u128  u128;
-};
+} crs_id;
 
 
-int
-crs_id_init(struct crs_id *id, const char *src);
+#define CRS_ID_ZERO  {{{{0}}}}
 
-#define crs_id_copy(id, src)  ((id)->u128 = (src)->u128)
+crs_id
+crs_id_init(const char *src);
 
 /* includes NUL terminator */
 #define CRS_ID_STRING_LENGTH  CORK_U128_HEX_LENGTH
 
 const char *
-crs_id_to_raw_string(const struct crs_id *id, char *str);
+crs_id_to_raw_string(char *str, crs_id id);
 
 void
-crs_id_print(struct cork_buffer *dest, const struct crs_id *id);
+crs_id_print(struct cork_buffer *dest, crs_id id);
 
-#define crs_id_equals(id1, id2) (cork_u128_eq((id1)->u128, (id2)->u128))
+#define crs_id_equals(id1, id2) (cork_u128_eq((id1).u128, (id2).u128))
 
 #define crs_id_get_nybble(id, index) \
-    (((index % 2) == 0)? \
-     ((cork_u128_be8((id)->u128, index / 2) & 0xf0) >> 4):  /* even index */ \
-      (cork_u128_be8((id)->u128, index / 2) & 0x0f))        /* odd index */
+    ((((index) % 2) == 0)? \
+     ((cork_u128_be8((id).u128, (index) / 2) & 0xf0) >> 4):  /* even index */ \
+      (cork_u128_be8((id).u128, (index) / 2) & 0x0f))        /* odd index */
 
 CORK_ATTR_UNUSED
 static int
-crs_id_get_msdd(const struct crs_id *id1, const struct crs_id *id2)
+crs_id_get_msdd(crs_id id1, crs_id id2)
 {
     unsigned int  i;
     for (i = 0; i < CRS_ID_NYBBLE_LENGTH; i++) {
@@ -112,7 +112,7 @@ crs_id_get_msdd(const struct crs_id *id1, const struct crs_id *id2)
 /* Returns if A is clockwise of B (A >= B).  An id is clockwise of itself. */
 CORK_ATTR_UNUSED
 static bool
-crs_id_is_cw(struct crs_id a, struct crs_id b)
+crs_id_is_cw(crs_id a, crs_id b)
 {
     cork_u128  diff = cork_u128_sub(a.u128, b.u128);
 #if CRS_DEBUG_ID_ARITHMETIC
@@ -131,7 +131,7 @@ crs_id_is_cw(struct crs_id a, struct crs_id b)
  * itself. */
 CORK_ATTR_UNUSED
 static bool
-crs_id_is_ccw(struct crs_id a, struct crs_id b)
+crs_id_is_ccw(crs_id a, crs_id b)
 {
     return !crs_id_is_cw(a, b);
 }
@@ -140,7 +140,7 @@ crs_id_is_ccw(struct crs_id a, struct crs_id b)
 /* Returns whether A is within [lo, hi] (inclusive). */
 CORK_ATTR_UNUSED
 static bool
-crs_id_is_between(struct crs_id a, struct crs_id lo, struct crs_id hi)
+crs_id_is_between(crs_id a, crs_id lo, crs_id hi)
 {
     return crs_id_is_cw(a, lo) && crs_id_is_cw(hi, a);
 }
@@ -149,7 +149,7 @@ crs_id_is_between(struct crs_id a, struct crs_id lo, struct crs_id hi)
 /* The shortest distance that you travel on the ring from `a` to `b` */
 CORK_ATTR_UNUSED
 static cork_u128
-crs_id_distance_between(struct crs_id a, struct crs_id b)
+crs_id_distance_between(crs_id a, crs_id b)
 {
     cork_u128  diff = cork_u128_sub(a.u128, b.u128);
     if (cork_u128_be8(diff, 0) >= 0x80) {
@@ -163,7 +163,7 @@ crs_id_distance_between(struct crs_id a, struct crs_id b)
 /* The clockwise distance that you travel on the ring from `a` to `b` */
 CORK_ATTR_UNUSED
 static cork_u128
-crs_id_cw_distance_between(struct crs_id a, struct crs_id b)
+crs_id_cw_distance_between(crs_id a, crs_id b)
 {
     return cork_u128_sub(b.u128, a.u128);
 }
@@ -203,7 +203,7 @@ void
 crs_ctx_free(struct crs_ctx *ctx);
 
 struct crs_node *
-crs_ctx_get_node_with_id(struct crs_ctx *ctx, const struct crs_id *id);
+crs_ctx_get_node_with_id(struct crs_ctx *ctx, crs_id id);
 
 
 /*-----------------------------------------------------------------------
@@ -218,7 +218,7 @@ struct crs_node;
  * is NULL, this node will only be accessible within the current process.  (This
  * is mostly useful for test cases.) */
 struct crs_node *
-crs_node_new(struct crs_ctx *ctx, const struct crs_id *id,
+crs_node_new(struct crs_ctx *ctx, crs_id id,
              const struct crs_node_address *address);
 
 /* If bootstrap_node is NULL, create a new Pastry network with this node as the
@@ -232,7 +232,7 @@ crs_node_bootstrap(struct crs_node *node,
 int
 crs_node_detach(struct crs_node *node);
 
-const struct crs_id *
+crs_id
 crs_node_get_id(const struct crs_node *node);
 
 const char *
@@ -245,12 +245,11 @@ const char *
 crs_node_get_address_str(const struct crs_node *node);
 
 int
-crs_node_route_message(struct crs_node *node,
-                       const struct crs_id *src, const struct crs_id *dest,
+crs_node_route_message(struct crs_node *node, crs_id src, crs_id dest,
                        const void *message, size_t message_length);
 
 int
-crs_node_send_message(struct crs_node *node, const struct crs_id *dest,
+crs_node_send_message(struct crs_node *node, crs_id dest,
                       const void *message, size_t message_length);
 
 
@@ -272,10 +271,10 @@ struct crs_node_ref *
 crs_node_get_ref(struct crs_node *node);
 
 struct crs_node_ref *
-crs_node_new_ref(struct crs_node *owner, const struct crs_id *node_id,
+crs_node_new_ref(struct crs_node *owner, crs_id node_id,
                  const struct crs_node_address *address);
 
-const struct crs_id *
+crs_id
 crs_node_ref_get_id(const struct crs_node_ref *ref);
 
 const const char *
@@ -298,8 +297,7 @@ crs_node_ref_set_proximity(struct crs_node_ref *ref, crs_proximity proximity);
  * particular node that we've already seen and know how to contact.  It is
  * mostly used internally by the message routing functions. */
 int
-crs_node_ref_send(struct crs_node_ref *ref,
-                  const struct crs_id *src, const struct crs_id *dest,
+crs_node_ref_send(struct crs_node_ref *ref, crs_id src, crs_id dest,
                   const void *message, size_t message_length);
 
 
@@ -331,13 +329,12 @@ crs_routing_table_get(const struct crs_routing_table *table,
 
 /* id must not be equal to the leaf set's node's ID. */
 struct crs_node_ref *
-crs_routing_table_get_closest(const struct crs_routing_table *table,
-                              const struct crs_id *id);
+crs_routing_table_get_closest(const struct crs_routing_table *table, crs_id id);
 
 /* id must not be equal to the leaf set's node's ID. */
 struct crs_node_ref *
 crs_routing_table_get_fallback(const struct crs_routing_table *table,
-                               const struct crs_id *id);
+                               crs_id id);
 
 /* ref's ID must not be equal to the leaf set's node's ID. */
 void
@@ -372,12 +369,10 @@ crs_leaf_set_add(struct crs_leaf_set *set, struct crs_node_ref *ref);
 /* Returns NULL if id isn't in the range of entries in the leaf set.  Returns
  * CRS_NODE_REF_SELF if the local node is closest. */
 struct crs_node_ref *
-crs_leaf_set_get_closest(const struct crs_leaf_set *set,
-                         const struct crs_id *id);
+crs_leaf_set_get_closest(const struct crs_leaf_set *set, crs_id id);
 
 struct crs_node_ref *
-crs_leaf_set_get_fallback(const struct crs_leaf_set *set,
-                          const struct crs_id *id);
+crs_leaf_set_get_fallback(const struct crs_leaf_set *set, crs_id id);
 
 void
 crs_leaf_set_print(struct cork_buffer *dest, const struct crs_leaf_set *set);
@@ -390,7 +385,7 @@ struct crs_routing_table *
 crs_node_get_routing_table(struct crs_node *node);
 
 struct crs_node_ref *
-crs_node_get_next_hop(struct crs_node *node, const struct crs_id *key);
+crs_node_get_next_hop(struct crs_node *node, crs_id key);
 
 
 /*-----------------------------------------------------------------------
@@ -401,8 +396,7 @@ typedef uint32_t  crs_application_id;
 
 typedef int
 (*crs_application_process_f)(void *user_data, struct crs_node *node,
-                             const struct crs_id *src,
-                             const struct crs_id *dest,
+                             crs_id src, crs_id dest,
                              const void *message, size_t message_length);
 
 

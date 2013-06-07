@@ -22,7 +22,7 @@
  */
 
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new_priv(struct crs_node *owner, const struct crs_id *node_id,
+crs_node_ref_new_priv(struct crs_node *owner, crs_id node_id,
                       const struct crs_node_address *address,
                       crs_proximity proximity,
                       struct crs_node *local_node,
@@ -31,8 +31,8 @@ crs_node_ref_new_priv(struct crs_node *owner, const struct crs_id *node_id,
 {
     struct crs_node_ref  *ref = cork_new(struct crs_node_ref);
     ref->owner = owner;
-    ref->id = *node_id;
-    crs_id_to_raw_string(node_id, ref->id_str);
+    ref->id = node_id;
+    crs_id_to_raw_string(ref->id_str, node_id);
     ref->address = *address;
     cork_buffer_init(&ref->address_str);
     crs_node_address_print(&ref->address_str, address);
@@ -45,7 +45,7 @@ crs_node_ref_new_priv(struct crs_node *owner, const struct crs_id *node_id,
 }
 
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new(struct crs_node *owner, const struct crs_id *node_id,
+crs_node_ref_new(struct crs_node *owner, crs_id node_id,
                  const struct crs_node_address *address)
 {
     struct crs_node  *local_node;
@@ -76,10 +76,10 @@ crs_node_ref_free(struct crs_node_ref *ref)
     free(ref);
 }
 
-const struct crs_id *
+crs_id
 crs_node_ref_get_id(const struct crs_node_ref *ref)
 {
-    return &ref->id;
+    return ref->id;
 }
 
 const char *
@@ -113,8 +113,7 @@ crs_node_ref_set_proximity(struct crs_node_ref *ref, crs_proximity proximity)
 }
 
 int
-crs_node_ref_send(struct crs_node_ref *ref,
-                  const struct crs_id *src, const struct crs_id *dest,
+crs_node_ref_send(struct crs_node_ref *ref, crs_id src, crs_id dest,
                   const void *message, size_t message_length)
 {
     /* If the node in question is in the current process, just sent the message

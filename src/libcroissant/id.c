@@ -15,20 +15,21 @@
 #include "croissant.h"
 
 
-int
-crs_id_init(struct crs_id *id, const char *src)
+crs_id
+crs_id_init(const char *src)
 {
+    crs_id  id;
     unsigned int  id_idx = 0;
     unsigned int  str_idx = 0;
 
-    for (id_idx = 0; id_idx < sizeof(struct crs_id); id_idx++) {
+    for (id_idx = 0; id_idx < sizeof(crs_id); id_idx++) {
         uint8_t  digit = 0;
 
 #define GET_DIGIT \
         if (CORK_UNLIKELY(src[str_idx] == '\0')) { \
             /* String is too short! */ \
             crs_parse_error("Pastry identifier is too short"); \
-            return -1; \
+            goto error; \
         } \
         \
         if ((src[str_idx] >= '0') && (src[str_idx] <= '9')) { \
@@ -41,14 +42,14 @@ crs_id_init(struct crs_id *id, const char *src)
             crs_parse_error \
                 ("Pastry identifier contains invalid character " \
                  "'%c' at position %u", src[str_idx], str_idx); \
-            return -1; \
+            goto error; \
         }
 
         GET_DIGIT;
         digit <<= 4;
         str_idx++;
         GET_DIGIT;
-        cork_u128_be8(id->u128, id_idx) = digit;
+        cork_u128_be8(id.u128, id_idx) = digit;
         str_idx++;
 
 #undef GET_DIGIT
@@ -56,24 +57,29 @@ crs_id_init(struct crs_id *id, const char *src)
 
     if (src[str_idx] != '\0') {
         crs_parse_error("Pastry identifier is too long");
-        return -1;
+        goto error;
     }
 
-    return 0;
+    return id;
+
+error:
+    id.u128._.be64.lo = 0;
+    id.u128._.be64.hi = 0;
+    return id;
 }
 
 
 const char *
-crs_id_to_raw_string(const struct crs_id *id, char *str)
+crs_id_to_raw_string(char *str, crs_id id)
 {
-    cork_u128_to_padded_hex(str, id->u128);
+    cork_u128_to_padded_hex(str, id.u128);
     return str;
 }
 
 void
-crs_id_print(struct cork_buffer *dest, const struct crs_id *id)
+crs_id_print(struct cork_buffer *dest, crs_id id)
 {
     char  str[CRS_ID_STRING_LENGTH];
-    crs_id_to_raw_string(id, str);
+    crs_id_to_raw_string(str, id);
     cork_buffer_append_string(dest, str);
 }

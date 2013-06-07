@@ -27,9 +27,9 @@
 START_TEST(test_local_nodes)
 {
     DESCRIBE_TEST;
+    crs_id  node_id = CRS_ID_ZERO;
     struct crs_ctx  *ctx = crs_ctx_new();
-    struct crs_node  *node = crs_node_new(ctx, NULL, NULL);
-    const struct crs_id  *node_id = crs_node_get_id(node);
+    struct crs_node  *node = crs_node_new(ctx, node_id, NULL);
     const struct crs_node_address  *address = crs_node_get_address(node);
     struct cork_buffer  actual = CORK_BUFFER_INIT();
     struct cork_buffer  send_buf = CORK_BUFFER_INIT();
