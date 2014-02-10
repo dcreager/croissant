@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -130,7 +130,9 @@ crs_node_new_with_id(struct crs_ctx *ctx, crs_id id,
     crs_node_address_print(&node->address_str, &node->address);
     clog_debug("[%s] New node %s", (char *) node->address_str.buf, node->id_str);
     crs_ctx_add_node(ctx, node);
-    cork_pointer_hash_table_init(&node->applications, 0);
+    node->applications = cork_pointer_hash_table_new(0, 0);
+    cork_hash_table_set_free_value
+        (node->applications, (cork_free_f) crs_application_free);
     node->ref = crs_local_node_ref_new(node, node->id, &node->address, node);
     node->refs = NULL;
     node->routing_table = crs_routing_table_new(node);
@@ -145,14 +147,6 @@ crs_node_new(struct crs_ctx *ctx, crs_id id,
     return crs_node_new_with_id(ctx, id, address);
 }
 
-static enum cork_hash_table_map_result
-free_application(struct cork_hash_table_entry *entry, void *user_data)
-{
-    struct crs_application  *app = entry->value;
-    crs_application_free(app);
-    return CORK_HASH_TABLE_MAP_DELETE;
-}
-
 CORK_LOCAL void
 crs_node_free(struct crs_node *node)
 {
@@ -160,8 +154,7 @@ crs_node_free(struct crs_node *node)
     struct crs_node_ref  *next;
     clog_debug("[%s] Free node", (char *) node->address_str.buf);
     crs_ctx_remove_node(node->ctx, node);
-    cork_hash_table_map(&node->applications, free_application, NULL);
-    cork_hash_table_done(&node->applications);
+    cork_hash_table_free(node->applications);
     crs_node_ref_free(node->ref);
     for (curr = node->refs; curr != NULL; curr = next) {
         next = curr->next;
@@ -336,14 +329,13 @@ crs_node_add_application(struct crs_node *node, struct crs_application *app)
     bool  is_new;
     struct cork_hash_table_entry  *entry =
         cork_hash_table_get_or_create
-        (&node->applications, (void *) (uintptr_t) app->id, &is_new);
+        (node->applications, (void *) (uintptr_t) app->id, &is_new);
 
     if (is_new) {
         entry->value = app;
         return 0;
     } else {
-        crs_duplicate_application
-            ("Already have an application for 0x%08" PRIx32, app->id);
+        cork_redefined("Already have an application for 0x%08" PRIx32, app->id);
         crs_application_free(app);
         return -1;
     }
@@ -353,9 +345,9 @@ static struct crs_application *
 crs_node_get_application(struct crs_node *node, crs_application_id id)
 {
     struct crs_application  *result =
-        cork_hash_table_get(&node->applications, (void *) (uintptr_t) id);
+        cork_hash_table_get(node->applications, (void *) (uintptr_t) id);
     if (CORK_UNLIKELY(result == NULL)) {
-        crs_unknown_application("No application for 0x%08" PRIx32, id);
+        cork_undefined("No application for 0x%08" PRIx32, id);
     }
     return result;
 }

@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2012-2013, RedJack, LLC.
+ * Copyright © 2012-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -65,7 +65,7 @@ struct crs_node {
     struct crs_node_address  address;
     struct crs_routing_table  *routing_table;
     struct crs_leaf_set  *leaf_set;
-    struct cork_hash_table  applications;
+    struct cork_hash_table  *applications;
     struct crs_node_ref  *ref;  /* A reference to the this node */
     struct crs_node_ref  *refs;  /* Other references this node has created */
     struct crs_node  *next;  /* A linked list of the nodes in ctx */
