@@ -1,0 +1,208 @@
+.TH "crs_id" "3" "2013-06-01" "Croissant" "Croissant\ documentation"
+.SH NAME
+.PP
+crs_id \[en] Pastry node identifiers
+.SH SYNOPSIS
+.PP
+\f[B]#include <croissant.h>\f[]
+.PP
+typedef uint128_t \f[B]crs_id\f[];
+.PP
+#define \f[B]CRS_ID_BIT_LENGTH\f[] 128
+.PD 0
+.P
+.PD
+#define \f[B]CRS_ID_BYTE_LENGTH\f[] 16
+.PD 0
+.P
+.PD
+#define \f[B]CRS_ID_NYBBLE_LENGTH\f[] 32
+.PP
+uint8_t
+.PD 0
+.P
+.PD
+\f[B]crs_id_get_nybble\f[](const crs_id \f[I]id\f[], unsigned int
+\f[I]index\f[]);
+.PP
+bool
+.PD 0
+.P
+.PD
+\f[B]crs_id_equals\f[](const crs_id \f[I]a\f[], const crs_id
+\f[I]b\f[]);
+.PP
+bool
+.PD 0
+.P
+.PD
+\f[B]crs_id_is_cw\f[](const crs_id \f[I]a\f[], const crs_id \f[I]b\f[]);
+.PP
+bool
+.PD 0
+.P
+.PD
+\f[B]crs_id_is_ccw\f[](const crs_id \f[I]a\f[], const crs_id
+\f[I]b\f[]);
+.PP
+bool
+.PD 0
+.P
+.PD
+\f[B]crs_id_is_between\f[](const crs_id \f[I]a\f[], const crs_id
+\f[I]lo\f[], const crs_id \f[I]hi\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_id_get_msdd\f[](const crs_id \f[I]a\f[], const crs_id
+\f[I]b\f[]);
+.PP
+cork_u128
+.PD 0
+.P
+.PD
+\f[B]crs_id_distance_between\f[](const crs_id \f[I]a\f[], const crs_id
+\f[I]b\f[]);
+.PP
+cork_u128
+.PD 0
+.P
+.PD
+\f[B]crs_id_cw_distance_between\f[](const crs_id \f[I]a\f[], const
+crs_id \f[I]b\f[]);
+.PP
+#define \f[B]CRS_ID_STRING_LENGTH\f[]
+.PP
+const char *
+.PD 0
+.P
+.PD
+\f[B]crs_id_to_raw_string\f[](char *\f[I]dest\f[], const crs_id
+\f[I]id\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_id_print\f[](struct cork_buffer *\f[I]dest\f[], const crs_id
+\f[I]id\f[]);
+.PP
+crs_id
+.PD 0
+.P
+.PD
+\f[B]crs_id_init\f[](const char *\f[I]str\f[]);
+.SH DESCRIPTION
+.PP
+Croissant uses 128\-bit integers to identify entities on a Pastry
+overlay network.
+Every node on the overlay network has its own 128\-bit ID, as do many
+application\-level objects.
+(This lets you easily see which overlay network node \[lq]owns\[rq] or
+\[lq]is responsible for\[rq] an application object by sending a Pastry
+message to the application object's ID; the overlay network node that
+receives the message will be the one with the ID closest to the
+application object's ID, and by convention, that node is the owner of
+the object.)
+.PP
+In Croissant, all Pastry identifiers are exactly 128 bits in length.
+(This differs from some of the Pastry papers, which use 160\-bit
+identifiers, but matches most existing Pastry implementations.) This is
+a compile\-time constraint, and is not overridable.
+\f[B]CRS_ID_BIT_LENGTH\f[], \f[B]CRS_ID_BYTE_LENGTH\f[], and
+\f[B]CRS_ID_NYBBLE_LENGTH\f[] are compile\-time constants giving you the
+size of a Pastry identifier in various units.
+(This lets you avoid magic numbers in your code.)
+.PP
+\f[B]crs_id\f[] is the C type that we use to represent Pastry
+identifiers.
+We guarantee that this is a valid C \f[C]typedef\f[], which you can pass
+around efficiently by value.
+The actual type that we use under the covers varies by platform.
+In particular, you cannot assume that it's a \f[C]struct\f[], and you
+cannot assume it's some primitive integer type.
+That means, in particular, that you can't use any of the comparison or
+arithmetic operators on \f[B]crs_id\f[] instances; you must always use
+the functions in the public API to work with them.
+.PP
+\f[B]crs_id_get_nybble\f[]() extracts a particular 4\-bit nybble from a
+Pastry identifier.
+Nybbles are counted in big\-endian order.
+.PP
+There are several functions for comparing two Pastry identifiers.
+\f[B]crs_id_equals\f[]() is analogous to the \f[C]==\f[] operator; it
+returns \f[C]true\f[] if two identifiers are equal.
+Pastry identifiers form a ring, so there isn't a simple notion of
+\[lq]greater than\[rq] or \[lq]less than\[rq]; instead, identifiers are
+\[lq]clockwise\[rq] or \[lq]counterclockwise\[rq] of each other.
+The \f[B]crs_id_is_cw\f[]() and \f[B]crs_id_is_ccw\f[]() perform these
+comparisons.
+An identifier is clockwise of itself, but not counterclockwise of
+itself.
+By convention, the clockwise direction is analogous to \[lq]greater
+than\[rq] for a simple number line, and counterclockwise is analogous to
+\[lq]less than\[rq].
+So the following identities should hold:
+.IP
+.nf
+\f[C]
+cork_id_equals(0,\ 0)
+!cork_id_equals(0,\ 1)
+cork_id_is_cw(0,\ 0)
+cork_id_is_cw(1,\ 0)
+!cork_id_is_ccw(0,\ 0)
+cork_id_is_ccw(0,\ 1)
+\f[]
+.fi
+.PP
+You can also check whether one Pastry identifier is \[lq]between\[rq]
+two others, using \f[B]crs_id_is_between\f[]().
+\f[I]a\f[] is considered between \f[I]lo\f[] and \f[I]hi\f[] if you pass
+through \f[I]a\f[] as you travel from \f[I]lo\f[] to \f[I]hi\f[], in the
+clockwise direction.
+(This makes it the analogue of \f[C]lo\ ≤\ a\ ≤\ hi\f[] on the number
+line.)
+.PP
+\f[B]crs_id_get_msdd\f[]() returns the \[lq]most significant different
+digit\[rq].
+It compares each corresponding nybble in two Pastry identifiers, and
+returns the index of the first nybbles that are different.
+If the two identifiers are equal, it returns \f[C]\-1\f[].
+.PP
+There are two ways to calculate the distance between two Pastry
+identifiers.
+\f[B]crs_id_distance_between\f[]() returns the shortest distance between
+\f[I]a\f[] and \f[I]b\f[], whereas \f[B]crs_id_cw_distance_between\f[]()
+returns the distance you travel going from \f[I]a\f[] to \f[I]b\f[] in
+the clockwise direction.
+In both cases, the result is a \f[B]cork_u128\f[](3) 128\-bit integer.
+.PP
+The human\-readable rendering of a Pastry identifier is a 32\-digit
+hexadecimal string.
+\f[B]crs_id_to_raw_string\f[]() and \f[B]crs_id_print\f[]() produce the
+human\-readable representation of a \f[B]crs_id\f[].
+\f[B]crs_id_to_raw_string\f[]() renders the string into a \f[C]char\f[]
+buffer that you've allocated yourself.
+You must ensure that this buffer holds at least
+\f[C]CRS_ID_STRING_LENGTH\f[] bytes.
+\f[B]crs_id_print\f[]() renders the string into a
+\f[B]cork_buffer\f[](3).
+.PP
+\f[B]crs_id_init\f[]() parses the string representation of a Pastry
+identifier, and returns the result as a \f[B]crs_id\f[].
+If the string that you pass in is invalid, we set a
+\f[B]CRS_PARSE_ERROR\f[] error condition.
+You must use \f[B]cork_error_occurred\f[](3) to check for this
+condition, since there isn't any special \f[B]crs_id\f[] value that we
+can return to signal an error.
+.SH RETURN VALUE
+.PP
+The result of \f[B]crs_id_init\f[]() is undefined if you pass in a
+string that doesn't contain the valid string representation of some
+Pastry identifier.
+In this case, we set a \f[B]CRS_PARSE_ERROR\f[] error condition.
+You must use \f[B]cork_error_occurred\f[](3) to check for this
+condition, since there isn't any special \f[B]crs_id\f[] value that we
+can return to signal an error.

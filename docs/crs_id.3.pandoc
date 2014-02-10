@@ -1,0 +1,136 @@
+% crs_id(3)
+
+# NAME
+
+crs_id -- Pastry node identifiers
+
+# SYNOPSIS
+
+| **#include &lt;croissant.h&gt;**
+|
+| typedef uint128_t  **crs_id**;
+|
+| #define **CRS_ID_BIT_LENGTH**  128
+| #define **CRS_ID_BYTE_LENGTH**  16
+| #define **CRS_ID_NYBBLE_LENGTH**  32
+|
+| uint8_t
+| **crs_id_get_nybble**(const crs_id *id*, unsigned int *index*);
+|
+| bool
+| **crs_id_equals**(const crs_id *a*, const crs_id *b*);
+|
+| bool
+| **crs_id_is_cw**(const crs_id *a*, const crs_id *b*);
+|
+| bool
+| **crs_id_is_ccw**(const crs_id *a*, const crs_id *b*);
+|
+| bool
+| **crs_id_is_between**(const crs_id *a*, const crs_id *lo*, const crs_id *hi*);
+|
+| int
+| **crs_id_get_msdd**(const crs_id *a*, const crs_id *b*);
+|
+| cork_u128
+| **crs_id_distance_between**(const crs_id *a*, const crs_id *b*);
+|
+| cork_u128
+| **crs_id_cw_distance_between**(const crs_id *a*, const crs_id *b*);
+|
+| #define **CRS_ID_STRING_LENGTH**
+|
+| const char \*
+| **crs_id_to_raw_string**(char \**dest*, const crs_id *id*);
+|
+| void
+| **crs_id_print**(struct cork_buffer \**dest*, const crs_id *id*);
+|
+| crs_id
+| **crs_id_init**(const char \**str*);
+
+
+# DESCRIPTION
+
+Croissant uses 128-bit integers to identify entities on a Pastry overlay
+network.  Every node on the overlay network has its own 128-bit ID, as do many
+application-level objects.  (This lets you easily see which overlay network node
+"owns" or "is responsible for" an application object by sending a Pastry message
+to the application object's ID; the overlay network node that receives the
+message will be the one with the ID closest to the application object's ID, and
+by convention, that node is the owner of the object.)
+
+In Croissant, all Pastry identifiers are exactly 128 bits in length.  (This
+differs from some of the Pastry papers, which use 160-bit identifiers, but
+matches most existing Pastry implementations.)  This is a compile-time
+constraint, and is not overridable.  **CRS_ID_BIT_LENGTH**,
+**CRS_ID_BYTE_LENGTH**, and **CRS_ID_NYBBLE_LENGTH** are compile-time constants
+giving you the size of a Pastry identifier in various units.  (This lets you
+avoid magic numbers in your code.)
+
+**crs_id** is the C type that we use to represent Pastry identifiers.  We
+guarantee that this is a valid C `typedef`, which you can pass around
+efficiently by value.  The actual type that we use under the covers varies by
+platform.  In particular, you cannot assume that it's a `struct`, and you cannot
+assume it's some primitive integer type.  That means, in particular, that you
+can't use any of the comparison or arithmetic operators on **crs_id** instances;
+you must always use the functions in the public API to work with them.
+
+**crs_id_get_nybble**() extracts a particular 4-bit nybble from a Pastry
+identifier.  Nybbles are counted in big-endian order.
+
+There are several functions for comparing two Pastry identifiers.
+**crs_id_equals**() is analogous to the `==` operator; it returns `true` if two
+identifiers are equal.  Pastry identifiers form a ring, so there isn't a simple
+notion of "greater than" or "less than"; instead, identifiers are "clockwise" or
+"counterclockwise" of each other.  The **crs_id_is_cw**() and
+**crs_id_is_ccw**() perform these comparisons.  An identifier is clockwise of
+itself, but not counterclockwise of itself.  By convention, the clockwise
+direction is analogous to "greater than" for a simple number line, and
+counterclockwise is analogous to "less than".  So the following identities
+should hold:
+
+    cork_id_equals(0, 0)
+    !cork_id_equals(0, 1)
+    cork_id_is_cw(0, 0)
+    cork_id_is_cw(1, 0)
+    !cork_id_is_ccw(0, 0)
+    cork_id_is_ccw(0, 1)
+
+You can also check whether one Pastry identifier is "between" two others, using
+**crs_id_is_between**().  *a* is considered between *lo* and *hi* if you pass
+through *a* as you travel from *lo* to *hi*, in the clockwise direction.  (This
+makes it the analogue of `lo ≤ a ≤ hi` on the number line.)
+
+**crs_id_get_msdd**() returns the "most significant different digit".  It
+compares each corresponding nybble in two Pastry identifiers, and returns the
+index of the first nybbles that are different.  If the two identifiers are
+equal, it returns `-1`.
+
+There are two ways to calculate the distance between two Pastry identifiers.
+**crs_id_distance_between**() returns the shortest distance between *a* and *b*,
+whereas **crs_id_cw_distance_between**() returns the distance you travel going
+from *a* to *b* in the clockwise direction.  In both cases, the result is a
+**cork_u128**(3) 128-bit integer.
+
+The human-readable rendering of a Pastry identifier is a 32-digit hexadecimal
+string.  **crs_id_to_raw_string**() and **crs_id_print**() produce the
+human-readable representation of a **crs_id**.  **crs_id_to_raw_string**()
+renders the string into a `char` buffer that you've allocated yourself.  You
+must ensure that this buffer holds at least `CRS_ID_STRING_LENGTH` bytes.
+**crs_id_print**() renders the string into a **cork_buffer**(3).
+
+**crs_id_init**() parses the string representation of a Pastry identifier, and
+returns the result as a **crs_id**.  If the string that you pass in is invalid,
+we set a **CRS_PARSE_ERROR** error condition.  You must use
+**cork_error_occurred**(3) to check for this condition, since there isn't any
+special **crs_id** value that we can return to signal an error.
+
+
+# RETURN VALUE
+
+The result of **crs_id_init**() is undefined if you pass in a string that
+doesn't contain the valid string representation of some Pastry identifier.  In
+this case, we set a **CRS_PARSE_ERROR** error condition.  You must use
+**cork_error_occurred**(3) to check for this condition, since there isn't any
+special **crs_id** value that we can return to signal an error.

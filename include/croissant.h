@@ -36,6 +36,7 @@
  */
 
 #define CRS_ID_BIT_LENGTH  128
+#define CRS_ID_BYTE_LENGTH  (CRS_ID_BIT_LENGTH / 8)
 #define CRS_ID_NYBBLE_LENGTH  (CRS_ID_BIT_LENGTH / 4)
 
 typedef struct {

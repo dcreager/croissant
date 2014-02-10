@@ -80,6 +80,6 @@ void
 crs_id_print(struct cork_buffer *dest, crs_id id)
 {
     char  str[CRS_ID_STRING_LENGTH];
-    crs_id_to_raw_string(str, id);
+    cork_u128_to_padded_hex(str, id.u128);
     cork_buffer_append_string(dest, str);
 }
