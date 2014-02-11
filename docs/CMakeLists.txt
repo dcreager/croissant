@@ -19,6 +19,9 @@ set(MAN_FOOTER "Croissant")
 
 set(MAN_PAGES
     crs_id.3
+    crs_message.3
+    crs_message_decode.3
+    crs_message_encode.3
 )
 
 #-----------------------------------------------------------------------

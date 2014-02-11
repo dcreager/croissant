@@ -46,8 +46,18 @@ crs_id -- Pastry node identifiers
 | void
 | **crs_id_print**(struct cork_buffer \**dest*, const crs_id *id*);
 |
+| void
+| **crs_id_fprint**(FILE \**out*, const crs_id *id*);
+|
 | crs_id
 | **crs_id_init**(const char \**str*);
+|
+| int
+| **crs_id_decode**(struct crs_message \**msg*, crs_id \**dest*,
+|               const char \*field_name);
+|
+| void
+| **crs_id_encode**(struct crs_message \**msg*, crs_id *id*);
 
 
 # DESCRIPTION
@@ -114,11 +124,13 @@ from *a* to *b* in the clockwise direction.  In both cases, the result is a
 **cork_u128**(3) 128-bit integer.
 
 The human-readable rendering of a Pastry identifier is a 32-digit hexadecimal
-string.  **crs_id_to_raw_string**() and **crs_id_print**() produce the
-human-readable representation of a **crs_id**.  **crs_id_to_raw_string**()
-renders the string into a `char` buffer that you've allocated yourself.  You
-must ensure that this buffer holds at least `CRS_ID_STRING_LENGTH` bytes.
-**crs_id_print**() renders the string into a **cork_buffer**(3).
+string.  **crs_id_to_raw_string**(), **crs_id_print**(), and **crs_id_fprint**()
+produce the human-readable representation of a **crs_id**.
+**crs_id_to_raw_string**() renders the string into a `char` buffer that you've
+allocated yourself.  You must ensure that this buffer holds at least
+`CRS_ID_STRING_LENGTH` bytes.  **crs_id_print**() renders the string into a
+**cork_buffer**(3).  **crs_id_fprint**() renders the string in the given C
+stream.
 
 **crs_id_init**() parses the string representation of a Pastry identifier, and
 returns the result as a **crs_id**.  If the string that you pass in is invalid,
@@ -126,11 +138,17 @@ we set a **CRS_PARSE_ERROR** error condition.  You must use
 **cork_error_occurred**(3) to check for this condition, since there isn't any
 special **crs_id** value that we can return to signal an error.
 
+**crs_id_decode**() and **crs_id_encode**() let you include Pastry identifiers
+in any messages that you send across the overlay network.  **crs_id_decode**()
+reads a Pastry identifier from the message, raising a **CRS_PARSE_ERROR**(3)
+error if there isn't enough space to read a full identifier.
+**crs_id_encode**() writes a Pastry identifier into a message.
 
-# RETURN VALUE
+
+# RETURN VALUES
 
 The result of **crs_id_init**() is undefined if you pass in a string that
 doesn't contain the valid string representation of some Pastry identifier.  In
-this case, we set a **CRS_PARSE_ERROR** error condition.  You must use
+this case, we set a **CRS_PARSE_ERROR**(3) error condition.  You must use
 **cork_error_occurred**(3) to check for this condition, since there isn't any
 special **crs_id** value that we can return to signal an error.

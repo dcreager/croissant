@@ -17,8 +17,8 @@
 #include "croissant/application.h"
 #include "croissant/context.h"
 #include "croissant/local.h"
+#include "croissant/message.h"
 #include "croissant/node.h"
-#include "croissant/parse.h"
 #include "croissant/tests.h"
 
 #define CLOG_CHANNEL  "croissant:node"
@@ -78,14 +78,13 @@ crs_node_address_free(const struct crs_node_address *address)
 }
 
 const struct crs_node_address *
-crs_node_address_decode(const void *message, size_t message_length)
+crs_node_address_decode(struct crs_message *msg, const char *field_name)
 {
     crs_node_type_id  type;
-    rpi_check(crs_ensure_size(message_length, sizeof(uint32_t), "node type"));
-    type = crs_decode_uint32(&message, &message_length);
+    rpi_check(crs_message_decode_uint32(msg, &type, field_name));
     switch (type) {
         case CRS_NODE_TYPE_ID_LOCAL:
-            return crs_local_node_address_decode(message, message_length);
+            return crs_local_node_address_decode(msg);
 
         default:
             crs_parse_error("Unknown node type 0x%08" PRIx32, type);
@@ -94,13 +93,13 @@ crs_node_address_decode(const void *message, size_t message_length)
 }
 
 void
-crs_node_address_encode(const struct crs_node_address *address,
-                        struct cork_buffer *dest)
+crs_node_address_encode(struct crs_message *msg,
+                        const struct crs_node_address *address)
 {
-    crs_encode_uint32(dest, crs_node_id_for_type(address->type));
+    crs_message_encode_uint32(msg, crs_node_id_for_type(address->type));
     switch (address->type) {
         case CRS_NODE_TYPE_LOCAL:
-            crs_local_node_address_encode(address, dest);
+            crs_local_node_address_encode(msg, address);
             return;
 
         default:
@@ -287,35 +286,53 @@ crs_node_get_next_hop(struct crs_node *node, crs_id key)
     return CRS_NODE_REF_SELF;
 }
 
+struct crs_message *
+crs_node_new_message(struct crs_node *node)
+{
+    return crs_message_new();
+}
+
+void
+crs_node_free_message(struct crs_node *node, struct crs_message *msg)
+{
+    crs_message_free(msg);
+}
+
 int
 crs_node_route_message(struct crs_node *node, crs_id src, crs_id dest,
-                       const void *message, size_t message_length)
+                       struct crs_message *msg)
 {
     struct crs_node_ref  *next_hop;
-    rip_check(next_hop = crs_node_get_next_hop(node, dest));
+    ep_check(next_hop = crs_node_get_next_hop(node, dest));
     if (next_hop == CRS_NODE_REF_SELF) {
+        int  rc;
         char  dest_str[CRS_ID_STRING_LENGTH];
         clog_debug("[%s] Delivering %s locally",
                    (char *) node->address_str.buf,
                    crs_id_to_raw_string(dest_str, dest));
-        return crs_node_process_message
-            (node, src, dest, message, message_length);
+        crs_message_start_reading(msg);
+        rc = crs_node_process_message(node, src, dest, msg);
+        crs_message_free(msg);
+        return rc;
     } else {
         char  dest_str[CRS_ID_STRING_LENGTH];
         clog_debug("[%s] Sending %s to %s",
                    (char *) node->address_str.buf,
                    crs_id_to_raw_string(dest_str, dest),
                    crs_node_ref_get_address_str(next_hop));
-        return crs_node_ref_send(next_hop, src, dest, message, message_length);
+        return crs_node_ref_send(next_hop, src, dest, msg);
     }
+
+error:
+    crs_message_free(msg);
+    return -1;
 }
 
 int
 crs_node_send_message(struct crs_node *node, crs_id dest,
-                      const void *message, size_t message_length)
+                      struct crs_message *msg)
 {
-    return crs_node_route_message
-        (node, node->id, dest, message, message_length);
+    return crs_node_route_message(node, node->id, dest, msg);
 }
 
 
@@ -354,16 +371,13 @@ crs_node_get_application(struct crs_node *node, crs_application_id id)
 
 CORK_LOCAL int
 crs_node_process_message(struct crs_node *node, crs_id src, crs_id dest,
-                         const void *message, size_t message_length)
+                         struct crs_message *msg)
 {
     crs_application_id  id;
     struct crs_application  *app;
-    rii_check(crs_ensure_size
-              (message_length, sizeof(uint32_t), "application ID"));
-    id = crs_decode_uint32(&message, &message_length);
+    rii_check(crs_message_decode_uint32(msg, &id, "application ID"));
     rip_check(app = crs_node_get_application(node, id));
-    return crs_application_process
-        (app, node, src, dest, message, message_length);
+    return crs_application_process(app, node, src, dest, msg);
 }
 
 

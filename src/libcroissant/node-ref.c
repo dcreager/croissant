@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -27,7 +27,7 @@ crs_node_ref_new_priv(struct crs_node *owner, crs_id node_id,
                       crs_proximity proximity,
                       struct crs_node *local_node,
                       void *user_data, cork_free_f free_user_data,
-                      crs_node_ref_send_f send)
+                      crs_node_ref_send_f *send)
 {
     struct crs_node_ref  *ref = cork_new(struct crs_node_ref);
     ref->owner = owner;
@@ -114,14 +114,13 @@ crs_node_ref_set_proximity(struct crs_node_ref *ref, crs_proximity proximity)
 
 int
 crs_node_ref_send(struct crs_node_ref *ref, crs_id src, crs_id dest,
-                  const void *message, size_t message_length)
+                  struct crs_message *msg)
 {
     /* If the node in question is in the current process, just sent the message
      * directly. */
-    if (ref->local_node != NULL) {
-        return crs_node_route_message
-            (ref->local_node, src, dest, message, message_length);
+    if (ref->local_node == NULL) {
+        return ref->send(ref, src, dest, msg);
     } else {
-        return ref->send(ref, src, dest, message, message_length);
+        return crs_node_route_message(ref->local_node, src, dest, msg);
     }
 }

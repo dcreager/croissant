@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -40,7 +40,7 @@ crs_save_message_application_new(crs_application_id id,
 /* Creates an application that prints each message received stdout.  This
  * is mainly used in test cases. */
 struct crs_application *
-crs_print_message_application_new(void);
+crs_print_message_application_new(FILE *out);
 
 int
 crs_send_print_message(struct crs_node *node, crs_id dest, const char *message);

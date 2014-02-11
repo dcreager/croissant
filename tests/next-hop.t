@@ -39,12 +39,15 @@ Test our next-hop routing logic.
   [local:1] Sending 04000000000000000000000000000000 to local:2
   [local:2] Next hop for 04000000000000000000000000000000 is self (leaf set)
   [local:2] Delivering 04000000000000000000000000000000 locally
+  [local:2] Received 04000000000000000000000000000000 hello
   [local:1] Next hop for 06000000000000000000000000000000 is 08000000000000000000000000000000 (leaf set)
   [local:1] Sending 06000000000000000000000000000000 to local:3
   [local:3] Next hop for 06000000000000000000000000000000 is self (last resort)
   [local:3] Delivering 06000000000000000000000000000000 locally
+  [local:3] Received 06000000000000000000000000000000 world
   [local:1] Next hop for 02000000000000000000000000000000 is self (leaf set)
   [local:1] Delivering 02000000000000000000000000000000 locally
+  [local:1] Received 02000000000000000000000000000000 goodbye
   [local:3] Free node
   [local:2] Free node
   [local:1] Free node
@@ -66,9 +69,6 @@ Test our next-hop routing logic.
   Next hop from 01000000000000000000000000000000
              to 0a0000000000000000000000000a0000
              is 04000000000000000000000000000000
-  [local:2] Received 04000000000000000000000000000000 hello
-  [local:3] Received 06000000000000000000000000000000 world
-  [local:1] Received 02000000000000000000000000000000 goodbye
 
   $ CLOG=DEBUG croissant test <<EOF
   > new node 0123456789abcdef0123456789abcdef;
@@ -115,12 +115,15 @@ Test our next-hop routing logic.
   [local:1] Sending 01000000000000000000000000000000 to local:3
   [local:3] Next hop for 01000000000000000000000000000000 is self (leaf set)
   [local:3] Delivering 01000000000000000000000000000000 locally
+  [local:3] Received 01000000000000000000000000000000 hello
   [local:1] Next hop for 02000000000000000000000000000000 is self (last resort)
   [local:1] Delivering 02000000000000000000000000000000 locally
+  [local:1] Received 02000000000000000000000000000000 world
   [local:1] Next hop for f0000000000000000000000000000000 is 00000000000000000000000000000000 (routing table fallback)
   [local:1] Sending f0000000000000000000000000000000 to local:2
   [local:2] Next hop for f0000000000000000000000000000000 is self (last resort)
   [local:2] Delivering f0000000000000000000000000000000 locally
+  [local:2] Received f0000000000000000000000000000000 goodbye
   [local:3] Free node
   [local:2] Free node
   [local:1] Free node
@@ -151,9 +154,6 @@ Test our next-hop routing logic.
   Next hop from 0123456789abcdef0123456789abcdef
              to f0000000000000000000000000000000
              is 00000000000000000000000000000000
-  [local:3] Received 01000000000000000000000000000000 hello
-  [local:1] Received 02000000000000000000000000000000 world
-  [local:2] Received f0000000000000000000000000000000 goodbye
 
   $ CLOG=DEBUG croissant test <<EOF
   > new node 0123456789abcdef0123456789abcdef;
@@ -299,7 +299,7 @@ Test our next-hop routing logic.
   [local:2] Sending 01110000000000000000000000000000 to local:3
   [local:3] Next hop for 01110000000000000000000000000000 is self (leaf set)
   [local:3] Delivering 01110000000000000000000000000000 locally
+  [local:3] Received 01110000000000000000000000000000 hello
   [local:3] Free node
   [local:2] Free node
   [local:1] Free node
-  [local:3] Received 01110000000000000000000000000000 hello

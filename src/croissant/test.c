@@ -2,7 +2,7 @@
 #line 1 "croissant/test.c.rl"
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -74,7 +74,7 @@ tr43:
 	{
                 struct crs_application  *printer;
                 rip_check(node = crs_node_new(ctx, id1, NULL));
-                printer = crs_print_message_application_new();
+                printer = crs_print_message_application_new(stderr);
                 rii_check(crs_node_add_application(node, printer));
             }
 	goto st517;
@@ -605,7 +605,7 @@ tr42:
 	{
                 struct crs_application  *printer;
                 rip_check(node = crs_node_new(ctx, id1, NULL));
-                printer = crs_print_message_application_new();
+                printer = crs_print_message_application_new(stderr);
                 rii_check(crs_node_add_application(node, printer));
             }
 	goto st42;

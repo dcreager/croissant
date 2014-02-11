@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -15,7 +15,6 @@
 #include "croissant.h"
 #include "croissant/local.h"
 #include "croissant/node.h"
-#include "croissant/parse.h"
 
 
 /*-----------------------------------------------------------------------
@@ -32,20 +31,18 @@ crs_local_node_address_new(crs_local_node_id id)
 }
 
 CORK_LOCAL struct crs_node_address *
-crs_local_node_address_decode(const void *message, size_t message_length)
+crs_local_node_address_decode(struct crs_message *msg)
 {
     crs_local_node_id  id;
-    rpi_check(crs_ensure_size
-              (message_length, sizeof(uint32_t), "local node ID"));
-    id = crs_decode_uint32(&message, &message_length);
+    rpi_check(crs_message_decode_uint32(msg, &id, "local node ID"));
     return crs_local_node_address_new(id);
 }
 
 CORK_LOCAL void
-crs_local_node_address_encode(const struct crs_node_address *address,
-                              struct cork_buffer *dest)
+crs_local_node_address_encode(struct crs_message *msg,
+                              const struct crs_node_address *address)
 {
-    crs_encode_uint32(dest, address->local_id);
+    crs_message_encode_uint32(msg, address->local_id);
 }
 
 CORK_LOCAL void
@@ -60,9 +57,11 @@ crs_local_node_print(struct cork_buffer *dest,
  * Local node references
  */
 
+static crs_node_ref_send_f  crs_local_node_ref__send;
+
 static int
 crs_local_node_ref__send(struct crs_node_ref *ref, crs_id src, crs_id dest,
-                         const void *message, size_t message_length)
+                         struct crs_message *msg)
 {
     /* We should never actually call the `send` method for a local node; the
      * `crs_node_ref_send` method should have noticed that the node was local to

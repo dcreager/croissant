@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -22,13 +22,19 @@
  * Saving messages into a buffer
  */
 
+static crs_application_process_f  crs_save_message__callback;
+
 static int
 crs_save_message__callback(void *user_data, struct crs_node *node,
                            crs_id src, crs_id dest,
-                           const void *message, size_t message_length)
+                           struct crs_message *msg)
 {
     struct cork_buffer  *buf = user_data;
-    cork_buffer_set(buf, message, message_length);
+    uint32_t  size;
+    rii_check(crs_message_decode_uint32(msg, &size, "message size"));
+    cork_buffer_ensure_size(buf, size);
+    rii_check(crs_message_decode_bytes(msg, buf->buf, size, "message"));
+    buf->size = size;
     return 0;
 }
 
@@ -44,39 +50,53 @@ crs_save_message_application_new(crs_application_id id,
  * Printing messages
  */
 
+struct crs_print_message {
+    FILE  *out;
+    struct cork_buffer  buf;
+};
+
 static int
 crs_print_message__callback(void *user_data, struct crs_node *node,
                             crs_id src, crs_id dest,
-                            const void *message, size_t message_length)
+                            struct crs_message *msg)
 {
-    struct cork_buffer  *buf = user_data;
-    cork_buffer_printf(buf, "[%s] Received ", crs_node_get_address_str(node));
-    crs_id_print(buf, dest);
-    cork_buffer_append(buf, " ", 1);
-    cork_buffer_append(buf, message, message_length);
-    cork_buffer_append(buf, "\n", 1);
-    fwrite(buf->buf, buf->size, 1, stdout);
+    struct crs_print_message  *self = user_data;
+    cork_buffer_printf
+        (&self->buf, "[%s] Received ", crs_node_get_address_str(node));
+    crs_id_print(&self->buf, dest);
+    cork_buffer_append(&self->buf, " ", 1);
+    rii_check(crs_message_decode_buffer_append(msg, &self->buf, "message"));
+    cork_buffer_append(&self->buf, "\n", 1);
+    fwrite(self->buf.buf, self->buf.size, 1, self->out);
     return 0;
 }
 
-struct crs_application *
-crs_print_message_application_new(void)
+static void
+crs_print_message__free(void *user_data)
 {
-    struct cork_buffer  *dest = cork_buffer_new();
+    struct crs_print_message  *self = user_data;
+    cork_buffer_done(&self->buf);
+    free(self);
+}
+
+struct crs_application *
+crs_print_message_application_new(FILE *out)
+{
+    struct crs_print_message  *self = cork_new(struct crs_print_message);
+    self->out = out;
+    cork_buffer_init(&self->buf);
     return crs_application_new
-        (CRS_PRINT_MESSAGE_ID, dest, (cork_free_f) cork_buffer_free,
+        (CRS_PRINT_MESSAGE_ID,
+         self, crs_print_message__free,
          crs_print_message__callback);
 }
 
 int
 crs_send_print_message(struct crs_node *node, crs_id dest, const char *message)
 {
-    int  rc;
-    struct cork_buffer  buf = CORK_BUFFER_INIT();
-    uint32_t  app_id = CORK_UINT32_HOST_TO_BIG(CRS_PRINT_MESSAGE_ID);
-    cork_buffer_set(&buf, &app_id, sizeof(uint32_t));
-    cork_buffer_append_string(&buf, message);
-    rc = crs_node_send_message(node, dest, buf.buf, buf.size);
-    cork_buffer_done(&buf);
-    return rc;
+    struct crs_message  *msg;
+    msg = crs_node_new_message(node);
+    crs_message_encode_application_id(msg, CRS_PRINT_MESSAGE_ID);
+    crs_message_encode_string(msg, message);
+    return crs_node_send_message(node, dest, msg);
 }

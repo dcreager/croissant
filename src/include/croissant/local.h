@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2012-2013, RedJack, LLC.
+ * Copyright © 2012-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -29,11 +29,11 @@ CORK_LOCAL struct crs_node_address *
 crs_local_node_address_new(crs_local_node_id id);
 
 CORK_LOCAL struct crs_node_address *
-crs_local_node_address_decode(const void *message, size_t message_length);
+crs_local_node_address_decode(struct crs_message *msg);
 
 CORK_LOCAL void
-crs_local_node_address_encode(const struct crs_node_address *address,
-                              struct cork_buffer *dest);
+crs_local_node_address_encode(struct crs_message *msg,
+                              const struct crs_node_address *address);
 
 CORK_LOCAL void
 crs_local_node_print(struct cork_buffer *dest,

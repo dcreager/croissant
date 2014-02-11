@@ -1,0 +1,84 @@
+% crs_message_decode(3)
+
+# NAME
+
+crs_message_decode -- Parsing Pastry messages
+
+# SYNOPSIS
+
+| **#include &lt;croissant.h&gt;**
+|
+| #define **CRS_PARSE_ERROR**
+|
+| int
+| **crs_message_decode_bytes**(struct crs_message \**msg*,
+|                          void \**dest*, size_t *size*,
+|                          const char \**field_name*);
+|
+| int
+| **crs_message_decode_buffer**(struct crs_message \**msg*,
+|                           struct cork_buffer \**dest*,
+|                           const char \**field_name*);
+|
+| int
+| **crs_message_decode_buffer_append**(struct crs_message \**msg*,
+|                                  struct cork_buffer \**dest*,
+|                                  const char \**field_name*);
+|
+| int
+| **crs_message_decode_uint8**(struct crs_message \**msg*, uint8_t \**dest*,
+|                          const char \**field_name*);
+|
+| int
+| **crs_message_decode_uint16**(struct crs_message \**msg*, uint16_t \**dest*,
+|                           const char \**field_name*);
+|
+| int
+| **crs_message_decode_uint32**(struct crs_message \**msg*, uint32_t \**dest*,
+|                           const char \**field_name*);
+|
+| int
+| **crs_message_decode_uint64**(struct crs_message \**msg*, uint64_t \**dest*,
+|                           const char \**field_name*);
+
+
+# DESCRIPTION
+
+When receiviing a message from the Pastry overlay network, you use the
+**crs_message_decode** family of functions to parse the content of the
+message into your internal application data structures.  You can only use these
+functions with read-only messages.
+
+Each read-only message contains a "cursor" into the content of the message.
+(This is very much like the current position when reading from a file.)  Each of
+the decoding functions described below read some data from the current cursor
+location, and advance the cursor past the data that was just read.  In that way,
+you can call these functions one after the other to read each successive field
+from the message content.
+
+In each case, we verify that there is enough data remaining in the message
+content for the kind of field being read.  If not, then the function will set a
+**CRS_PARSE_ERROR** error condition, and return `-1`.  We'll use the
+*field_name* parameter to construct a descriptive error message; this should be
+the human-readable name of the field that you're trying to read.
+
+**crs_message_decode_uint8**(), **crs_message_decode_uint16**(),
+**crs_message_decode_uint32**(), and **crs_message_decode_uint64**() parse a
+single integer value from the message.  To make it easier to produce
+platform-independent message formats, we only provide decoders for the
+fixed-size integer types.  Similarly, we always read the integer in big-endian
+byte order, regardless of the endianness of the host machine.
+
+**crs_message_decode_bytes**() reads a specific amount of binary data from the
+message, copying that content into *dest*.  You specify the size of this
+content; we read exactly that many bytes, and nothing else, from the message.
+
+**crs_message_decode_buffer**() and
+**crs_message_decode_buffer_append**() read an variable amount of binary content
+from the message.  We first read a 32-bit length prefix, which specifies how
+much binary content follows.  We then read that much binary content, placing the
+result into a **cork_buffer**(3).  (This format matches what is produced by
+**crs_message_encode_buffer**(3) and **crs_message_encode_string**(3).)
+**crs_message_decode_buffer**() clears *dest* first, so that the buffer contains
+only the data read from the message.  **crs_message_decode_buffer_append**()
+appends the content to any data that's already in the buffer.
