@@ -348,7 +348,7 @@ struct crs_node_ref *
 crs_node_get_ref(struct crs_node *node);
 
 struct crs_node_ref *
-crs_node_new_ref(struct crs_node *owner, crs_id node_id,
+crs_node_new_ref(struct crs_node *owner,
                  const struct crs_node_address *address);
 
 crs_id

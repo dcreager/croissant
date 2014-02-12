@@ -45,24 +45,14 @@ crs_node_ref_new_priv(struct crs_node *owner, crs_id node_id,
 }
 
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new(struct crs_node *owner, crs_id node_id,
+crs_node_ref_new(struct crs_node *owner,
                  const struct crs_node_address *address)
 {
-    struct crs_node  *local_node;
-
-    /* If the node in question is in the local process, then link the node
-     * reference to the node object. */
-    local_node = crs_ctx_get_node_with_id(owner->ctx, node_id);
-    /* proximity = (local_node == NULL?) CRS_PROXIMITY_UNKNOWN: 0; */
-
-    /* Otherwise use the type of address to determine which type of node
-     * reference to create. */
     switch (address->type) {
         case CRS_NODE_TYPE_LOCAL:
             /* We ignore the proximity value for local nodes; since they're
              * local, we always use a proximity of 0. */
-            return crs_local_node_ref_new(owner, node_id, address, local_node);
-
+            return crs_local_node_ref_new(owner, address);
         default:
             cork_unreachable();
     }

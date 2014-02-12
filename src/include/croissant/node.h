@@ -54,6 +54,9 @@ struct crs_node_address {
     crs_local_node_id  local_id;
 };
 
+CORK_LOCAL struct cork_hash_table *
+crs_node_address_hash_table_new(size_t initial_size, unsigned int flags);
+
 
 /*-----------------------------------------------------------------------
  * Nodes
@@ -67,7 +70,7 @@ struct crs_node {
     struct crs_leaf_set  *leaf_set;
     struct cork_hash_table  *applications;
     struct crs_node_ref  *ref;  /* A reference to the this node */
-    struct crs_node_ref  *refs;  /* Other references this node has created */
+    struct cork_hash_table  *refs;
     struct crs_node  *next;  /* A linked list of the nodes in ctx */
     char  id_str[CRS_ID_STRING_LENGTH];
     struct cork_buffer  address_str;
@@ -98,7 +101,6 @@ struct crs_node_ref {
     void  *user_data;
     cork_free_f  free_user_data;
     crs_node_ref_send_f  *send;
-    struct crs_node_ref  *next;  /* A linked list of references in owner */
     char  id_str[CRS_ID_STRING_LENGTH];
     struct cork_buffer  address_str;
 };
@@ -112,7 +114,7 @@ crs_node_ref_new_priv(struct crs_node *owner, crs_id node_id,
                       crs_node_ref_send_f *send);
 
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new(struct crs_node *owner, crs_id node_id,
+crs_node_ref_new(struct crs_node *owner,
                  const struct crs_node_address *address);
 
 CORK_LOCAL void
