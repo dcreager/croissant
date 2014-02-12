@@ -38,8 +38,7 @@ crs_save_message__receive(void *user_data, struct crs_node *node,
 {
     struct crs_save_message  *self = user_data;
     rii_check(crs_message_decode_buffer(msg, self->dest, "message"));
-    clog_debug("[%s] {save} Received message \"%s\"",
-               crs_node_get_address_str(node), (char *) self->dest->buf);
+    clog_debug("{save} Received message \"%s\"", (char *) self->dest->buf);
     return 0;
 }
 
@@ -93,8 +92,7 @@ crs_print_message__intercept(void *user_data, struct crs_node *node,
 {
     char  src_str[CRS_ID_STRING_LENGTH];
     char  dest_str[CRS_ID_STRING_LENGTH];
-    clog_debug("[%s] {print} Spy on message from %s to %s",
-               crs_node_get_address_str(node),
+    clog_debug("{print} Spy on message from %s to %s",
                crs_id_to_raw_string(src_str, src),
                crs_id_to_raw_string(dest_str, dest));
     return crs_node_ref_forward(next_hop, src, dest, msg);

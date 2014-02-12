@@ -11,6 +11,7 @@
 #ifndef CROISSANT_NODE_H
 #define CROISSANT_NODE_H
 
+#include <clogger.h>
 #include <libcork/core.h>
 #include <libcork/ds.h>
 
@@ -75,10 +76,17 @@ struct crs_node {
     struct crs_node  *next;  /* A linked list of the nodes in ctx */
     char  id_str[CRS_ID_STRING_LENGTH];
     struct cork_buffer  address_str;
+    struct clog_handler  handler;
 };
 
 CORK_LOCAL void
 crs_node_free(struct crs_node *node);
+
+CORK_LOCAL void
+crs_node_activate(struct crs_node *node);
+
+CORK_LOCAL void
+crs_node_deactivate(struct crs_node *node);
 
 
 /*-----------------------------------------------------------------------

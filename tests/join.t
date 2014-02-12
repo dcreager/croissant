@@ -54,8 +54,8 @@ Some tests of creating and joining overlay networks.
   --- create empty network
   --- [000000000000000000000000000000ff]
   --- join network via 0123456789abcdef0123456789abcdef
-  [local:2] Send join request to 0123456789abcdef0123456789abcdef at local:1
-  [local:2] {local} Send message to local:1
+  Send join request to 0123456789abcdef0123456789abcdef at local:1
+  {local} Send message to local:1
   [local:1] Next hop is self (leaf set)
   [local:1] Deliver message to application "crs_maintenance"
   [local:1] {maint} Received join request from 000000000000000000000000000000ff at local:2
@@ -71,8 +71,8 @@ Some tests of creating and joining overlay networks.
   [local:2] {maint} Received partial routing table from 0123456789abcdef0123456789abcdef at local:1
   [local:2] (rtable) [ 1/1] 0123456789abcdef0123456789abcdef (new entry)
   [local:2] (rtable) Decode 0 routing table entries from message
-  [local:1] Send initial leaf set to new node 000000000000000000000000000000ff at local:2
-  [local:1] {local} Send message to local:2
+  [local:2] Send initial leaf set to new node 000000000000000000000000000000ff at local:2
+  [local:2] {local} Send message to local:2
   [local:2] Next hop is self (leaf set)
   [local:2] Deliver message to application "crs_maintenance"
   [local:2] {maint} Received initial leaf set from 0123456789abcdef0123456789abcdef at local:1
@@ -87,8 +87,8 @@ Some tests of creating and joining overlay networks.
   [local:1] (rtable) [ 1/0] 000000000000000000000000000000ff (new entry)
   --- [00000000000000000000000000000100]
   --- join network via 0123456789abcdef0123456789abcdef
-  [local:3] Send join request to 0123456789abcdef0123456789abcdef at local:1
-  [local:3] {local} Send message to local:1
+  [local:1] Send join request to 0123456789abcdef0123456789abcdef at local:1
+  [local:1] {local} Send message to local:1
   [local:1] Next hop is self (leaf set)
   [local:1] Deliver message to application "crs_maintenance"
   [local:1] {maint} Received join request from 00000000000000000000000000000100 at local:3
@@ -104,8 +104,8 @@ Some tests of creating and joining overlay networks.
   [local:3] (rtable) [ 1/1] 0123456789abcdef0123456789abcdef (new entry)
   [local:3] (rtable) Decode 1 routing table entries from message
   [local:3] (rtable) [29/0] 000000000000000000000000000000ff (new entry)
-  [local:1] Forward via local:2
-  [local:1] {local} Send message to local:2
+  [local:3] Forward via local:2
+  [local:3] {local} Send message to local:2
   [local:2] Next hop is self (leaf set)
   [local:2] Deliver message to application "crs_maintenance"
   [local:2] {maint} Received join reply from 0123456789abcdef0123456789abcdef for 00000000000000000000000000000100 at local:3
@@ -117,8 +117,8 @@ Some tests of creating and joining overlay networks.
   [local:3] (rtable) [29/0] 000000000000000000000000000000ff (duplicate)
   [local:3] (rtable) Decode 1 routing table entries from message
   [local:3] (rtable) [ 1/1] 0123456789abcdef0123456789abcdef (duplicate)
-  [local:2] Send initial leaf set to new node 00000000000000000000000000000100 at local:3
-  [local:2] {local} Send message to local:3
+  [local:3] Send initial leaf set to new node 00000000000000000000000000000100 at local:3
+  [local:3] {local} Send message to local:3
   [local:3] Next hop is self (leaf set)
   [local:3] Deliver message to application "crs_maintenance"
   [local:3] {maint} Received initial leaf set from 000000000000000000000000000000ff at local:2
@@ -134,8 +134,8 @@ Some tests of creating and joining overlay networks.
   [local:2] (leafset) [+ 2] Bubble up 0123456789abcdef0123456789abcdef
   [local:2] (leafset) [+ 1] Add 00000000000000000000000000000100
   [local:2] (rtable) [29/1] 00000000000000000000000000000100 (new entry)
-  [local:3] Announce presence to 0123456789abcdef0123456789abcdef at local:1
-  [local:3] {local} Send message to local:1
+  [local:2] Announce presence to 0123456789abcdef0123456789abcdef at local:1
+  [local:2] {local} Send message to local:1
   [local:1] Next hop is self (leaf set)
   [local:1] Deliver message to application "crs_maintenance"
   [local:1] {maint} Received presence announcement from 00000000000000000000000000000100 at local:3
@@ -145,8 +145,8 @@ Some tests of creating and joining overlay networks.
   [local:1] (rtable) [ 1/0] 000000000000000000000000000000ff (closer than 00000000000000000000000000000100)
   --- [00000000000000000000000000000101]
   --- join network via 000000000000000000000000000000ff
-  [local:4] Send join request to 000000000000000000000000000000ff at local:2
-  [local:4] {local} Send message to local:2
+  [local:1] Send join request to 000000000000000000000000000000ff at local:2
+  [local:1] {local} Send message to local:2
   [local:2] Next hop is self (leaf set)
   [local:2] Deliver message to application "crs_maintenance"
   [local:2] {maint} Received join request from 00000000000000000000000000000101 at local:4
@@ -163,8 +163,8 @@ Some tests of creating and joining overlay networks.
   [local:4] (rtable) Decode 2 routing table entries from message
   [local:4] (rtable) [ 1/1] 0123456789abcdef0123456789abcdef (new entry)
   [local:4] (rtable) [31/0] 00000000000000000000000000000100 (new entry)
-  [local:2] Forward via local:3
-  [local:2] {local} Send message to local:3
+  [local:4] Forward via local:3
+  [local:4] {local} Send message to local:3
   [local:3] Next hop is self (leaf set)
   [local:3] Deliver message to application "crs_maintenance"
   [local:3] {maint} Received join reply from 000000000000000000000000000000ff for 00000000000000000000000000000101 at local:4
@@ -177,8 +177,8 @@ Some tests of creating and joining overlay networks.
   [local:4] (rtable) Decode 2 routing table entries from message
   [local:4] (rtable) [ 1/1] 0123456789abcdef0123456789abcdef (duplicate)
   [local:4] (rtable) [29/0] 000000000000000000000000000000ff (duplicate)
-  [local:3] Send initial leaf set to new node 00000000000000000000000000000101 at local:4
-  [local:3] {local} Send message to local:4
+  [local:4] Send initial leaf set to new node 00000000000000000000000000000101 at local:4
+  [local:4] {local} Send message to local:4
   [local:4] Next hop is self (leaf set)
   [local:4] Deliver message to application "crs_maintenance"
   [local:4] {maint} Received initial leaf set from 00000000000000000000000000000100 at local:3
@@ -195,8 +195,8 @@ Some tests of creating and joining overlay networks.
   [local:2] (leafset) [+ 3] Bubble up 0123456789abcdef0123456789abcdef
   [local:2] (leafset) [+ 2] Add 00000000000000000000000000000101
   [local:2] (rtable) [29/1] 00000000000000000000000000000100 (closer than 00000000000000000000000000000101)
-  [local:4] Announce presence to 00000000000000000000000000000100 at local:3
-  [local:4] {local} Send message to local:3
+  [local:2] Announce presence to 00000000000000000000000000000100 at local:3
+  [local:2] {local} Send message to local:3
   [local:3] Next hop is self (leaf set)
   [local:3] Deliver message to application "crs_maintenance"
   [local:3] {maint} Received presence announcement from 00000000000000000000000000000101 at local:4
@@ -204,8 +204,8 @@ Some tests of creating and joining overlay networks.
   [local:3] (leafset) [+ 2] Bubble up 0123456789abcdef0123456789abcdef
   [local:3] (leafset) [+ 1] Add 00000000000000000000000000000101
   [local:3] (rtable) [31/1] 00000000000000000000000000000101 (new entry)
-  [local:4] Announce presence to 0123456789abcdef0123456789abcdef at local:1
-  [local:4] {local} Send message to local:1
+  [local:3] Announce presence to 0123456789abcdef0123456789abcdef at local:1
+  [local:3] {local} Send message to local:1
   [local:1] Next hop is self (leaf set)
   [local:1] Deliver message to application "crs_maintenance"
   [local:1] {maint} Received presence announcement from 00000000000000000000000000000101 at local:4
@@ -272,7 +272,7 @@ Some tests of creating and joining overlay networks.
   [+ 1] 0123456789abcdef0123456789abcdef local:1
   [max] 0123456789abcdef0123456789abcdef
   ---
-  [local:4] Free node
-  [local:3] Free node
-  [local:2] Free node
-  [local:1] Free node
+  [local:4] Free node 00000000000000000000000000000101
+  [local:3] Free node 00000000000000000000000000000100
+  [local:2] Free node 000000000000000000000000000000ff
+  [local:1] Free node 0123456789abcdef0123456789abcdef

@@ -8733,7 +8733,7 @@ execute(int argc, char **argv)
     struct cork_buffer  buf = CORK_BUFFER_INIT();
     struct cork_stream_consumer  *consumer;
 
-    clog_set_default_format("%m");
+    clog_set_default_format("#!{address}{[%v] }%m");
     if (clog_setup_logging() != 0) {
         fprintf(stderr, "%s\n", cork_error_message());
         exit(EXIT_FAILURE);

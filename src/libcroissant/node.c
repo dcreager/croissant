@@ -8,6 +8,8 @@
  * ----------------------------------------------------------------------
  */
 
+#include <assert.h>
+
 #include <clogger.h>
 #include <libcork/core.h>
 #include <libcork/ds.h>
@@ -148,6 +150,27 @@ crs_node_address_hash_table_new(size_t initial_size, unsigned int flags)
  * Nodes
  */
 
+static int
+crs_node__log_annotation(struct clog_handler *log, struct clog_message *msg,
+                         const char *key, const char *value)
+{
+    return CLOG_CONTINUE;
+}
+
+static int
+crs_node__log_message(struct clog_handler *log, struct clog_message *msg)
+{
+    struct crs_node  *node = cork_container_of(log, struct crs_node, handler);
+    rii_check(clog_annotate_message(log, msg, "id", node->id_str));
+    return clog_annotate_message(log, msg, "address", node->address_str.buf);
+}
+
+static void
+crs_node__log_free(struct clog_handler *log)
+{
+    /* Nothing to do */
+}
+
 static struct crs_node *
 crs_node_new_with_id(struct crs_ctx *ctx, crs_id id,
                      const struct crs_node_address *address)
@@ -163,8 +186,12 @@ crs_node_new_with_id(struct crs_ctx *ctx, crs_id id,
     node->address.local_id = crs_ctx_next_node_id(ctx);
     cork_buffer_init(&node->address_str);
     crs_node_address_print(&node->address_str, &node->address);
-    clog_debug("[%s] New node %s", (char *) node->address_str.buf, node->id_str);
     crs_ctx_add_node(ctx, node);
+    node->handler.annotation = crs_node__log_annotation;
+    node->handler.message = crs_node__log_message;
+    node->handler.free = crs_node__log_free;
+    crs_node_activate(node);
+    clog_debug("New node %s", node->id_str);
     node->applications = cork_pointer_hash_table_new(0, 0);
     cork_hash_table_set_free_value
         (node->applications, (cork_free_f) crs_application_free);
@@ -177,6 +204,7 @@ crs_node_new_with_id(struct crs_ctx *ctx, crs_id id,
     node->leaf_set = crs_leaf_set_new(node);
     node->maint = crs_maintenance_new(node);
     crs_maintenance_register(node->maint, node);
+    crs_node_deactivate(node);
     return node;
 }
 
@@ -190,7 +218,9 @@ crs_node_new(struct crs_ctx *ctx, crs_id id,
 CORK_LOCAL void
 crs_node_free(struct crs_node *node)
 {
-    clog_debug("[%s] Free node", (char *) node->address_str.buf);
+    crs_node_activate(node);
+    clog_debug("Free node %s", node->id_str);
+    crs_node_deactivate(node);
     crs_ctx_remove_node(node->ctx, node);
     cork_hash_table_free(node->applications);
     cork_hash_table_free(node->refs);
@@ -271,8 +301,7 @@ crs_node_get_next_hop(struct crs_node *node, crs_id key)
     /* First try the node's leaf set */
     ref = crs_leaf_set_get_closest(node->leaf_set, key);
     if (ref != NULL) {
-        clog_debug("[%s] Next hop is %s (leaf set)",
-                   (char *) node->address_str.buf,
+        clog_debug("Next hop is %s (leaf set)",
                    (ref == CRS_NODE_REF_SELF)? "self":
                        crs_node_ref_get_id_str(ref));
         return ref;
@@ -281,8 +310,7 @@ crs_node_get_next_hop(struct crs_node *node, crs_id key)
     /* Then try the routing table */
     ref = crs_routing_table_get_closest(node->routing_table, key);
     if (ref != NULL) {
-        clog_debug("[%s] Next hop is %s (routing table)",
-                   (char *) node->address_str.buf,
+        clog_debug("Next hop is %s (routing table)",
                    crs_node_ref_get_id_str(ref));
         return ref;
     }
@@ -290,23 +318,20 @@ crs_node_get_next_hop(struct crs_node *node, crs_id key)
     /* Then look for a fallback */
     ref = crs_leaf_set_get_fallback(node->leaf_set, key);
     if (ref != NULL) {
-        clog_debug("[%s] Next hop is %s (leaf set fallback)",
-                   (char *) node->address_str.buf,
+        clog_debug("Next hop is %s (leaf set fallback)",
                    crs_node_ref_get_id_str(ref));
         return ref;
     }
 
     ref = crs_routing_table_get_fallback(node->routing_table, key);
     if (ref != NULL) {
-        clog_debug("[%s] Next hop is %s (routing table fallback)",
-                   (char *) node->address_str.buf,
+        clog_debug("Next hop is %s (routing table fallback)",
                    crs_node_ref_get_id_str(ref));
         return ref;
     }
 
     /* And if none of those worked, deliver to the local node */
-    clog_debug("[%s] Next hop is self (last resort)",
-               (char *) node->address_str.buf);
+    clog_debug("Next hop is self (last resort)");
     return CRS_NODE_REF_SELF;
 }
 
@@ -331,6 +356,7 @@ crs_node_route_message(struct crs_node *node, crs_id src, crs_id dest,
     struct crs_application  *app;
 
     /* Determine the next hop for this message. */
+    crs_node_activate(node);
     ep_check(next_hop = crs_node_get_next_hop(node, dest));
 
     /* Decode the beginning of the message to find out which application is
@@ -343,8 +369,7 @@ crs_node_route_message(struct crs_node *node, crs_id src, crs_id dest,
      * whether this is the final destination. */
     if (next_hop == CRS_NODE_REF_SELF) {
         int  rc;
-        clog_debug("[%s] Deliver message to application \"%s\"",
-                   (char *) node->address_str.buf, app->name);
+        clog_debug("Deliver message to application \"%s\"", app->name);
         rc = crs_application_receive(app, node, src, dest, msg);
         crs_message_free(msg);
         return rc;
@@ -362,10 +387,31 @@ crs_node_send_message(struct crs_node *node, crs_id dest,
                       struct crs_message *msg)
 {
     char  dest_str[CRS_ID_STRING_LENGTH];
-    clog_debug("[%s] Send message to %s",
-               (char *) node->address_str.buf,
-               crs_id_to_raw_string(dest_str, dest));
+    clog_debug("Send message to %s", crs_id_to_raw_string(dest_str, dest));
     return crs_node_route_message(node, node->id, dest, msg);
+}
+
+
+CORK_LOCAL void
+crs_node_activate(struct crs_node *node)
+{
+    struct crs_ctx  *ctx = node->ctx;
+    if (ctx->active != node) {
+        if (ctx->active != NULL) {
+            clog_handler_pop_thread(&ctx->active->handler);
+        }
+        clog_handler_push_thread(&node->handler);
+        ctx->active = node;
+    }
+}
+
+CORK_LOCAL void
+crs_node_deactivate(struct crs_node *node)
+{
+    struct crs_ctx  *ctx = node->ctx;
+    assert(ctx->active == node);
+    clog_handler_pop_thread(&node->handler);
+    ctx->active = NULL;
 }
 
 

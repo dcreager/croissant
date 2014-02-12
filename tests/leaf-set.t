@@ -41,6 +41,6 @@ Some tests of manually updating the contents of a node's leaf set.
   [+ 1] 00000000000000000000000000000101 local:3
   [max] 00000000000000000000000000000101
   ---
-  [local:3] Free node
-  [local:2] Free node
-  [local:1] Free node
+  [local:3] Free node 00000000000000000000000000000101
+  [local:2] Free node 00000000000000000000000000000100
+  [local:1] Free node 000000000000000000000000000000ff

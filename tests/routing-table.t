@@ -24,8 +24,8 @@ Some tests of manually updating the contents of a node's routing table.
   Routing table for 0123456789abcdef0123456789abcdef
   [ 1/0] 00000000000000000000000000000000 local:2
   ---
-  [local:2] Free node
-  [local:1] Free node
+  [local:2] Free node 00000000000000000000000000000000
+  [local:1] Free node 0123456789abcdef0123456789abcdef
 
   $ CLOG=DEBUG croissant test <<EOF
   > new node 0123456789abcdef0123456789abcdef;
@@ -61,9 +61,9 @@ Some tests of manually updating the contents of a node's routing table.
   [ 1/0] 00000000000000000000000000000000 local:2
   [ 2/0] 01000000000000000000000000000000 local:3
   ---
-  [local:3] Free node
-  [local:2] Free node
-  [local:1] Free node
+  [local:3] Free node 01000000000000000000000000000000
+  [local:2] Free node 00000000000000000000000000000000
+  [local:1] Free node 0123456789abcdef0123456789abcdef
 
   $ CLOG=DEBUG croissant test <<EOF
   > new node 0123456789abcdef0123456789abcdef;
@@ -98,6 +98,6 @@ Some tests of manually updating the contents of a node's routing table.
   Routing table for 0123456789abcdef0123456789abcdef
   [ 1/0] 00000000000000000000000000000000 local:2
   ---
-  [local:3] Free node
-  [local:2] Free node
-  [local:1] Free node
+  [local:3] Free node 00200000000000000000000000000000
+  [local:2] Free node 00000000000000000000000000000000
+  [local:1] Free node 0123456789abcdef0123456789abcdef

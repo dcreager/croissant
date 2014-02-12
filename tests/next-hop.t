@@ -84,7 +84,7 @@ Test our next-hop routing logic.
   [local:2] Received 04000000000000000000000000000000 hello
   --- [01000000000000000000000000000000]
   --- send "world" to 06000000000000000000000000000000
-  [local:1] Send message to 06000000000000000000000000000000
+  [local:2] Send message to 06000000000000000000000000000000
   [local:1] Next hop is 08000000000000000000000000000000 (leaf set)
   [local:1] {print} Spy on message from 01000000000000000000000000000000 to 06000000000000000000000000000000
   [local:1] Forward via local:3
@@ -94,14 +94,14 @@ Test our next-hop routing logic.
   [local:3] Received 06000000000000000000000000000000 world
   --- [01000000000000000000000000000000]
   --- send "goodbye" to 02000000000000000000000000000000
-  [local:1] Send message to 02000000000000000000000000000000
+  [local:3] Send message to 02000000000000000000000000000000
   [local:1] Next hop is self (leaf set)
   [local:1] Deliver message to application "crs_print_message"
   [local:1] Received 02000000000000000000000000000000 goodbye
   ---
-  [local:3] Free node
-  [local:2] Free node
-  [local:1] Free node
+  [local:3] Free node 08000000000000000000000000000000
+  [local:2] Free node 04000000000000000000000000000000
+  [local:1] Free node 01000000000000000000000000000000
 
   $ CLOG=DEBUG croissant test <<EOF
   > new node 0123456789abcdef0123456789abcdef;
@@ -208,7 +208,7 @@ Test our next-hop routing logic.
   [local:3] Received 01000000000000000000000000000000 hello
   --- [0123456789abcdef0123456789abcdef]
   --- send "world" to 02000000000000000000000000000000
-  [local:1] Send message to 02000000000000000000000000000000
+  [local:3] Send message to 02000000000000000000000000000000
   [local:1] Next hop is self (last resort)
   [local:1] Deliver message to application "crs_print_message"
   [local:1] Received 02000000000000000000000000000000 world
@@ -223,9 +223,9 @@ Test our next-hop routing logic.
   [local:2] Deliver message to application "crs_print_message"
   [local:2] Received f0000000000000000000000000000000 goodbye
   ---
-  [local:3] Free node
-  [local:2] Free node
-  [local:1] Free node
+  [local:3] Free node 01000000000000000000000000000000
+  [local:2] Free node 00000000000000000000000000000000
+  [local:1] Free node 0123456789abcdef0123456789abcdef
 
   $ CLOG=DEBUG croissant test <<EOF
   > new node 0123456789abcdef0123456789abcdef;
@@ -378,11 +378,11 @@ Test our next-hop routing logic.
              to 0a0000000000000000000000000a0000
              is 04000000000000000000000000000000
   ---
-  [local:5] Free node
-  [local:4] Free node
-  [local:3] Free node
-  [local:2] Free node
-  [local:1] Free node
+  [local:5] Free node 08000000000000000000000000000000
+  [local:4] Free node 04000000000000000000000000000000
+  [local:3] Free node 01000000000000000000000000000000
+  [local:2] Free node 00000000000000000000000000000000
+  [local:1] Free node 0123456789abcdef0123456789abcdef
 
   $ CLOG=DEBUG croissant test <<EOF
   > new node 01000000000000000000000000000000;
@@ -418,7 +418,7 @@ Test our next-hop routing logic.
   [local:2] (leafset) [+ 1] Add 01110000000000000000000000000000
   --- [01000000000000000000000000000000]
   --- send "hello" to 01110000000000000000000000000000
-  [local:1] Send message to 01110000000000000000000000000000
+  [local:2] Send message to 01110000000000000000000000000000
   [local:1] Next hop is 01100000000000000000000000000000 (routing table)
   [local:1] {print} Spy on message from 01000000000000000000000000000000 to 01110000000000000000000000000000
   [local:1] Forward via local:2
@@ -431,6 +431,6 @@ Test our next-hop routing logic.
   [local:3] Deliver message to application "crs_print_message"
   [local:3] Received 01110000000000000000000000000000 hello
   ---
-  [local:3] Free node
-  [local:2] Free node
-  [local:1] Free node
+  [local:3] Free node 01110000000000000000000000000000
+  [local:2] Free node 01100000000000000000000000000000
+  [local:1] Free node 01000000000000000000000000000000

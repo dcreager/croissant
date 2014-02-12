@@ -48,7 +48,8 @@ crs_routing_table_new(struct crs_node *node)
     struct crs_routing_table  *table = cork_new(struct crs_routing_table);
     memset(table, 0, sizeof(struct crs_routing_table));
     table->node = node;
-    clog_debug("[%s] New routing table", crs_node_get_address_str(node));
+    crs_node_activate(node);
+    clog_debug("New routing table");
     return table;
 }
 
@@ -131,30 +132,27 @@ crs_routing_table_set(struct crs_routing_table *table,
     int  r;
     unsigned int  c;
     assert(table->node == ref->owner);
+    crs_node_activate(table->node);
     entry = crs_routing_table_get_entry_for_id(table, ref->id, &r, &c);
     if (entry != NULL) {
         if (entry->ref == NULL) {
-            clog_debug("[%s] (rtable) [%2d/%hx] %s (new entry)",
-                       crs_node_get_address_str(table->node),
+            clog_debug("(rtable) [%2d/%hx] %s (new entry)",
                        r, c, crs_node_ref_get_id_str(ref));
         } else {
             /* If there's already a node reference in this entry, then we should
              * keep the reference that's closer to the local process, according
              * to whichever proximity metric is being used. */
             if (ref == entry->ref || crs_id_equals(ref->id, entry->ref->id)) {
-                clog_debug("[%s] (rtable) [%2d/%x] %s (duplicate)",
-                           crs_node_get_address_str(table->node),
+                clog_debug("(rtable) [%2d/%x] %s (duplicate)",
                            r, c, crs_node_ref_get_id_str(entry->ref));
                 return;
             } else if (entry->ref->proximity <= ref->proximity) {
-                clog_debug("[%s] (rtable) [%2d/%x] %s (closer than %s)",
-                           crs_node_get_address_str(table->node),
+                clog_debug("(rtable) [%2d/%x] %s (closer than %s)",
                            r, c, crs_node_ref_get_id_str(entry->ref),
                            crs_node_ref_get_id_str(ref));
                 return;
             } else {
-                clog_debug("[%s] (rtable) [%2d/%x] %s (replaces %s)",
-                           crs_node_get_address_str(table->node),
+                clog_debug("(rtable) [%2d/%x] %s (replaces %s)",
                            r, c, crs_node_ref_get_id_str(ref),
                            crs_node_ref_get_id_str(entry->ref));
             }
@@ -203,17 +201,17 @@ crs_routing_table_decode(struct crs_message *msg,
     unsigned int  i;
     uint16_t  count;
 
+    crs_node_activate(dest->node);
     rii_check(crs_message_decode_uint16(msg, &count, field_name));
-    clog_debug("[%s] (rtable) Decode %" PRIu16
+    clog_debug("(rtable) Decode %" PRIu16
                " routing table entries from message",
-               crs_node_get_address_str(dest->node), count);
+               count);
 
     for (i = 0; i < count; i++) {
         struct crs_node_ref  *ref;
         rip_check(ref = crs_node_ref_decode(msg, dest->node, field_name));
         if (crs_id_equals(ref->id, dest->node->id)) {
-            clog_debug("[%s] (rtable) Ignore self",
-                       crs_node_get_address_str(dest->node));
+            clog_debug("(rtable) Ignore self");
         } else {
             crs_routing_table_set(dest, ref);
         }
@@ -281,7 +279,8 @@ crs_leaf_set_new(struct crs_node *node)
     set->node = node;
     set->below_least = node->id;
     set->above_most = node->id;
-    clog_debug("[%s] New leaf set", crs_node_get_address_str(node));
+    crs_node_activate(node);
+    clog_debug("New leaf set");
     return set;
 }
 
@@ -307,8 +306,7 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
         if (curr == NULL) {
             /* We've reached the end of the array, and the array is not full, so
              * just insert the new element here. */
-            clog_debug("[%s] (leafset) [-%2u] Add %s",
-                       crs_node_get_address_str(set->node),
+            clog_debug("(leafset) [-%2u] Add %s",
                        i+1, crs_node_ref_get_id_str(ref));
             set->below[i].ref = ref;
             set->below_least = ref->id;
@@ -317,13 +315,11 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
 
         curr_dist = crs_id_cw_distance_between(curr->id, set->node->id);
         if (cork_u128_eq(curr_dist, ref_dist)) {
-            clog_debug("[%s] (leafset) [-%2u] Found duplicate entry %s",
-                       crs_node_get_address_str(set->node),
+            clog_debug("(leafset) [-%2u] Found duplicate entry %s",
                        i+1, crs_node_ref_get_id_str(ref));
             return;
         } else if (cork_u128_ge(curr_dist, ref_dist)) {
-            clog_debug("[%s] (leafset) [-%2u] Found spot for %s",
-                       crs_node_get_address_str(set->node),
+            clog_debug("(leafset) [-%2u] Found spot for %s",
                        i+1, crs_node_ref_get_id_str(ref));
             break;
         }
@@ -336,8 +332,7 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
         struct crs_node_ref  *bubble = set->below[j-1].ref;
         set->below[j].ref = bubble;
         if (bubble != NULL) {
-            clog_debug("[%s] (leafset) [-%2u] Bubble down %s",
-                       crs_node_get_address_str(set->node),
+            clog_debug("(leafset) [-%2u] Bubble down %s",
                        j+1, crs_node_ref_get_id_str(bubble));
             if (crs_id_is_cw(set->below_least, bubble->id)) {
                 set->below_least = bubble->id;
@@ -347,12 +342,10 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
 
     if (i == CRS_LEAF_SET_SIZE) {
         /* We ran out of space in the array. */
-        clog_debug("[%s] (leafset)       Skip %s",
-                   crs_node_get_address_str(set->node),
+        clog_debug("(leafset)       Skip %s",
                    crs_node_ref_get_id_str(ref));
     } else {
-        clog_debug("[%s] (leafset) [-%2u] Add %s",
-                   crs_node_get_address_str(set->node),
+        clog_debug("(leafset) [-%2u] Add %s",
                    i+1, crs_node_ref_get_id_str(ref));
         set->below[i].ref = ref;
         if (crs_id_is_cw(set->below_least, ref->id)) {
@@ -376,8 +369,7 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
         if (curr == NULL) {
             /* We've reached the end of the array, and the array is not full, so
              * just insert the new element here. */
-            clog_debug("[%s] (leafset) [+%2u] Add %s",
-                       crs_node_get_address_str(set->node),
+            clog_debug("(leafset) [+%2u] Add %s",
                        i+1, crs_node_ref_get_id_str(ref));
             set->above[i].ref = ref;
             set->above_most = ref->id;
@@ -386,13 +378,11 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
 
         curr_dist = crs_id_cw_distance_between(set->node->id, curr->id);
         if (cork_u128_eq(curr_dist, ref_dist)) {
-            clog_debug("[%s] (leafset) [-%2u] Found duplicate entry %s",
-                       crs_node_get_address_str(set->node),
+            clog_debug("(leafset) [-%2u] Found duplicate entry %s",
                        i+1, crs_node_ref_get_id_str(ref));
             return;
         } else if (cork_u128_ge(curr_dist, ref_dist)) {
-            clog_debug("[%s] (leafset) [+%2u] Found spot for %s",
-                       crs_node_get_address_str(set->node),
+            clog_debug("(leafset) [+%2u] Found spot for %s",
                        i+1, crs_node_ref_get_id_str(ref));
             break;
         }
@@ -405,8 +395,7 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
         struct crs_node_ref  *bubble = set->above[j-1].ref;
         set->above[j].ref = bubble;
         if (bubble != NULL) {
-            clog_debug("[%s] (leafset) [+%2u] Bubble up %s",
-                       crs_node_get_address_str(set->node),
+            clog_debug("(leafset) [+%2u] Bubble up %s",
                        j+1, crs_node_ref_get_id_str(bubble));
             if (crs_id_is_cw(bubble->id, set->above_most)) {
                 set->above_most = bubble->id;
@@ -416,12 +405,10 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
 
     if (i == CRS_LEAF_SET_SIZE) {
         /* We ran out of space in the array. */
-        clog_debug("[%s] (leafset)       Skip %s",
-                   crs_node_get_address_str(set->node),
+        clog_debug("(leafset)       Skip %s",
                    crs_node_ref_get_id_str(ref));
     } else {
-        clog_debug("[%s] (leafset) [+%2u] Add %s",
-                   crs_node_get_address_str(set->node),
+        clog_debug("(leafset) [+%2u] Add %s",
                    i+1, crs_node_ref_get_id_str(ref));
         set->above[i].ref = ref;
         if (crs_id_is_cw(ref->id, set->above_most)) {
@@ -435,6 +422,7 @@ crs_leaf_set_add(struct crs_leaf_set *set, struct crs_node_ref *ref)
 {
     assert(!crs_id_equals(ref->id, set->node->id));
     assert(set->node == ref->owner);
+    crs_node_activate(set->node);
     /* Try to insert the new node into one of the arrays, depending on whether
      * the new ID is larger or smaller than the local node's. */
     if (crs_id_is_cw(ref->id, set->node->id)) {
@@ -615,16 +603,16 @@ crs_leaf_set_decode(struct crs_message *msg, struct crs_leaf_set *dest,
     unsigned int  i;
     uint8_t  count;
 
+    crs_node_activate(dest->node);
     rii_check(crs_message_decode_uint8(msg, &count, field_name));
-    clog_debug("[%s] (leafset) Decode %" PRIu8 " leaf set entries from message",
-               crs_node_get_address_str(dest->node), count);
+    clog_debug("(leafset) Decode %" PRIu8 " leaf set entries from message",
+               count);
 
     for (i = 0; i < count; i++) {
         struct crs_node_ref  *ref;
         rip_check(ref = crs_node_ref_decode(msg, dest->node, field_name));
         if (crs_id_equals(ref->id, dest->node->id)) {
-            clog_debug("[%s] (leafset) Ignore self",
-                       crs_node_get_address_str(dest->node));
+            clog_debug("(leafset) Ignore self");
         } else {
             crs_leaf_set_add(dest, ref);
         }

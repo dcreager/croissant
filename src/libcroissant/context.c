@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -27,6 +27,7 @@ crs_ctx_new(void)
     struct crs_ctx  *ctx = cork_new(struct crs_ctx);
     ctx->nodes = NULL;
     ctx->last_id = 0;
+    ctx->active = NULL;
     return ctx;
 }
 

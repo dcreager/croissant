@@ -44,8 +44,7 @@ crs_maintenance__JOIN(struct crs_maintenance *maint, struct crs_node *node,
 
     /* Parse the message. */
     rip_check(join_ref = crs_node_ref_decode(msg, node, "joining node"));
-    clog_debug("[%s] {maint} Received join request from %s at %s",
-               crs_node_get_address_str(node),
+    clog_debug("{maint} Received join request from %s at %s",
                crs_node_ref_get_id_str(join_ref),
                crs_node_ref_get_address_str(join_ref));
 
@@ -65,8 +64,7 @@ crs_maintenance__FIND_JOINER(struct crs_maintenance *maint,
 
     /* Parse the message. */
     rip_check(join_ref = crs_node_ref_decode(msg, node, "joining node"));
-    clog_debug("[%s] {maint} Received join reply from %s for %s at %s",
-               crs_node_get_address_str(node),
+    clog_debug("{maint} Received join reply from %s for %s at %s",
                crs_id_to_raw_string(src_str, src),
                crs_node_ref_get_id_str(join_ref),
                crs_node_ref_get_address_str(join_ref));
@@ -103,8 +101,7 @@ crs_maintenance__SEND_LEAF_SET(struct crs_maintenance *maint,
 
     /* Parse the start of the message. */
     rip_check(leaf_set_src = crs_node_ref_decode(msg, node, "leaf set source"));
-    clog_debug("[%s] {maint} Received initial leaf set from %s at %s",
-               crs_node_get_address_str(node),
+    clog_debug("{maint} Received initial leaf set from %s at %s",
                crs_node_ref_get_id_str(leaf_set_src),
                crs_node_ref_get_address_str(leaf_set_src));
 
@@ -132,8 +129,7 @@ crs_maintenance__SEND_ROUTING_TABLE(struct crs_maintenance *maint,
     /* Parse the start of the message. */
     rip_check(routing_table_src =
               crs_node_ref_decode(msg, node, "routing table source"));
-    clog_debug("[%s] {maint} Received partial routing table from %s at %s",
-               crs_node_get_address_str(node),
+    clog_debug("{maint} Received partial routing table from %s at %s",
                crs_node_ref_get_id_str(routing_table_src),
                crs_node_ref_get_address_str(routing_table_src));
 
@@ -154,8 +150,7 @@ crs_maintenance__ANNOUNCE(struct crs_maintenance *maint, struct crs_node *node,
 
     /* Parse the message. */
     rip_check(other_ref = crs_node_ref_decode(msg, node, "node"));
-    clog_debug("[%s] {maint} Received presence announcement from %s at %s",
-               crs_node_get_address_str(node),
+    clog_debug("{maint} Received presence announcement from %s at %s",
                crs_node_ref_get_id_str(other_ref),
                crs_node_ref_get_address_str(other_ref));
 
@@ -206,8 +201,7 @@ crs_maintenance__intercept_FIND_JOINER(struct crs_maintenance *maint,
 
     /* Parse the message. */
     rip_check(join_ref = crs_node_ref_decode(msg, node, "joining node"));
-    clog_debug("[%s] {maint} Intercept join reply from %s for %s at %s",
-               crs_node_get_address_str(node),
+    clog_debug("{maint} Intercept join reply from %s for %s at %s",
                crs_id_to_raw_string(src_str, src),
                crs_node_ref_get_id_str(join_ref),
                crs_node_ref_get_address_str(join_ref));
@@ -284,8 +278,7 @@ crs_maintenance_join(struct crs_maintenance *maint,
     struct crs_message  *msg = crs_application_new_message(maint->app);
     struct crs_node_ref  *bootstrap_ref;
     bootstrap_ref = crs_node_new_ref(maint->node, bootstrap_address);
-    clog_debug("[%s] Send join request to %s at %s",
-               crs_node_get_address_str(maint->node),
+    clog_debug("Send join request to %s at %s",
                crs_node_ref_get_id_str(bootstrap_ref),
                crs_node_ref_get_address_str(bootstrap_ref));
     crs_message_encode_uint8(msg, JOIN);
@@ -299,8 +292,7 @@ crs_maintenance_find_joiner(struct crs_maintenance *maint,
                             struct crs_node_ref *dest)
 {
     struct crs_message  *msg = crs_application_new_message(maint->app);
-    clog_debug("[%s] Route initial message to new node %s at %s",
-               crs_node_get_address_str(maint->node),
+    clog_debug("Route initial message to new node %s at %s",
                crs_node_ref_get_id_str(dest),
                crs_node_ref_get_address_str(dest));
     crs_message_encode_uint8(msg, FIND_JOINER);
@@ -313,8 +305,7 @@ crs_maintenance_send_leaf_set(struct crs_maintenance *maint,
                               struct crs_node_ref *dest)
 {
     struct crs_message  *msg = crs_application_new_message(maint->app);
-    clog_debug("[%s] Send initial leaf set to new node %s at %s",
-               crs_node_get_address_str(maint->node),
+    clog_debug("Send initial leaf set to new node %s at %s",
                crs_node_ref_get_id_str(dest),
                crs_node_ref_get_address_str(dest));
     crs_message_encode_uint8(msg, SEND_LEAF_SET);
@@ -329,8 +320,7 @@ crs_maintenance_send_routing_table(struct crs_maintenance *maint,
                                    unsigned int row_count)
 {
     struct crs_message  *msg = crs_application_new_message(maint->app);
-    clog_debug("[%s] Send %u rows of routing table to %s at %s",
-               crs_node_get_address_str(maint->node),
+    clog_debug("Send %u rows of routing table to %s at %s",
                row_count,
                crs_node_ref_get_id_str(dest),
                crs_node_ref_get_address_str(dest));
@@ -345,8 +335,7 @@ crs_maintenance_announce(struct crs_maintenance *maint,
                          struct crs_node_ref *dest)
 {
     struct crs_message  *msg = crs_application_new_message(maint->app);
-    clog_debug("[%s] Announce presence to %s at %s",
-               crs_node_get_address_str(maint->node),
+    clog_debug("Announce presence to %s at %s",
                crs_node_ref_get_id_str(dest),
                crs_node_ref_get_address_str(dest));
     crs_message_encode_uint8(msg, ANNOUNCE);
