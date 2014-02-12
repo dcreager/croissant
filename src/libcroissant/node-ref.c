@@ -8,6 +8,7 @@
  * ----------------------------------------------------------------------
  */
 
+#include <clogger.h>
 #include <libcork/core.h>
 #include <libcork/ds.h>
 #include <libcork/helpers/errors.h>
@@ -15,6 +16,8 @@
 #include "croissant.h"
 #include "croissant/context.h"
 #include "croissant/node.h"
+
+#define CLOG_CHANNEL  "croissant:node-ref"
 
 
 /*-----------------------------------------------------------------------
@@ -111,6 +114,9 @@ crs_node_ref_send(struct crs_node_ref *ref, crs_id src, crs_id dest,
     if (ref->local_node == NULL) {
         return ref->send(ref, src, dest, msg);
     } else {
+        clog_debug("[%s] {local} Send message to %s",
+                   crs_node_get_address_str(ref->owner),
+                   crs_node_ref_get_address_str(ref));
         return crs_node_route_message(ref->local_node, src, dest, msg);
     }
 }

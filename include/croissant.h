@@ -474,26 +474,58 @@ crs_node_get_next_hop(struct crs_node *node, crs_id key);
 typedef uint32_t  crs_application_id;
 
 typedef int
-crs_application_process_f(void *user_data, struct crs_node *node,
+crs_application_receive_f(void *user_data, struct crs_node *node,
                           crs_id src, crs_id dest,
-                          struct crs_message *message);
+                          struct crs_message *msg);
 
 
 struct crs_application *
-crs_application_new(crs_application_id id,
-                    void *user_data, cork_free_f free_user_data,
-                    crs_application_process_f *process);
+crs_application_new(crs_application_id id, const char *name);
 
 void
 crs_application_free(struct crs_application *app);
+
+
+crs_application_id
+crs_application_get_id(const struct crs_application *app);
+
+const char *
+crs_application_get_name(const struct crs_application *app);
+
+struct crs_node *
+crs_application_get_node(const struct crs_application *app);
+
+void *
+crs_application_get_user_data(const struct crs_application *app);
+
+
+void
+crs_application_set_user_data(struct crs_application *app,
+                              void *user_data, cork_free_f free_user_data);
+
+void
+crs_application_set_receive(struct crs_application *app,
+                            crs_application_receive_f *receive);
+
+
+struct crs_message *
+crs_application_new_message(struct crs_application *app);
+
+void
+crs_application_free_message(struct crs_application *app,
+                             struct crs_message *msg);
+
+int
+crs_application_send_message(struct crs_application *app, crs_id dest,
+                             struct crs_message *msg);
+
 
 /* Takes control of app */
 int
 crs_node_add_application(struct crs_node *node, struct crs_application *app);
 
-void
-crs_message_encode_application_id(struct crs_message *msg,
-                                  crs_application_id id);
+struct crs_application *
+crs_node_get_application(struct crs_node *node, crs_application_id id);
 
 
 #endif  /* CROISSANT_H */

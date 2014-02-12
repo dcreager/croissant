@@ -1,0 +1,74 @@
+.TH "crs_application_receive" "3" "2013-06-01" "Croissant" "Croissant\ documentation"
+.SH NAME
+.PP
+crs_application_receive \[en] Receiving application messages
+.SH SYNOPSIS
+.PP
+\f[B]#include <croissant.h>\f[]
+.PP
+typedef int
+.PD 0
+.P
+.PD
+\f[B]crs_application_receive_f\f[](void *\f[I]user_data\f[], struct
+crs_node *\f[I]node\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ crs_id \f[I]src\f[],
+crs_id \f[I]dest\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ struct crs_message
+*\f[I]msg\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_application_set_receive\f[](struct crs_application
+*\f[I]app\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ crs_application_receive_f
+*\f[I]receive\f[]);
+.SH DESCRIPTION
+.PP
+The \f[I]receive\f[] callback is how an application instance receives
+and processes messages sent over the Pastry overlay network.
+.PP
+When the local node receives a message where it is the final destination
+(i.e., the local node's Pastry identifier is closest to the
+\f[I]dest\f[] identifier for the message), then the local node extracts
+the application ID from the message, and routes the message to the
+\f[B]crs_application\f[](3) instance that has been registered with that
+ID.
+The local node then calls that instance's \f[I]receive\f[] callback
+function.
+.PP
+Your callback should parse the contents of \f[I]msg\f[], using the
+\f[B]crs_message_decode\f[](3) family of functions, and then perform
+whatever logic is necessary based on the contents of the message.
+The \f[I]node\f[] parameter is the \f[B]crs_node\f[](3) instance for the
+local node.
+The \f[I]src\f[] and \f[I]dest\f[] parameters are the message's
+\[lq]source\[rq] and \[lq]destination\[rq] Pastry identifiers.
+Note that these don't necessarily correspond to the Pastry identifiers
+of the sender and receiver nodes.
+The destination identifier will be \[lq]close\[rq] to the receiver
+identifier.
+The source identifier will \f[B]usually\f[] be the same as the sender
+identifier, so that you know where to route any replies to, but this
+isn't a requirement.
+.PP
+Your callback can raise an error condition and return a non\-zero value.
+However, this should only be used in exceptional circumstances, such as
+an unexpected parse error, or an error sending a reply message; the
+underlying node delivery code that calls your callback won't know how to
+respond to the error condition, and so it will just be logged and
+ignored.
+If any real application\-level errors happen, you should catch those and
+handle them in your callback \[em] possibly by sending an error message
+back across the overlay network to the message's sender.

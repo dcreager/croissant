@@ -34,11 +34,10 @@ START_TEST(test_local_nodes)
     struct crs_message  *msg;
     struct cork_buffer  actual = CORK_BUFFER_INIT();
     struct cork_buffer  expected = CORK_BUFFER_INIT();
-    struct crs_application  *app =
-        crs_save_message_application_new(10, &actual);
+    struct crs_save_message  *app = crs_save_message_new(10, &actual);
     struct crs_node_ref  *ref;
 
-    fail_if_error(crs_node_add_application(node, app));
+    fail_if_error(crs_save_message_register(app, node));
 
     cork_buffer_set_string(&expected, "local:1");
     fail_if_error(crs_node_address_print(&actual, address));

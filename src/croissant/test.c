@@ -39,6 +39,7 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
     int  cs;
     const char  *p = command;
     const char  *pe = strchr(command, '\0');
+    const char  *eof = pe;
     const char  *start;
 
     struct cork_buffer  buf = CORK_BUFFER_INIT();
@@ -46,43 +47,46 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
     struct cork_buffer  output = CORK_BUFFER_INIT();
     struct crs_node  *node;
     crs_id  id1;
+    char  id1_str[CRS_ID_STRING_LENGTH];
 
     
-#line 52 "croissant/test.c"
+#line 54 "croissant/test.c"
 static const int crs_command_start = 517;
 
 static const int crs_command_en_main = 517;
 
 
-#line 58 "croissant/test.c"
+#line 60 "croissant/test.c"
 	{
 	cs = crs_command_start;
 	}
 
-#line 63 "croissant/test.c"
+#line 65 "croissant/test.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr43:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 62 "croissant/test.c.rl"
+#line 64 "croissant/test.c.rl"
 	{
-                struct crs_application  *printer;
+                struct crs_print_message  *printer;
+                fprintf(stderr, "--- new node %s\n",
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(node = crs_node_new(ctx, id1, NULL));
-                printer = crs_print_message_application_new(stderr);
-                rii_check(crs_node_add_application(node, printer));
+                printer = crs_print_message_new(stderr);
+                rii_check(crs_print_message_register(printer, node));
             }
 	goto st517;
 st517:
 	if ( ++p == pe )
 		goto _test_eof517;
 case 517:
-#line 86 "croissant/test.c"
+#line 90 "croissant/test.c"
 	switch( (*p) ) {
 		case 32: goto st517;
 		case 110: goto st1;
@@ -178,14 +182,14 @@ case 9:
 		goto tr10;
 	goto st0;
 tr10:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st10;
 st10:
 	if ( ++p == pe )
 		goto _test_eof10;
 case 10:
-#line 189 "croissant/test.c"
+#line 193 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st11;
@@ -597,28 +601,33 @@ case 41:
 		goto tr42;
 	goto st0;
 tr42:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 62 "croissant/test.c.rl"
+#line 64 "croissant/test.c.rl"
 	{
-                struct crs_application  *printer;
+                struct crs_print_message  *printer;
+                fprintf(stderr, "--- new node %s\n",
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(node = crs_node_new(ctx, id1, NULL));
-                printer = crs_print_message_application_new(stderr);
-                rii_check(crs_node_add_application(node, printer));
+                printer = crs_print_message_new(stderr);
+                rii_check(crs_print_message_register(printer, node));
             }
 	goto st42;
 tr139:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 72 "croissant/test.c.rl"
+#line 76 "croissant/test.c.rl"
 	{
                 struct crs_leaf_set  *from_set;
                 struct crs_node  *to_node;
                 struct crs_node_ref  *to_ref;
+                fprintf(stderr, "--- [%s]\n--- add leaf set entry %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_set = crs_node_get_leaf_set(node);
                 to_ref = crs_node_get_ref(to_node);
@@ -626,15 +635,18 @@ tr139:
             }
 	goto st42;
 tr193:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 85 "croissant/test.c.rl"
+#line 92 "croissant/test.c.rl"
 	{
                 struct crs_routing_table  *from_table;
                 struct crs_node  *to_node;
                 struct crs_node_ref  *to_ref;
+                fprintf(stderr, "--- [%s]\n--- add routing table entry %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_table = crs_node_get_routing_table(node);
                 to_ref = crs_node_get_ref(to_node);
@@ -642,67 +654,76 @@ tr193:
             }
 	goto st42;
 tr210:
-#line 97 "croissant/test.c.rl"
+#line 107 "croissant/test.c.rl"
 	{
                 struct crs_leaf_set  *set;
+                fprintf(stderr, "--- [%s]\n--- print leaf set\n",
+                        crs_node_get_id_str(node));
                 set = crs_node_get_leaf_set(node);
                 cork_buffer_printf
                     (&output, "Leaf set for %s\n", crs_node_get_id_str(node));
                 crs_leaf_set_print(&output, set);
-                fwrite(output.buf, output.size, 1, stdout);
+                fwrite(output.buf, output.size, 1, stderr);
             }
 	goto st42;
 tr256:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 109 "croissant/test.c.rl"
+#line 121 "croissant/test.c.rl"
 	{
                 struct crs_node_ref  *next_hop;
+                fprintf(stderr, "--- [%s]\n--- print next hop for %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(next_hop = crs_node_get_next_hop(node, id1));
-                cork_buffer_printf
-                    (&output,
+                fprintf
+                    (stderr,
                      "Next hop from %s\n"
-                     "           to ",
-                     crs_node_get_id_str(node));
-                crs_id_print(&output, id1);
-                cork_buffer_append_printf
-                    (&output,
-                     "\n"
+                     "           to %s\n"
                      "           is %s\n",
+                     crs_node_get_id_str(node),
+                     crs_id_to_raw_string(id1_str, id1),
                      (next_hop == CRS_NODE_REF_SELF)? "local delivery":
                          crs_node_ref_get_id_str(next_hop));
-                fwrite(output.buf, output.size, 1, stdout);
             }
 	goto st42;
 tr270:
-#line 129 "croissant/test.c.rl"
+#line 140 "croissant/test.c.rl"
 	{
                 struct crs_routing_table  *table;
+                fprintf(stderr, "--- [%s]\n--- print routing table\n",
+                        crs_node_get_id_str(node));
                 table = crs_node_get_routing_table(node);
                 cork_buffer_printf
                     (&output, "Routing table for %s\n",
                      crs_node_get_id_str(node));
                 crs_routing_table_print(&output, table);
-                fwrite(output.buf, output.size, 1, stdout);
+                fwrite(output.buf, output.size, 1, stderr);
             }
 	goto st42;
 tr315:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 141 "croissant/test.c.rl"
+#line 154 "croissant/test.c.rl"
 	{
-                rii_check(crs_send_print_message(node, id1, message.buf));
+                struct crs_print_message  *printer;
+                rip_check(printer = crs_print_message_get(node));
+                fprintf(stderr, "--- [%s]\n--- send \"%s\" to %s\n",
+                        crs_node_get_id_str(node),
+                        (char *) message.buf,
+                        crs_id_to_raw_string(id1_str, id1));
+                rii_check(crs_print_message_send(printer, id1, message.buf));
             }
 	goto st42;
 st42:
 	if ( ++p == pe )
 		goto _test_eof42;
 case 42:
-#line 706 "croissant/test.c"
+#line 727 "croissant/test.c"
 	switch( (*p) ) {
 		case 32: goto st42;
 		case 59: goto st517;
@@ -752,14 +773,14 @@ case 46:
 		goto tr49;
 	goto st0;
 tr49:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st47;
 st47:
 	if ( ++p == pe )
 		goto _test_eof47;
 case 47:
-#line 763 "croissant/test.c"
+#line 784 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st48;
@@ -1169,18 +1190,18 @@ case 78:
 		goto tr81;
 	goto st0;
 tr81:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 158 "croissant/test.c.rl"
+#line 177 "croissant/test.c.rl"
 	{ rip_check(node = crs_ctx_require_node(ctx, id1)); }
 	goto st79;
 st79:
 	if ( ++p == pe )
 		goto _test_eof79;
 case 79:
-#line 1184 "croissant/test.c"
+#line 1205 "croissant/test.c"
 	switch( (*p) ) {
 		case 32: goto st79;
 		case 97: goto st80;
@@ -1357,14 +1378,14 @@ case 98:
 		goto tr106;
 	goto st0;
 tr106:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st99;
 st99:
 	if ( ++p == pe )
 		goto _test_eof99;
 case 99:
-#line 1368 "croissant/test.c"
+#line 1389 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st100;
@@ -1776,15 +1797,18 @@ case 130:
 		goto tr138;
 	goto st0;
 tr138:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 72 "croissant/test.c.rl"
+#line 76 "croissant/test.c.rl"
 	{
                 struct crs_leaf_set  *from_set;
                 struct crs_node  *to_node;
                 struct crs_node_ref  *to_ref;
+                fprintf(stderr, "--- [%s]\n--- add leaf set entry %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_set = crs_node_get_leaf_set(node);
                 to_ref = crs_node_get_ref(to_node);
@@ -1792,15 +1816,18 @@ tr138:
             }
 	goto st131;
 tr192:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 85 "croissant/test.c.rl"
+#line 92 "croissant/test.c.rl"
 	{
                 struct crs_routing_table  *from_table;
                 struct crs_node  *to_node;
                 struct crs_node_ref  *to_ref;
+                fprintf(stderr, "--- [%s]\n--- add routing table entry %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_table = crs_node_get_routing_table(node);
                 to_ref = crs_node_get_ref(to_node);
@@ -1808,67 +1835,76 @@ tr192:
             }
 	goto st131;
 tr209:
-#line 97 "croissant/test.c.rl"
+#line 107 "croissant/test.c.rl"
 	{
                 struct crs_leaf_set  *set;
+                fprintf(stderr, "--- [%s]\n--- print leaf set\n",
+                        crs_node_get_id_str(node));
                 set = crs_node_get_leaf_set(node);
                 cork_buffer_printf
                     (&output, "Leaf set for %s\n", crs_node_get_id_str(node));
                 crs_leaf_set_print(&output, set);
-                fwrite(output.buf, output.size, 1, stdout);
+                fwrite(output.buf, output.size, 1, stderr);
             }
 	goto st131;
 tr255:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 109 "croissant/test.c.rl"
+#line 121 "croissant/test.c.rl"
 	{
                 struct crs_node_ref  *next_hop;
+                fprintf(stderr, "--- [%s]\n--- print next hop for %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(next_hop = crs_node_get_next_hop(node, id1));
-                cork_buffer_printf
-                    (&output,
+                fprintf
+                    (stderr,
                      "Next hop from %s\n"
-                     "           to ",
-                     crs_node_get_id_str(node));
-                crs_id_print(&output, id1);
-                cork_buffer_append_printf
-                    (&output,
-                     "\n"
+                     "           to %s\n"
                      "           is %s\n",
+                     crs_node_get_id_str(node),
+                     crs_id_to_raw_string(id1_str, id1),
                      (next_hop == CRS_NODE_REF_SELF)? "local delivery":
                          crs_node_ref_get_id_str(next_hop));
-                fwrite(output.buf, output.size, 1, stdout);
             }
 	goto st131;
 tr269:
-#line 129 "croissant/test.c.rl"
+#line 140 "croissant/test.c.rl"
 	{
                 struct crs_routing_table  *table;
+                fprintf(stderr, "--- [%s]\n--- print routing table\n",
+                        crs_node_get_id_str(node));
                 table = crs_node_get_routing_table(node);
                 cork_buffer_printf
                     (&output, "Routing table for %s\n",
                      crs_node_get_id_str(node));
                 crs_routing_table_print(&output, table);
-                fwrite(output.buf, output.size, 1, stdout);
+                fwrite(output.buf, output.size, 1, stderr);
             }
 	goto st131;
 tr314:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 141 "croissant/test.c.rl"
+#line 154 "croissant/test.c.rl"
 	{
-                rii_check(crs_send_print_message(node, id1, message.buf));
+                struct crs_print_message  *printer;
+                rip_check(printer = crs_print_message_get(node));
+                fprintf(stderr, "--- [%s]\n--- send \"%s\" to %s\n",
+                        crs_node_get_id_str(node),
+                        (char *) message.buf,
+                        crs_id_to_raw_string(id1_str, id1));
+                rii_check(crs_print_message_send(printer, id1, message.buf));
             }
 	goto st131;
 st131:
 	if ( ++p == pe )
 		goto _test_eof131;
 case 131:
-#line 1872 "croissant/test.c"
+#line 1908 "croissant/test.c"
 	switch( (*p) ) {
 		case 32: goto st131;
 		case 59: goto st42;
@@ -2042,14 +2078,14 @@ case 151:
 		goto tr160;
 	goto st0;
 tr160:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st152;
 st152:
 	if ( ++p == pe )
 		goto _test_eof152;
 case 152:
-#line 2053 "croissant/test.c"
+#line 2089 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st153;
@@ -2693,14 +2729,14 @@ case 210:
 		goto tr223;
 	goto st0;
 tr223:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st211;
 st211:
 	if ( ++p == pe )
 		goto _test_eof211;
 case 211:
-#line 2704 "croissant/test.c"
+#line 2740 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st212;
@@ -3261,14 +3297,14 @@ case 260:
 		goto tr275;
 	goto st0;
 tr275:
-#line 58 "croissant/test.c.rl"
+#line 60 "croissant/test.c.rl"
 	{ start = p; }
 	goto st261;
 st261:
 	if ( ++p == pe )
 		goto _test_eof261;
 case 261:
-#line 3272 "croissant/test.c"
+#line 3308 "croissant/test.c"
 	if ( (*p) == 32 )
 		goto tr276;
 	if ( (*p) < 48 ) {
@@ -3284,14 +3320,14 @@ case 261:
 		goto st261;
 	goto st0;
 tr276:
-#line 59 "croissant/test.c.rl"
+#line 61 "croissant/test.c.rl"
 	{ cork_buffer_set(&message, start, p - start); }
 	goto st262;
 st262:
 	if ( ++p == pe )
 		goto _test_eof262;
 case 262:
-#line 3295 "croissant/test.c"
+#line 3331 "croissant/test.c"
 	switch( (*p) ) {
 		case 32: goto st262;
 		case 116: goto st263;
@@ -3334,14 +3370,14 @@ case 265:
 		goto tr282;
 	goto st0;
 tr282:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st266;
 st266:
 	if ( ++p == pe )
 		goto _test_eof266;
 case 266:
-#line 3345 "croissant/test.c"
+#line 3381 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st267;
@@ -3753,15 +3789,18 @@ case 297:
 		goto tr314;
 	goto st0;
 tr371:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 72 "croissant/test.c.rl"
+#line 76 "croissant/test.c.rl"
 	{
                 struct crs_leaf_set  *from_set;
                 struct crs_node  *to_node;
                 struct crs_node_ref  *to_ref;
+                fprintf(stderr, "--- [%s]\n--- add leaf set entry %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_set = crs_node_get_leaf_set(node);
                 to_ref = crs_node_get_ref(to_node);
@@ -3769,15 +3808,18 @@ tr371:
             }
 	goto st298;
 tr425:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 85 "croissant/test.c.rl"
+#line 92 "croissant/test.c.rl"
 	{
                 struct crs_routing_table  *from_table;
                 struct crs_node  *to_node;
                 struct crs_node_ref  *to_ref;
+                fprintf(stderr, "--- [%s]\n--- add routing table entry %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_table = crs_node_get_routing_table(node);
                 to_ref = crs_node_get_ref(to_node);
@@ -3785,67 +3827,76 @@ tr425:
             }
 	goto st298;
 tr442:
-#line 97 "croissant/test.c.rl"
+#line 107 "croissant/test.c.rl"
 	{
                 struct crs_leaf_set  *set;
+                fprintf(stderr, "--- [%s]\n--- print leaf set\n",
+                        crs_node_get_id_str(node));
                 set = crs_node_get_leaf_set(node);
                 cork_buffer_printf
                     (&output, "Leaf set for %s\n", crs_node_get_id_str(node));
                 crs_leaf_set_print(&output, set);
-                fwrite(output.buf, output.size, 1, stdout);
+                fwrite(output.buf, output.size, 1, stderr);
             }
 	goto st298;
 tr488:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 109 "croissant/test.c.rl"
+#line 121 "croissant/test.c.rl"
 	{
                 struct crs_node_ref  *next_hop;
+                fprintf(stderr, "--- [%s]\n--- print next hop for %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(next_hop = crs_node_get_next_hop(node, id1));
-                cork_buffer_printf
-                    (&output,
+                fprintf
+                    (stderr,
                      "Next hop from %s\n"
-                     "           to ",
-                     crs_node_get_id_str(node));
-                crs_id_print(&output, id1);
-                cork_buffer_append_printf
-                    (&output,
-                     "\n"
+                     "           to %s\n"
                      "           is %s\n",
+                     crs_node_get_id_str(node),
+                     crs_id_to_raw_string(id1_str, id1),
                      (next_hop == CRS_NODE_REF_SELF)? "local delivery":
                          crs_node_ref_get_id_str(next_hop));
-                fwrite(output.buf, output.size, 1, stdout);
             }
 	goto st298;
 tr502:
-#line 129 "croissant/test.c.rl"
+#line 140 "croissant/test.c.rl"
 	{
                 struct crs_routing_table  *table;
+                fprintf(stderr, "--- [%s]\n--- print routing table\n",
+                        crs_node_get_id_str(node));
                 table = crs_node_get_routing_table(node);
                 cork_buffer_printf
                     (&output, "Routing table for %s\n",
                      crs_node_get_id_str(node));
                 crs_routing_table_print(&output, table);
-                fwrite(output.buf, output.size, 1, stdout);
+                fwrite(output.buf, output.size, 1, stderr);
             }
 	goto st298;
 tr547:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 141 "croissant/test.c.rl"
+#line 154 "croissant/test.c.rl"
 	{
-                rii_check(crs_send_print_message(node, id1, message.buf));
+                struct crs_print_message  *printer;
+                rip_check(printer = crs_print_message_get(node));
+                fprintf(stderr, "--- [%s]\n--- send \"%s\" to %s\n",
+                        crs_node_get_id_str(node),
+                        (char *) message.buf,
+                        crs_id_to_raw_string(id1_str, id1));
+                rii_check(crs_print_message_send(printer, id1, message.buf));
             }
 	goto st298;
 st298:
 	if ( ++p == pe )
 		goto _test_eof298;
 case 298:
-#line 3849 "croissant/test.c"
+#line 3900 "croissant/test.c"
 	switch( (*p) ) {
 		case 32: goto st298;
 		case 97: goto st299;
@@ -4022,14 +4073,14 @@ case 317:
 		goto tr338;
 	goto st0;
 tr338:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st318;
 st318:
 	if ( ++p == pe )
 		goto _test_eof318;
 case 318:
-#line 4033 "croissant/test.c"
+#line 4084 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st319;
@@ -4441,15 +4492,18 @@ case 349:
 		goto tr370;
 	goto st0;
 tr370:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 72 "croissant/test.c.rl"
+#line 76 "croissant/test.c.rl"
 	{
                 struct crs_leaf_set  *from_set;
                 struct crs_node  *to_node;
                 struct crs_node_ref  *to_ref;
+                fprintf(stderr, "--- [%s]\n--- add leaf set entry %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_set = crs_node_get_leaf_set(node);
                 to_ref = crs_node_get_ref(to_node);
@@ -4457,15 +4511,18 @@ tr370:
             }
 	goto st350;
 tr424:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 85 "croissant/test.c.rl"
+#line 92 "croissant/test.c.rl"
 	{
                 struct crs_routing_table  *from_table;
                 struct crs_node  *to_node;
                 struct crs_node_ref  *to_ref;
+                fprintf(stderr, "--- [%s]\n--- add routing table entry %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_table = crs_node_get_routing_table(node);
                 to_ref = crs_node_get_ref(to_node);
@@ -4473,67 +4530,76 @@ tr424:
             }
 	goto st350;
 tr441:
-#line 97 "croissant/test.c.rl"
+#line 107 "croissant/test.c.rl"
 	{
                 struct crs_leaf_set  *set;
+                fprintf(stderr, "--- [%s]\n--- print leaf set\n",
+                        crs_node_get_id_str(node));
                 set = crs_node_get_leaf_set(node);
                 cork_buffer_printf
                     (&output, "Leaf set for %s\n", crs_node_get_id_str(node));
                 crs_leaf_set_print(&output, set);
-                fwrite(output.buf, output.size, 1, stdout);
+                fwrite(output.buf, output.size, 1, stderr);
             }
 	goto st350;
 tr487:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 109 "croissant/test.c.rl"
+#line 121 "croissant/test.c.rl"
 	{
                 struct crs_node_ref  *next_hop;
+                fprintf(stderr, "--- [%s]\n--- print next hop for %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
                 rip_check(next_hop = crs_node_get_next_hop(node, id1));
-                cork_buffer_printf
-                    (&output,
+                fprintf
+                    (stderr,
                      "Next hop from %s\n"
-                     "           to ",
-                     crs_node_get_id_str(node));
-                crs_id_print(&output, id1);
-                cork_buffer_append_printf
-                    (&output,
-                     "\n"
+                     "           to %s\n"
                      "           is %s\n",
+                     crs_node_get_id_str(node),
+                     crs_id_to_raw_string(id1_str, id1),
                      (next_hop == CRS_NODE_REF_SELF)? "local delivery":
                          crs_node_ref_get_id_str(next_hop));
-                fwrite(output.buf, output.size, 1, stdout);
             }
 	goto st350;
 tr501:
-#line 129 "croissant/test.c.rl"
+#line 140 "croissant/test.c.rl"
 	{
                 struct crs_routing_table  *table;
+                fprintf(stderr, "--- [%s]\n--- print routing table\n",
+                        crs_node_get_id_str(node));
                 table = crs_node_get_routing_table(node);
                 cork_buffer_printf
                     (&output, "Routing table for %s\n",
                      crs_node_get_id_str(node));
                 crs_routing_table_print(&output, table);
-                fwrite(output.buf, output.size, 1, stdout);
+                fwrite(output.buf, output.size, 1, stderr);
             }
 	goto st350;
 tr546:
-#line 53 "croissant/test.c.rl"
-	{ cork_buffer_set(&buf, start, p - start); }
 #line 55 "croissant/test.c.rl"
+	{ cork_buffer_set(&buf, start, p - start); }
+#line 57 "croissant/test.c.rl"
 	{ rie_check(id1 = crs_id_init(buf.buf)); }
-#line 141 "croissant/test.c.rl"
+#line 154 "croissant/test.c.rl"
 	{
-                rii_check(crs_send_print_message(node, id1, message.buf));
+                struct crs_print_message  *printer;
+                rip_check(printer = crs_print_message_get(node));
+                fprintf(stderr, "--- [%s]\n--- send \"%s\" to %s\n",
+                        crs_node_get_id_str(node),
+                        (char *) message.buf,
+                        crs_id_to_raw_string(id1_str, id1));
+                rii_check(crs_print_message_send(printer, id1, message.buf));
             }
 	goto st350;
 st350:
 	if ( ++p == pe )
 		goto _test_eof350;
 case 350:
-#line 4537 "croissant/test.c"
+#line 4603 "croissant/test.c"
 	switch( (*p) ) {
 		case 32: goto st350;
 		case 59: goto st298;
@@ -4707,14 +4773,14 @@ case 370:
 		goto tr392;
 	goto st0;
 tr392:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st371;
 st371:
 	if ( ++p == pe )
 		goto _test_eof371;
 case 371:
-#line 4718 "croissant/test.c"
+#line 4784 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st372;
@@ -5358,14 +5424,14 @@ case 429:
 		goto tr455;
 	goto st0;
 tr455:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st430;
 st430:
 	if ( ++p == pe )
 		goto _test_eof430;
 case 430:
-#line 5369 "croissant/test.c"
+#line 5435 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st431;
@@ -5926,14 +5992,14 @@ case 479:
 		goto tr507;
 	goto st0;
 tr507:
-#line 58 "croissant/test.c.rl"
+#line 60 "croissant/test.c.rl"
 	{ start = p; }
 	goto st480;
 st480:
 	if ( ++p == pe )
 		goto _test_eof480;
 case 480:
-#line 5937 "croissant/test.c"
+#line 6003 "croissant/test.c"
 	if ( (*p) == 32 )
 		goto tr508;
 	if ( (*p) < 48 ) {
@@ -5949,14 +6015,14 @@ case 480:
 		goto st480;
 	goto st0;
 tr508:
-#line 59 "croissant/test.c.rl"
+#line 61 "croissant/test.c.rl"
 	{ cork_buffer_set(&message, start, p - start); }
 	goto st481;
 st481:
 	if ( ++p == pe )
 		goto _test_eof481;
 case 481:
-#line 5960 "croissant/test.c"
+#line 6026 "croissant/test.c"
 	switch( (*p) ) {
 		case 32: goto st481;
 		case 116: goto st482;
@@ -5999,14 +6065,14 @@ case 484:
 		goto tr514;
 	goto st0;
 tr514:
-#line 53 "croissant/test.c.rl"
+#line 55 "croissant/test.c.rl"
 	{ start = p; }
 	goto st485;
 st485:
 	if ( ++p == pe )
 		goto _test_eof485;
 case 485:
-#line 6010 "croissant/test.c"
+#line 6076 "croissant/test.c"
 	if ( (*p) < 65 ) {
 		if ( 48 <= (*p) && (*p) <= 57 )
 			goto st486;
@@ -6937,19 +7003,32 @@ case 516:
 	_test_eof516: cs = 516; goto _test_eof; 
 
 	_test_eof: {}
+	if ( p == eof )
+	{
+	switch ( cs ) {
+	case 517: 
+#line 186 "croissant/test.c.rl"
+	{
+                    fprintf(stderr, "---\n");
+                }
+	break;
+#line 7016 "croissant/test.c"
+	}
+	}
+
 	_out: {}
 	}
 
-#line 171 "croissant/test.c.rl"
+#line 193 "croissant/test.c.rl"
 
 
     /* A hack to suppress some unused variable warnings */
     (void) crs_command_en_main;
 
     if (CORK_UNLIKELY(cs < 
-#line 6951 "croissant/test.c"
+#line 7030 "croissant/test.c"
 517
-#line 176 "croissant/test.c.rl"
+#line 198 "croissant/test.c.rl"
 )) {
         crs_parse_error("Invalid command");
         goto error;

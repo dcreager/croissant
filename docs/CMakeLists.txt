@@ -18,6 +18,9 @@ set(MAN_FOOTER "Croissant")
 # called foo.5.pandoc.
 
 set(MAN_PAGES
+    crs_application.3
+    crs_application_receive.3
+    crs_application_send.3
     crs_id.3
     crs_message.3
     crs_message_decode.3

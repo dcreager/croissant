@@ -1,0 +1,89 @@
+.TH "crs_application_send" "3" "2013-06-01" "Croissant" "Croissant\ documentation"
+.SH NAME
+.PP
+crs_application_send \[en] Sending application messages
+.SH SYNOPSIS
+.PP
+\f[B]#include <croissant.h>\f[]
+.PP
+struct crs_message *
+.PD 0
+.P
+.PD
+\f[B]crs_application_new_message\f[](struct crs_application
+*\f[I]app\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_application_free_message\f[](struct crs_application
+*\f[I]app\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ struct
+crs_message *\f[I]msg\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_application_send_message\f[](struct crs_application
+*\f[I]app\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ crs_id
+\f[I]dest\f[], struct crs_message *\f[I]msg\f[]);
+.SH DESCRIPTION
+.PP
+Pastry applications can use these functions to send a message over the
+overlay network.
+.PP
+\f[B]crs_application_new_message\f[]() creates a new write\-only
+\f[B]crs_message\f[](3) instance for the given application.
+When sent, the message will be processed by the application on the
+receiving node with the same application ID.
+We will automatically add the application ID to the message, so that the
+receiving node can delegate the message in this way.
+You only need to add application\-specific content to the message, using
+the \f[B]crs_message_encode\f[](3) family of functions.
+.PP
+Once you have filled in the message content,
+\f[B]crs_application_send_message\f[]() gives control of the message to
+the overlay network, which will send the message to the requested
+destination.
+The overlay network's routing protocol will route the message so that
+the node whose Pastry identifier is closest to \f[I]dest\f[] will
+receive it.
+(Instances of your application on the nodes along the routing path from
+the local node to the destination node will also have a chance to
+inspect, and possibly modify, the message in transit.)
+.PP
+Once you pass a \f[B]crs_message\f[](3) into
+\f[B]crs_application_send_message\f[](), you relinquish all control of
+the message.
+You should not modify its contents or try to free it.
+.PP
+If you have created and partially constructed a \f[B]crs_message\f[](3)
+instance, but then decide that you don't want to send it, you must use
+\f[B]crs_application_free_message\f[](3) to free the message instance.
+.PP
+Note that the overlay network does not guarantee that two messages sent
+to the same \f[I]dest\f[] identifier will be delivered to the same node.
+If we detect that a node has failed (or equivalently, that we can't
+reach it), then any messages that would have previously been sent to it
+will be sent to some other node instead.
+The only guarantee is that, given the current view of which nodes are
+still alive and reachable, the message will be delivered to the node
+with the closest identifier.
+It is \f[B]your\f[] responsibility to add the necessary redundancy to
+your application to allow it to survive the loss of a particular
+destination node.
+In general, Pastry applications do this by sending replicas to other
+nodes with nearby Pastry identifiers (which you find by querying the
+node's leaf set).
+Because the Pastry identifier of a node is assigned randomly, this
+ensures that the replicas will be distributed well across the underlying
+\[lq]real\[rq] network.

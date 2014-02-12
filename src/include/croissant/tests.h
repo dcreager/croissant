@@ -27,23 +27,53 @@ int
 crs_finalize_tests(void);
 
 
-/* Creates an application that saves each message received into a buffer.  This
- * is mainly used to verify that the contents of the message survive being
+/*-----------------------------------------------------------------------
+ * Saving messages
+ */
+
+/* A Pastry application that saves each message received into a buffer.  This is
+ * mainly used to verify that the contents of the message survive being
  * transported. */
-struct crs_application *
-crs_save_message_application_new(crs_application_id id,
-                                 struct cork_buffer *dest);
+
+struct crs_save_message;
+
+struct crs_save_message *
+crs_save_message_new(crs_application_id id, struct cork_buffer *dest);
+
+void
+crs_save_message_free(struct crs_save_message *app);
+
+/* node takes control of app */
+int
+crs_save_message_register(struct crs_save_message *app, struct crs_node *node);
 
 
-#define CRS_PRINT_MESSAGE_ID  0xa5282785  /* hash of print */
+/*-----------------------------------------------------------------------
+ * Printing messages
+ */
 
-/* Creates an application that prints each message received stdout.  This
- * is mainly used in test cases. */
-struct crs_application *
-crs_print_message_application_new(FILE *out);
+/* A Pastry application that prints each message received to the given stream.
+ * This is mainly used in test cases. */
+
+struct crs_print_message;
+
+struct crs_print_message *
+crs_print_message_new(FILE *out);
+
+void
+crs_print_message_free(struct crs_print_message *app);
+
+/* node takes control of app */
+int
+crs_print_message_register(struct crs_print_message *app,
+                           struct crs_node *node);
+
+struct crs_print_message *
+crs_print_message_get(struct crs_node *node);
 
 int
-crs_send_print_message(struct crs_node *node, crs_id dest, const char *message);
+crs_print_message_send(struct crs_print_message *app, crs_id dest,
+                       const char *message);
 
 
 #endif  /* CROISSANT_TESTS_H */

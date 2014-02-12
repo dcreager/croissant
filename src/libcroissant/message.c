@@ -204,11 +204,3 @@ crs_message_encode_uint64(struct crs_message *msg, uint64_t src)
     CORK_UINT64_HOST_TO_BIG_IN_PLACE(src);
     cork_buffer_append(&msg->buf, &src, sizeof(src));
 }
-
-void
-crs_message_encode_application_id(struct crs_message *msg,
-                                  crs_application_id id)
-{
-    CORK_UINT32_HOST_TO_BIG_IN_PLACE(id);
-    cork_buffer_append(&msg->buf, &id, sizeof(id));
-}
