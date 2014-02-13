@@ -79,10 +79,6 @@ struct crs_node {
 CORK_LOCAL void
 crs_node_free(struct crs_node *node);
 
-CORK_LOCAL int
-crs_node_process_message(struct crs_node *node, crs_id src, crs_id dest,
-                         struct crs_message *msg);
-
 
 /*-----------------------------------------------------------------------
  * Node references

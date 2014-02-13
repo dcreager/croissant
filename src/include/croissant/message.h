@@ -39,5 +39,9 @@ crs_message_free(struct crs_message *msg);
 CORK_LOCAL void
 crs_message_start_reading(struct crs_message *msg);
 
+/* Resets the cursor of a read-only message */
+CORK_LOCAL void
+crs_message_reset_cursor(struct crs_message *msg);
+
 
 #endif  /* CROISSANT_MESSAGE_H */

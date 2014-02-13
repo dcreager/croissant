@@ -10,6 +10,35 @@ typedef int
 .PD 0
 .P
 .PD
+\f[B]crs_application_intercept_f\f[](void *\f[I]user_data\f[], struct
+crs_node *\f[I]node\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ crs_id
+\f[I]src\f[], crs_id \f[I]dest\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ struct
+crs_message *\f[I]msg\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_application_set_intercept\f[](struct crs_application
+*\f[I]app\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ crs_application_intercept_f
+*\f[I]intercept\f[]);
+.PP
+typedef int
+.PD 0
+.P
+.PD
 \f[B]crs_application_receive_f\f[](void *\f[I]user_data\f[], struct
 crs_node *\f[I]node\f[],
 .PD 0
@@ -36,17 +65,23 @@ void
 *\f[I]receive\f[]);
 .SH DESCRIPTION
 .PP
-The \f[I]receive\f[] callback is how an application instance receives
-and processes messages sent over the Pastry overlay network.
+The \f[I]intercept\f[] and \f[I]receive\f[] callbacks are how an
+application instance receives and processes messages sent over the
+Pastry overlay network.
 .PP
-When the local node receives a message where it is the final destination
-(i.e., the local node's Pastry identifier is closest to the
-\f[I]dest\f[] identifier for the message), then the local node extracts
-the application ID from the message, and routes the message to the
+When the local node receives a message, it extracts the application ID
+from the message, and routes the message to the
 \f[B]crs_application\f[](3) instance that has been registered with that
 ID.
-The local node then calls that instance's \f[I]receive\f[] callback
-function.
+The local node then calls that instance's \f[I]intercept\f[] or
+\f[I]receive\f[] callback function.
+.PP
+The difference between the two callbacks is whether the local node is
+the final destination for the message \[em] i.e., the local node's
+Pastry identifier is closest to the \f[I]dest\f[] identifier for the
+message.
+If it is, then the \f[I]receive\f[] callback is called; otherwise, the
+\f[I]intercept\f[] callback is called.
 .PP
 Your callback should parse the contents of \f[I]msg\f[], using the
 \f[B]crs_message_decode\f[](3) family of functions, and then perform
@@ -63,7 +98,23 @@ The source identifier will \f[B]usually\f[] be the same as the sender
 identifier, so that you know where to route any replies to, but this
 isn't a requirement.
 .PP
-Your callback can raise an error condition and return a non\-zero value.
+The \f[I]intercept\f[] callback receives an extra \f[I]next_hop\f[]
+parameter, which is a node that is closer to the message's final
+destination than the local node is.
+This callback is optional; for most applications, you don't need to
+provide one.
+The default behavior is to implement the standard Pastry routing
+protocol by forwarding the message to the \f[I]next_hop\f[] node.
+If you do provide an \f[I]intercept\f[] callback, you can forward the
+message to another node by calling \f[B]crs_node_ref_forward\f[](3).
+You can use the pre\-calculated \f[I]next_hop\f[] parameter, or find
+some other next hop node if you need to re\-route the message in some
+way.
+You can also drop the message completely, by not forward the message to
+any next hop node.
+.PP
+Your callbacks can raise an error condition and return a non\-zero
+value.
 However, this should only be used in exceptional circumstances, such as
 an unexpected parse error, or an error sending a reply message; the
 underlying node delivery code that calls your callback won't know how to

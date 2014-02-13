@@ -44,6 +44,13 @@ crs_message_start_reading(struct crs_message *msg)
     msg->remaining_bytes = msg->buf.size;
 }
 
+CORK_LOCAL void
+crs_message_reset_cursor(struct crs_message *msg)
+{
+    msg->cursor = msg->buf.buf;
+    msg->remaining_bytes = msg->buf.size;
+}
+
 void
 crs_message_to_buffer(struct cork_buffer *dest, struct crs_message *msg)
 {

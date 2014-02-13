@@ -9,6 +9,15 @@ crs_application_receive -- Receiving application messages
 | **#include &lt;croissant.h&gt;**
 |
 | typedef int
+| **crs_application_intercept_f**(void \**user_data*, struct crs_node \**node*,
+|                             crs_id *src*, crs_id *dest*,
+|                             struct crs_message \**msg*);
+|
+| void
+| **crs_application_set_intercept**(struct crs_application \**app*,
+|                               crs_application_intercept_f \**intercept*);
+|
+| typedef int
 | **crs_application_receive_f**(void \**user_data*, struct crs_node \**node*,
 |                           crs_id *src*, crs_id *dest*,
 |                           struct crs_message \**msg*);
@@ -20,15 +29,18 @@ crs_application_receive -- Receiving application messages
 
 # DESCRIPTION
 
-The *receive* callback is how an application instance receives and processes
-messages sent over the Pastry overlay network.
+The *intercept* and *receive* callbacks are how an application instance receives
+and processes messages sent over the Pastry overlay network.
 
-When the local node receives a message where it is the final destination (i.e.,
-the local node's Pastry identifier is closest to the *dest* identifier for the
-message), then the local node extracts the application ID from the message, and
-routes the message to the **crs_application**(3) instance that has been
-registered with that ID.  The local node then calls that instance's *receive*
-callback function.
+When the local node receives a message, it extracts the application ID from the
+message, and routes the message to the **crs_application**(3) instance that has
+been registered with that ID.  The local node then calls that instance's
+*intercept* or *receive* callback function.
+
+The difference between the two callbacks is whether the local node is the final
+destination for the message — i.e., the local node's Pastry identifier is
+closest to the *dest* identifier for the message.  If it is, then the *receive*
+callback is called; otherwise, the *intercept* callback is called.
 
 Your callback should parse the contents of *msg*, using the
 **crs_message_decode**(3) family of functions, and then perform whatever logic
@@ -41,11 +53,22 @@ identifier.  The source identifier will **usually** be the same as the sender
 identifier, so that you know where to route any replies to, but this isn't a
 requirement.
 
-Your callback can raise an error condition and return a non-zero value.
+The *intercept* callback receives an extra *next_hop* parameter, which is a node
+that is closer to the message's final destination than the local node is.
+This callback is optional; for most applications, you don't need to provide one.
+The default behavior is to implement the standard Pastry routing protocol by
+forwarding the message to the *next_hop* node.  If you do provide an *intercept*
+callback, you can forward the message to another node by calling
+**crs_node_ref_forward**(3).  You can use the pre-calculated *next_hop*
+parameter, or find some other next hop node if you need to re-route the message
+in some way.  You can also drop the message completely, by not forward the
+message to any next hop node.
+
+Your callbacks can raise an error condition and return a non-zero value.
 However, this should only be used in exceptional circumstances, such as an
-unexpected parse error, or an error sending a reply message; the underlying
-node delivery code that calls your callback won't know how to respond to the
-error condition, and so it will just be logged and ignored.  If any real
+unexpected parse error, or an error sending a reply message; the underlying node
+delivery code that calls your callback won't know how to respond to the error
+condition, and so it will just be logged and ignored.  If any real
 application-level errors happen, you should catch those and handle them in your
 callback — possibly by sending an error message back across the overlay network
 to the message's sender.

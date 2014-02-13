@@ -27,8 +27,12 @@ struct crs_application {
     struct crs_node  *node;
     void  *user_data;
     cork_free_f  free_user_data;
+    crs_application_intercept_f  *intercept;
     crs_application_receive_f  *receive;
 };
+
+#define crs_application_intercept(a, n, nh, s, d, m) \
+    ((a)->intercept((a)->user_data, (n), (nh), (s), (d), (m)))
 
 #define crs_application_receive(a, n, s, d, m) \
     ((a)->receive((a)->user_data, (n), (s), (d), (m)))

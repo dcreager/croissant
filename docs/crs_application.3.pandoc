@@ -121,6 +121,17 @@ instance for the given application ID.
     the local node is the final destination.  See **crs_application_receive**(3)
     for more details.
 
+*intercept*
+
+  : Called when the local node receives a message for this application, where
+    the local node is **not** the final destination.  Croissant will decide
+    which node is the "next hop" for this message, and pass that into your
+    *intercept* callback along with details about the message.  See
+    **crs_application_receive**(3) for more details.
+
+    This callback is optional.  If you don't provide one, the default
+    implementation will forward the message to the "next hop" node.
+
 
 # RETURN VALUES
 

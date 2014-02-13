@@ -324,18 +324,29 @@ crs_node_route_message(struct crs_node *node, crs_id src, crs_id dest,
                        struct crs_message *msg)
 {
     struct crs_node_ref  *next_hop;
+    crs_application_id  id;
+    struct crs_application  *app;
+
+    /* Determine the next hop for this message. */
     ep_check(next_hop = crs_node_get_next_hop(node, dest));
+
+    /* Decode the beginning of the message to find out which application is
+     * belongs to. */
+    crs_message_start_reading(msg);
+    ei_check(crs_message_decode_uint32(msg, &id, "application ID"));
+    ep_check(app = crs_node_get_application(node, id));
+
+    /* Deliver the message to one of the application's callbacks, depending on
+     * whether this is the final destination. */
     if (next_hop == CRS_NODE_REF_SELF) {
         int  rc;
-        crs_message_start_reading(msg);
-        rc = crs_node_process_message(node, src, dest, msg);
+        clog_debug("[%s] Deliver message to application \"%s\"",
+                   (char *) node->address_str.buf, app->name);
+        rc = crs_application_receive(app, node, src, dest, msg);
         crs_message_free(msg);
         return rc;
     } else {
-        clog_debug("[%s] Forward via %s",
-                   (char *) node->address_str.buf,
-                   crs_node_ref_get_address_str(next_hop));
-        return crs_node_ref_send(next_hop, src, dest, msg);
+        return crs_application_intercept(app, node, next_hop, src, dest, msg);
     }
 
 error:
@@ -387,19 +398,6 @@ crs_node_get_application(struct crs_node *node, crs_application_id id)
         cork_undefined("No application for 0x%08" PRIx32, id);
     }
     return result;
-}
-
-CORK_LOCAL int
-crs_node_process_message(struct crs_node *node, crs_id src, crs_id dest,
-                         struct crs_message *msg)
-{
-    crs_application_id  id;
-    struct crs_application  *app;
-    rii_check(crs_message_decode_uint32(msg, &id, "application ID"));
-    rip_check(app = crs_node_get_application(node, id));
-    clog_debug("[%s] Deliver message to application \"%s\"",
-               (char *) node->address_str.buf, app->name);
-    return crs_application_receive(app, node, src, dest, msg);
 }
 
 

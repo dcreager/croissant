@@ -87,6 +87,20 @@ struct crs_print_message {
 };
 
 static int
+crs_print_message__intercept(void *user_data, struct crs_node *node,
+                             struct crs_node_ref *next_hop,
+                             crs_id src, crs_id dest, struct crs_message *msg)
+{
+    char  src_str[CRS_ID_STRING_LENGTH];
+    char  dest_str[CRS_ID_STRING_LENGTH];
+    clog_debug("[%s] {print} Spy on message from %s to %s",
+               crs_node_get_address_str(node),
+               crs_id_to_raw_string(src_str, src),
+               crs_id_to_raw_string(dest_str, dest));
+    return crs_node_ref_forward(next_hop, src, dest, msg);
+}
+
+static int
 crs_print_message__receive(void *user_data, struct crs_node *node,
                            crs_id src, crs_id dest, struct crs_message *msg)
 {
@@ -117,6 +131,7 @@ crs_print_message_new(FILE *out)
     cork_buffer_init(&self->buf);
     self->app = crs_application_new(CRS_PRINT_MESSAGE_ID, "crs_print_message");
     crs_application_set_user_data(self->app, self, crs_print_message__free);
+    crs_application_set_intercept(self->app, crs_print_message__intercept);
     crs_application_set_receive(self->app, crs_print_message__receive);
     return self;
 }

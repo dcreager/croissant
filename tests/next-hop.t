@@ -76,7 +76,8 @@ Test our next-hop routing logic.
   --- send "hello" to 04000000000000000000000000000000
   [local:1] Send message to 04000000000000000000000000000000
   [local:1] Next hop is 04000000000000000000000000000000 (leaf set)
-  [local:1] Forward via local:2
+  [local:1] {print} Spy on message from 01000000000000000000000000000000 to 04000000000000000000000000000000
+  [local:2] Forward via local:2
   [local:2] {local} Send message to local:2
   [local:2] Next hop is self (leaf set)
   [local:2] Deliver message to application "crs_print_message"
@@ -85,7 +86,8 @@ Test our next-hop routing logic.
   --- send "world" to 06000000000000000000000000000000
   [local:1] Send message to 06000000000000000000000000000000
   [local:1] Next hop is 08000000000000000000000000000000 (leaf set)
-  [local:1] Forward via local:3
+  [local:1] {print} Spy on message from 01000000000000000000000000000000 to 06000000000000000000000000000000
+  [local:3] Forward via local:3
   [local:3] {local} Send message to local:3
   [local:3] Next hop is self (last resort)
   [local:3] Deliver message to application "crs_print_message"
@@ -198,7 +200,8 @@ Test our next-hop routing logic.
   --- send "hello" to 01000000000000000000000000000000
   [local:1] Send message to 01000000000000000000000000000000
   [local:1] Next hop is 01000000000000000000000000000000 (routing table)
-  [local:1] Forward via local:3
+  [local:1] {print} Spy on message from 0123456789abcdef0123456789abcdef to 01000000000000000000000000000000
+  [local:3] Forward via local:3
   [local:3] {local} Send message to local:3
   [local:3] Next hop is self (leaf set)
   [local:3] Deliver message to application "crs_print_message"
@@ -213,7 +216,8 @@ Test our next-hop routing logic.
   --- send "goodbye" to f0000000000000000000000000000000
   [local:1] Send message to f0000000000000000000000000000000
   [local:1] Next hop is 00000000000000000000000000000000 (routing table fallback)
-  [local:1] Forward via local:2
+  [local:1] {print} Spy on message from 0123456789abcdef0123456789abcdef to f0000000000000000000000000000000
+  [local:2] Forward via local:2
   [local:2] {local} Send message to local:2
   [local:2] Next hop is self (last resort)
   [local:2] Deliver message to application "crs_print_message"
@@ -416,10 +420,12 @@ Test our next-hop routing logic.
   --- send "hello" to 01110000000000000000000000000000
   [local:1] Send message to 01110000000000000000000000000000
   [local:1] Next hop is 01100000000000000000000000000000 (routing table)
-  [local:1] Forward via local:2
+  [local:1] {print} Spy on message from 01000000000000000000000000000000 to 01110000000000000000000000000000
+  [local:2] Forward via local:2
   [local:2] {local} Send message to local:2
   [local:2] Next hop is 01110000000000000000000000000000 (leaf set)
-  [local:2] Forward via local:3
+  [local:2] {print} Spy on message from 01000000000000000000000000000000 to 01110000000000000000000000000000
+  [local:3] Forward via local:3
   [local:3] {local} Send message to local:3
   [local:3] Next hop is self (leaf set)
   [local:3] Deliver message to application "crs_print_message"

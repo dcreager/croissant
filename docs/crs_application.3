@@ -186,6 +186,20 @@ where the local node is the final destination.
 See \f[B]crs_application_receive\f[](3) for more details.
 .RS
 .RE
+.TP
+.B \f[I]intercept\f[]
+Called when the local node receives a message for this application,
+where the local node is \f[B]not\f[] the final destination.
+Croissant will decide which node is the \[lq]next hop\[rq] for this
+message, and pass that into your \f[I]intercept\f[] callback along with
+details about the message.
+See \f[B]crs_application_receive\f[](3) for more details.
+.RS
+.PP
+This callback is optional.
+If you don't provide one, the default implementation will forward the
+message to the \[lq]next hop\[rq] node.
+.RE
 .SH RETURN VALUES
 .PP
 \f[B]crs_node_add_application\f[]() returns a \f[B]CORK_REDEFINED\f[](3)

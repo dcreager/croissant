@@ -379,6 +379,14 @@ int
 crs_node_ref_send(struct crs_node_ref *ref, crs_id src, crs_id dest,
                   struct crs_message *msg);
 
+/* Takes control of msg.
+ *
+ * This function should be used in an application's `intercept` callback to
+ * forward a message on to another node in the network. */
+int
+crs_node_ref_forward(struct crs_node_ref *next_hop, crs_id src, crs_id dest,
+                     struct crs_message *msg);
+
 
 /*-----------------------------------------------------------------------
  * Routing state
@@ -474,9 +482,13 @@ crs_node_get_next_hop(struct crs_node *node, crs_id key);
 typedef uint32_t  crs_application_id;
 
 typedef int
+crs_application_intercept_f(void *user_data, struct crs_node *node,
+                            struct crs_node_ref *next_hop,
+                            crs_id src, crs_id dest, struct crs_message *msg);
+
+typedef int
 crs_application_receive_f(void *user_data, struct crs_node *node,
-                          crs_id src, crs_id dest,
-                          struct crs_message *msg);
+                          crs_id src, crs_id dest, struct crs_message *msg);
 
 
 struct crs_application *
@@ -506,6 +518,10 @@ crs_application_set_user_data(struct crs_application *app,
 void
 crs_application_set_receive(struct crs_application *app,
                             crs_application_receive_f *receive);
+
+void
+crs_application_set_intercept(struct crs_application *app,
+                              crs_application_intercept_f *intercept);
 
 
 struct crs_message *

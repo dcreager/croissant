@@ -8,13 +8,26 @@
  * ----------------------------------------------------------------------
  */
 
+#include <clogger.h>
 #include <libcork/core.h>
 #include <libcork/ds.h>
 #include <libcork/helpers/errors.h>
 
 #include "croissant.h"
 #include "croissant/application.h"
+#include "croissant/node.h"
 
+#define CLOG_CHANNEL  "croissant:node"
+
+
+static int
+crs_application__default_intercept(void *user_data, struct crs_node *node,
+                                   struct crs_node_ref *next_hop,
+                                   crs_id src, crs_id dest,
+                                   struct crs_message *msg)
+{
+    return crs_node_ref_forward(next_hop, src, dest, msg);
+}
 
 static int
 crs_application__default_receive(void *user_data, struct crs_node *node,
@@ -33,6 +46,7 @@ crs_application_new(crs_application_id id, const char *name)
     app->node = NULL;
     app->user_data = NULL;
     app->free_user_data = NULL;
+    app->intercept = crs_application__default_intercept;
     app->receive = crs_application__default_receive;
     return app;
 }
@@ -76,6 +90,13 @@ crs_application_set_user_data(struct crs_application *app,
     cork_free_user_data(app);
     app->user_data = user_data;
     app->free_user_data = free_user_data;
+}
+
+void
+crs_application_set_intercept(struct crs_application *app,
+                              crs_application_intercept_f *intercept)
+{
+    app->intercept = intercept;
 }
 
 void

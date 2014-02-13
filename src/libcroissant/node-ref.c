@@ -15,6 +15,7 @@
 
 #include "croissant.h"
 #include "croissant/context.h"
+#include "croissant/message.h"
 #include "croissant/node.h"
 
 #define CLOG_CHANNEL  "croissant:node-ref"
@@ -117,6 +118,17 @@ crs_node_ref_send(struct crs_node_ref *ref, crs_id src, crs_id dest,
         clog_debug("[%s] {local} Send message to %s",
                    crs_node_get_address_str(ref->owner),
                    crs_node_ref_get_address_str(ref));
+        crs_message_reset_cursor(msg);
         return crs_node_route_message(ref->local_node, src, dest, msg);
     }
+}
+
+int
+crs_node_ref_forward(struct crs_node_ref *next_hop, crs_id src, crs_id dest,
+                     struct crs_message *msg)
+{
+    clog_debug("[%s] Forward via %s",
+               (char *) next_hop->owner->address_str.buf,
+               (char *) next_hop->address_str.buf);
+    return crs_node_ref_send(next_hop, src, dest, msg);
 }
