@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -249,7 +249,12 @@ crs_leaf_set_add_below(struct crs_leaf_set *set, struct crs_node_ref *ref)
         }
 
         curr_dist = crs_id_cw_distance_between(curr->id, set->node->id);
-        if (cork_u128_ge(curr_dist, ref_dist)) {
+        if (cork_u128_eq(curr_dist, ref_dist)) {
+            clog_debug("[%s] (leafset) [-%2u] Found duplicate entry %s",
+                       crs_node_get_address_str(set->node),
+                       i+1, crs_node_ref_get_id_str(ref));
+            return;
+        } else if (cork_u128_ge(curr_dist, ref_dist)) {
             clog_debug("[%s] (leafset) [-%2u] Found spot for %s",
                        crs_node_get_address_str(set->node),
                        i+1, crs_node_ref_get_id_str(ref));
@@ -313,7 +318,12 @@ crs_leaf_set_add_above(struct crs_leaf_set *set, struct crs_node_ref *ref)
         }
 
         curr_dist = crs_id_cw_distance_between(set->node->id, curr->id);
-        if (cork_u128_ge(curr_dist, ref_dist)) {
+        if (cork_u128_eq(curr_dist, ref_dist)) {
+            clog_debug("[%s] (leafset) [-%2u] Found duplicate entry %s",
+                       crs_node_get_address_str(set->node),
+                       i+1, crs_node_ref_get_id_str(ref));
+            return;
+        } else if (cork_u128_ge(curr_dist, ref_dist)) {
             clog_debug("[%s] (leafset) [+%2u] Found spot for %s",
                        crs_node_get_address_str(set->node),
                        i+1, crs_node_ref_get_id_str(ref));

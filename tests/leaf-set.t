@@ -7,6 +7,7 @@ Some tests of manually updating the contents of a node's leaf set.
   > node 00000000000000000000000000000100 {
   >     add leaf set entry 000000000000000000000000000000ff;
   >     add leaf set entry 00000000000000000000000000000101;
+  >     add leaf set entry 000000000000000000000000000000ff;
   >     print leaf set;
   > };
   > EOF
@@ -28,6 +29,9 @@ Some tests of manually updating the contents of a node's leaf set.
   --- [00000000000000000000000000000100]
   --- add leaf set entry 00000000000000000000000000000101
   [local:2] (leafset) [+ 1] Add 00000000000000000000000000000101
+  --- [00000000000000000000000000000100]
+  --- add leaf set entry 000000000000000000000000000000ff
+  [local:2] (leafset) [- 1] Found duplicate entry 000000000000000000000000000000ff
   --- [00000000000000000000000000000100]
   --- print leaf set
   Leaf set for 00000000000000000000000000000100
