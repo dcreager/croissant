@@ -630,7 +630,7 @@ tr139:
                         crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_set = crs_node_get_leaf_set(node);
-                to_ref = crs_node_get_ref(to_node);
+                to_ref = crs_node_new_ref(node, crs_node_get_address(to_node));
                 crs_leaf_set_add(from_set, to_ref);
             }
 	goto st42;
@@ -649,7 +649,7 @@ tr193:
                         crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_table = crs_node_get_routing_table(node);
-                to_ref = crs_node_get_ref(to_node);
+                to_ref = crs_node_new_ref(node, crs_node_get_address(to_node));
                 crs_routing_table_set(from_table, to_ref);
             }
 	goto st42;
@@ -1811,7 +1811,7 @@ tr138:
                         crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_set = crs_node_get_leaf_set(node);
-                to_ref = crs_node_get_ref(to_node);
+                to_ref = crs_node_new_ref(node, crs_node_get_address(to_node));
                 crs_leaf_set_add(from_set, to_ref);
             }
 	goto st131;
@@ -1830,7 +1830,7 @@ tr192:
                         crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_table = crs_node_get_routing_table(node);
-                to_ref = crs_node_get_ref(to_node);
+                to_ref = crs_node_new_ref(node, crs_node_get_address(to_node));
                 crs_routing_table_set(from_table, to_ref);
             }
 	goto st131;
@@ -3803,7 +3803,7 @@ tr371:
                         crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_set = crs_node_get_leaf_set(node);
-                to_ref = crs_node_get_ref(to_node);
+                to_ref = crs_node_new_ref(node, crs_node_get_address(to_node));
                 crs_leaf_set_add(from_set, to_ref);
             }
 	goto st298;
@@ -3822,7 +3822,7 @@ tr425:
                         crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_table = crs_node_get_routing_table(node);
-                to_ref = crs_node_get_ref(to_node);
+                to_ref = crs_node_new_ref(node, crs_node_get_address(to_node));
                 crs_routing_table_set(from_table, to_ref);
             }
 	goto st298;
@@ -4506,7 +4506,7 @@ tr370:
                         crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_set = crs_node_get_leaf_set(node);
-                to_ref = crs_node_get_ref(to_node);
+                to_ref = crs_node_new_ref(node, crs_node_get_address(to_node));
                 crs_leaf_set_add(from_set, to_ref);
             }
 	goto st350;
@@ -4525,7 +4525,7 @@ tr424:
                         crs_id_to_raw_string(id1_str, id1));
                 rip_check(to_node = crs_ctx_require_node(ctx, id1));
                 from_table = crs_node_get_routing_table(node);
-                to_ref = crs_node_get_ref(to_node);
+                to_ref = crs_node_new_ref(node, crs_node_get_address(to_node));
                 crs_routing_table_set(from_table, to_ref);
             }
 	goto st350;

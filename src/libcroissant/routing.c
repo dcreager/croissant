@@ -129,6 +129,7 @@ crs_routing_table_set(struct crs_routing_table *table,
     struct crs_routing_table_entry  *entry;
     int  r;
     unsigned int  c;
+    assert(table->node == ref->owner);
     entry = crs_routing_table_get_entry_for_id(table, ref->id, &r, &c);
     if (entry != NULL) {
         clog_debug("[%s] (rtable) [%2d/%hx] %s",
@@ -367,6 +368,7 @@ void
 crs_leaf_set_add(struct crs_leaf_set *set, struct crs_node_ref *ref)
 {
     assert(!crs_id_equals(ref->id, set->node->id));
+    assert(set->node == ref->owner);
     /* Try to insert the new node into one of the arrays, depending on whether
      * the new ID is larger or smaller than the local node's. */
     if (crs_id_is_cw(ref->id, set->node->id)) {

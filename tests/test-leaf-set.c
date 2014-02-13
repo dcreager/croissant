@@ -51,14 +51,15 @@ create_test_id(unsigned int value)
 }
 
 static void
-add_to_set(struct crs_ctx *ctx, struct crs_leaf_set *set, unsigned int value)
+add_to_set(struct crs_ctx *ctx, struct crs_node *owner,
+           struct crs_leaf_set *set, unsigned int value)
 {
     crs_id  id;
     struct crs_node  *node;
     struct crs_node_ref  *ref;
     id = create_test_id(value);
     node = crs_node_new(ctx, id, NULL);
-    ref = crs_node_get_ref(node);
+    ref = crs_node_new_ref(owner, crs_node_get_address(node));
     crs_leaf_set_add(set, ref);
 }
 
@@ -95,8 +96,8 @@ START_TEST(test_leaf_set_02)
     id = create_test_id(100);
     node = crs_node_new(ctx, id, NULL);
     fail_if_error(set = crs_leaf_set_new(node));
-    add_to_set(ctx, set, 99);
-    add_to_set(ctx, set, 101);
+    add_to_set(ctx, node, set, 99);
+    add_to_set(ctx, node, set, 101);
     verify_leaf_set(set,
         "[min] 00000000000000000000000000000063\n"
         "[- 1] 00000000000000000000000000000063 local:2\n"
@@ -124,19 +125,19 @@ START_TEST(test_leaf_set_03)
     /* Insert the closest items last, so that we can test bubbling up existing
      * entries. */
     /* below */
-    add_to_set(ctx, set, 94);
-    add_to_set(ctx, set, 95);
-    add_to_set(ctx, set, 96);
-    add_to_set(ctx, set, 97);
-    add_to_set(ctx, set, 98);
-    add_to_set(ctx, set, 99);
+    add_to_set(ctx, node, set, 94);
+    add_to_set(ctx, node, set, 95);
+    add_to_set(ctx, node, set, 96);
+    add_to_set(ctx, node, set, 97);
+    add_to_set(ctx, node, set, 98);
+    add_to_set(ctx, node, set, 99);
     /* above */
-    add_to_set(ctx, set, 106);
-    add_to_set(ctx, set, 105);
-    add_to_set(ctx, set, 104);
-    add_to_set(ctx, set, 103);
-    add_to_set(ctx, set, 102);
-    add_to_set(ctx, set, 101);
+    add_to_set(ctx, node, set, 106);
+    add_to_set(ctx, node, set, 105);
+    add_to_set(ctx, node, set, 104);
+    add_to_set(ctx, node, set, 103);
+    add_to_set(ctx, node, set, 102);
+    add_to_set(ctx, node, set, 101);
     verify_leaf_set(set,
         "[min] 0000000000000000000000000000005e\n"
         "[- 6] 0000000000000000000000000000005e local:2\n"
@@ -174,10 +175,10 @@ START_TEST(test_leaf_set_04)
     fail_if_error(set = crs_leaf_set_new(node));
     /* Test inserting into a full set */
     for (i = 100 - CRS_LEAF_SET_SIZE - 3; i < 100; i++) {
-        add_to_set(ctx, set, i);
+        add_to_set(ctx, node, set, i);
     }
     for (i = 100 + CRS_LEAF_SET_SIZE + 3; --i > 100; ) {
-        add_to_set(ctx, set, i);
+        add_to_set(ctx, node, set, i);
     }
     verify_leaf_set(set,
         "[min] 00000000000000000000000000000054\n"
