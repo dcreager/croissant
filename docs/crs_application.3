@@ -1,0 +1,209 @@
+.TH "crs_application" "3" "2013-06-01" "Croissant" "Croissant\ documentation"
+.SH NAME
+.PP
+crs_application \[en] Pastry applications
+.SH SYNOPSIS
+.PP
+\f[B]#include <croissant.h>\f[]
+.PP
+typedef uint32_t \f[B]crs_application_id\f[];
+.PP
+\f[B]struct crs_application\f[];
+.PP
+struct crs_application *
+.PD 0
+.P
+.PD
+\f[B]crs_application_new\f[](crs_application_id \f[I]id\f[], const char
+*\f[I]name\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_application_free\f[](struct crs_application *\f[I]app\f[]);
+.PP
+crs_application_id
+.PD 0
+.P
+.PD
+\f[B]crs_application_get_id\f[](const struct crs_application
+*\f[I]app\f[]);
+.PP
+const char *
+.PD 0
+.P
+.PD
+\f[B]crs_application_get_name\f[](const struct crs_application
+*\f[I]app\f[]);
+.PP
+struct crs_node *
+.PD 0
+.P
+.PD
+\f[B]crs_application_get_node\f[](const struct crs_application
+*\f[I]app\f[]);
+.PP
+void *
+.PD 0
+.P
+.PD
+\f[B]crs_application_get_user_data\f[](const struct crs_application
+*\f[I]app\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_application_set_user_data\f[](struct crs_application
+*\f[I]app\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ void
+*\f[I]user_data\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cork_free_f
+\f[I]free_user_data\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_node_add_application\f[](struct crs_node *\f[I]node\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ struct crs_application
+*\f[I]app\f[]);
+.PP
+struct crs_application *
+.PD 0
+.P
+.PD
+\f[B]crs_node_get_application\f[](struct crs_node *\f[I]node\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ crs_application_id
+\f[I]id\f[]);
+.SH DESCRIPTION
+.PP
+A Pastry application is a collection of code running of the nodes of the
+overlay network, providing some useful service to the network.
+Each node that runs the application will have some local state, and
+these per\-node application instances will communicate by sending
+messages to each other via the overlay network.
+.PP
+This per\-node state and code is represented by a
+\f[B]crs_application\f[] instance, which defines how the local node
+should respond to any application messages that are received (or seen in
+transit) by the local node.
+Each application will also present a higher\-level,
+application\-specific interface, which lets any other code running on
+the local node access the services provided by the application.
+This interface will use the local node's \f[B]crs_application\f[]
+instance to send and receive messages to provide those services.
+.PP
+Each application is identified by a \f[B]crs_application_id\f[], which
+is 32\-bit integer identifier.
+Each application must have a globally unique identifier.
+If you ever have to extend the capabilities of an application (by adding
+new types of messages that it sends and responds to), each new version
+of the application must also have a separate globally unique identifier.
+When an application sends a message over the overlay network, it is
+prefixed with this application ID, which ensures that the receiving node
+can determine which local \f[B]crs_application\f[] instance to send the
+message to.
+.PP
+There is no central registry of application identifiers.
+Instead, you should generate a \f[B]crs_application_id\f[] by computing
+the hash of a unique string that identifies the application, using the
+\f[B]cork\-hash\f[](1) command.
+The convention is to use the name of the C identifier for the code
+representing the application, possibly followed by a versioning suffix.
+For instance, Croissant includes a test application that simplies prints
+out each message that it receives.
+This application is called \f[C]crs_print_message\f[] in the C code, and
+so its application ID is \f[C]0x9703f971\f[]:
+.IP
+.nf
+\f[C]
+$\ cork\-hash\ crs_print_message
+0x9703f971
+\f[]
+.fi
+.PP
+If we were to add any new capabilites to this application, we'd need a
+new application ID.
+We'd add a version suffix to the name, resulting in
+\f[C]crs_print_message:1\f[], and then hash that to get the new ID:
+.IP
+.nf
+\f[C]
+$\ cork\-hash\ crs_print_message:1
+0xb1d28bcc
+\f[]
+.fi
+.PP
+\f[B]crs_application_new\f[]() creates a new \f[B]crs_application\f[]
+instance with a particular unique \f[I]id\f[] and \f[I]name\f[].
+\f[B]crs_application_free\f[]() frees an application instance.
+The \f[B]crs_application_get\f[] family of functions give you access to
+the various properties of a \f[B]crs_application\f[] instance.
+.PP
+After creating the application instance, you must also register several
+callback functions, which define how the application will respond to
+certain events that occur on the overlay network.
+The most important of these is how the application responds to messages
+that are delivered to the local node.
+The callbacks are described in more detail below.
+You can add a custom \f[I]user_data\f[] object to the application
+instance using \f[B]crs_application_set_user_data\f[](); see
+\f[B]tac\-callbacks\f[](7) for more details.
+This object will be passed as\-is as the \f[I]user_data\f[] parameter to
+all of the application's callback functions.
+You can also access the application's \f[I]user_data\f[] object using
+\f[B]crs_application_get_user_data\f[]().
+.PP
+Once you have created the application instance, and registered all of
+the necessary callbacks, you must register the application with the
+local node's \f[B]crs_node\f[](3) instance.
+That allows the node to know which \f[B]crs_application\f[] instance to
+delegate to when messages with its application ID are received, and also
+gives the application access to the overlay network for sending
+messages.
+\f[B]crs_node_add_application\f[]() adds a new application to the node.
+\f[B]crs_node_get_application\f[]() returns the \f[B]crs_application\f[]
+instance for the given application ID.
+.SH CALLBACKS
+.TP
+.B \f[I]receive\f[]
+Called when the local node receives a message for this application,
+where the local node is the final destination.
+See \f[B]crs_application_receive\f[](3) for more details.
+.RS
+.RE
+.TP
+.B \f[I]intercept\f[]
+Called when the local node receives a message for this application,
+where the local node is \f[B]not\f[] the final destination.
+Croissant will decide which node is the \[lq]next hop\[rq] for this
+message, and pass that into your \f[I]intercept\f[] callback along with
+details about the message.
+See \f[B]crs_application_receive\f[](3) for more details.
+.RS
+.PP
+This callback is optional.
+If you don't provide one, the default implementation will forward the
+message to the \[lq]next hop\[rq] node.
+.RE
+.SH RETURN VALUES
+.PP
+\f[B]crs_node_add_application\f[]() returns a \f[B]CORK_REDEFINED\f[](3)
+error if there is already a registered application with the same ID.
+.PP
+\f[B]crs_node_get_application\f[]() returns a \f[B]CORK_UNDEFINED\f[](3)
+error if there is no registered application with the requested ID.

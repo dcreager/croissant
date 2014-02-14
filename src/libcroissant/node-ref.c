@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -8,13 +8,17 @@
  * ----------------------------------------------------------------------
  */
 
+#include <clogger.h>
 #include <libcork/core.h>
 #include <libcork/ds.h>
 #include <libcork/helpers/errors.h>
 
 #include "croissant.h"
 #include "croissant/context.h"
+#include "croissant/message.h"
 #include "croissant/node.h"
+
+#define CLOG_CHANNEL  "croissant:node-ref"
 
 
 /*-----------------------------------------------------------------------
@@ -27,7 +31,7 @@ crs_node_ref_new_priv(struct crs_node *owner, crs_id node_id,
                       crs_proximity proximity,
                       struct crs_node *local_node,
                       void *user_data, cork_free_f free_user_data,
-                      crs_node_ref_send_f send)
+                      crs_node_ref_send_f *send)
 {
     struct crs_node_ref  *ref = cork_new(struct crs_node_ref);
     ref->owner = owner;
@@ -45,24 +49,14 @@ crs_node_ref_new_priv(struct crs_node *owner, crs_id node_id,
 }
 
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new(struct crs_node *owner, crs_id node_id,
+crs_node_ref_new(struct crs_node *owner,
                  const struct crs_node_address *address)
 {
-    struct crs_node  *local_node;
-
-    /* If the node in question is in the local process, then link the node
-     * reference to the node object. */
-    local_node = crs_ctx_get_node_with_id(owner->ctx, node_id);
-    /* proximity = (local_node == NULL?) CRS_PROXIMITY_UNKNOWN: 0; */
-
-    /* Otherwise use the type of address to determine which type of node
-     * reference to create. */
     switch (address->type) {
         case CRS_NODE_TYPE_LOCAL:
             /* We ignore the proximity value for local nodes; since they're
              * local, we always use a proximity of 0. */
-            return crs_local_node_ref_new(owner, node_id, address, local_node);
-
+            return crs_local_node_ref_new(owner, address);
         default:
             cork_unreachable();
     }
@@ -114,14 +108,46 @@ crs_node_ref_set_proximity(struct crs_node_ref *ref, crs_proximity proximity)
 
 int
 crs_node_ref_send(struct crs_node_ref *ref, crs_id src, crs_id dest,
-                  const void *message, size_t message_length)
+                  struct crs_message *msg)
 {
     /* If the node in question is in the current process, just sent the message
      * directly. */
-    if (ref->local_node != NULL) {
-        return crs_node_route_message
-            (ref->local_node, src, dest, message, message_length);
+    if (ref->local_node == NULL) {
+        return ref->send(ref, src, dest, msg);
     } else {
-        return ref->send(ref, src, dest, message, message_length);
+        clog_debug("[%s] {local} Send message to %s",
+                   crs_node_get_address_str(ref->owner),
+                   crs_node_ref_get_address_str(ref));
+        crs_message_reset_cursor(msg);
+        return crs_node_route_message(ref->local_node, src, dest, msg);
     }
+}
+
+int
+crs_node_ref_forward(struct crs_node_ref *next_hop, crs_id src, crs_id dest,
+                     struct crs_message *msg)
+{
+    clog_debug("[%s] Forward via %s",
+               (char *) next_hop->owner->address_str.buf,
+               (char *) next_hop->address_str.buf);
+    return crs_node_ref_send(next_hop, src, dest, msg);
+}
+
+
+struct crs_node_ref *
+crs_node_ref_decode(struct crs_message *msg, struct crs_node *owner,
+                    const char *field_name)
+{
+    crs_id  id;
+    const struct crs_node_address  *address;
+    rpi_check(crs_id_decode(msg, &id, field_name));
+    rpp_check(address = crs_node_address_decode(msg, field_name));
+    return crs_node_new_ref(owner, address);
+}
+
+void
+crs_node_ref_encode(struct crs_message *msg, const struct crs_node_ref *ref)
+{
+    crs_id_encode(msg, ref->id);
+    crs_node_address_encode(msg, &ref->address);
 }

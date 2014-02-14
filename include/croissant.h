@@ -11,6 +11,8 @@
 #ifndef CROISSANT_H
 #define CROISSANT_H
 
+#include <stdio.h>
+
 #include <libcork/core.h>
 #include <libcork/ds.h>
 
@@ -29,6 +31,78 @@
     cork_error_set_printf(CRS_IO_ERROR, __VA_ARGS__)
 #define crs_parse_error(...) \
     cork_error_set_printf(CRS_PARSE_ERROR, __VA_ARGS__)
+
+
+/*-----------------------------------------------------------------------
+ * Messages
+ */
+
+/* Each individual message instance is either read-only or write-only.  You are
+ * responsible for calling the write functions for the type of message. */
+
+struct crs_message;
+
+/* Valid for either message type.  Useful mostly for testing purposes. */
+
+void
+crs_message_to_buffer(struct cork_buffer *dest, struct crs_message *msg);
+
+
+/* Read-only functions */
+
+int
+crs_message_decode_bytes(struct crs_message *msg, void *dest, size_t size,
+                         const char *field_name);
+
+int
+crs_message_decode_buffer(struct crs_message *msg, struct cork_buffer *dest,
+                          const char *field_name);
+
+int
+crs_message_decode_buffer_append(struct crs_message *msg,
+                                 struct cork_buffer *dest, const char *field_name);
+
+int
+crs_message_decode_uint8(struct crs_message *msg, uint8_t *dest,
+                         const char *field_name);
+
+int
+crs_message_decode_uint16(struct crs_message *msg, uint16_t *dest,
+                          const char *field_name);
+
+int
+crs_message_decode_uint32(struct crs_message *msg, uint32_t *dest,
+                          const char *field_name);
+
+int
+crs_message_decode_uint64(struct crs_message *msg, uint64_t *dest,
+                          const char *field_name);
+
+
+/* Write-only functions */
+
+void
+crs_message_encode_bytes(struct crs_message *msg,
+                         const void *src, size_t size);
+
+void
+crs_message_encode_buffer(struct crs_message *msg,
+                          const struct cork_buffer *src);
+
+void
+crs_message_encode_string(struct crs_message *msg, const char *str);
+
+void
+crs_message_encode_uint8(struct crs_message *msg, uint8_t src);
+
+void
+crs_message_encode_uint16(struct crs_message *msg, uint16_t src);
+
+void
+crs_message_encode_uint32(struct crs_message *msg, uint32_t src);
+
+void
+crs_message_encode_uint64(struct crs_message *msg, uint64_t src);
 
 
 /*-----------------------------------------------------------------------
@@ -58,6 +132,9 @@ crs_id_to_raw_string(char *str, crs_id id);
 void
 crs_id_print(struct cork_buffer *dest, crs_id id);
 
+void
+crs_id_fprint(FILE *out, crs_id id);
+
 #define crs_id_equals(id1, id2) (cork_u128_eq((id1).u128, (id2).u128))
 
 #define crs_id_get_nybble(id, index) \
@@ -79,6 +156,13 @@ crs_id_get_msdd(crs_id id1, crs_id id2)
     }
     return -1;
 }
+
+
+int
+crs_id_decode(struct crs_message *msg, crs_id *dest, const char *field_name);
+
+void
+crs_id_encode(struct crs_message *msg, crs_id id);
 
 
 /*-----------------------------------------------------------------------
@@ -163,11 +247,11 @@ void
 crs_node_address_free(const struct crs_node_address *address);
 
 const struct crs_node_address *
-crs_node_address_decode(const void *message, size_t message_length);
+crs_node_address_decode(struct crs_message *msg, const char *field_name);
 
 void
-crs_node_address_encode(const struct crs_node_address *address,
-                        struct cork_buffer *dest);
+crs_node_address_encode(struct crs_message *msg,
+                        const struct crs_node_address *address);
 
 
 /*-----------------------------------------------------------------------
@@ -224,13 +308,26 @@ crs_node_get_address(const struct crs_node *node);
 const char *
 crs_node_get_address_str(const struct crs_node *node);
 
+
+/* Use the encoding functions to build up the content of the message.  You must
+ * at some point call exactly one of crs_node_free_message, route_message, or
+ * send_message. */
+
+struct crs_message *
+crs_node_new_message(struct crs_node *node);
+
+void
+crs_node_free_message(struct crs_node *node, struct crs_message *msg);
+
+/* Takes control of msg */
 int
 crs_node_route_message(struct crs_node *node, crs_id src, crs_id dest,
-                       const void *message, size_t message_length);
+                       struct crs_message *msg);
 
+/* Takes control of msg */
 int
 crs_node_send_message(struct crs_node *node, crs_id dest,
-                      const void *message, size_t message_length);
+                      struct crs_message *msg);
 
 
 /*-----------------------------------------------------------------------
@@ -251,7 +348,7 @@ struct crs_node_ref *
 crs_node_get_ref(struct crs_node *node);
 
 struct crs_node_ref *
-crs_node_new_ref(struct crs_node *owner, crs_id node_id,
+crs_node_new_ref(struct crs_node *owner,
                  const struct crs_node_address *address);
 
 crs_id
@@ -272,13 +369,35 @@ crs_node_ref_get_proximity(const struct crs_node_ref *ref);
 void
 crs_node_ref_set_proximity(struct crs_node_ref *ref, crs_proximity proximity);
 
-/* This is not the main public function for sending a message.  (For that, use
+/* Takes control of msg.
+ *
+ * This is not the main public function for sending a message.  (For that, use
  * crs_node_send.)  This is used when you want to send a message directly to a
  * particular node that we've already seen and know how to contact.  It is
  * mostly used internally by the message routing functions. */
 int
 crs_node_ref_send(struct crs_node_ref *ref, crs_id src, crs_id dest,
-                  const void *message, size_t message_length);
+                  struct crs_message *msg);
+
+/* Takes control of msg.
+ *
+ * This function should be used in an application's `intercept` callback to
+ * forward a message on to another node in the network. */
+int
+crs_node_ref_forward(struct crs_node_ref *next_hop, crs_id src, crs_id dest,
+                     struct crs_message *msg);
+
+
+typedef int
+crs_node_ref_visit_f(void *user_data, struct crs_node_ref *ref);
+
+
+struct crs_node_ref *
+crs_node_ref_decode(struct crs_message *msg, struct crs_node *owner,
+                    const char *field_name);
+
+void
+crs_node_ref_encode(struct crs_message *msg, const struct crs_node_ref *ref);
 
 
 /*-----------------------------------------------------------------------
@@ -307,16 +426,16 @@ struct crs_node_ref *
 crs_routing_table_get(const struct crs_routing_table *table,
                       unsigned int row, unsigned int column);
 
-/* id must not be equal to the leaf set's node's ID. */
+/* id must not be equal to the routing table's node's ID. */
 struct crs_node_ref *
 crs_routing_table_get_closest(const struct crs_routing_table *table, crs_id id);
 
-/* id must not be equal to the leaf set's node's ID. */
+/* id must not be equal to the routing table's node's ID. */
 struct crs_node_ref *
 crs_routing_table_get_fallback(const struct crs_routing_table *table,
                                crs_id id);
 
-/* ref's ID must not be equal to the leaf set's node's ID. */
+/* ref's ID must not be equal to the routing table's node's ID. */
 void
 crs_routing_table_set(struct crs_routing_table *table,
                       struct crs_node_ref *ref);
@@ -328,6 +447,20 @@ crs_routing_table_clear(struct crs_routing_table *table,
 void
 crs_routing_table_print(struct cork_buffer *dest,
                         const struct crs_routing_table *table);
+
+
+/* Decodes routing table entries from a message and adds them to the given
+ * routing table.  The routing table itself will decide which ones to keep and
+ * which ones to throw away, given the entries that are already in the table. */
+int
+crs_routing_table_decode(struct crs_message *msg,
+                         struct crs_routing_table *dest,
+                         const char *field_name);
+
+void
+crs_routing_table_encode(struct crs_message *msg,
+                         const struct crs_routing_table *table,
+                         unsigned int row_count);
 
 
 /* This is l/2 from the Pastry papers — i.e., the size of one half of the leaf
@@ -357,6 +490,21 @@ crs_leaf_set_get_fallback(const struct crs_leaf_set *set, crs_id id);
 void
 crs_leaf_set_print(struct cork_buffer *dest, const struct crs_leaf_set *set);
 
+int
+crs_leaf_set_visit_each(const struct crs_leaf_set *set, void *user_data,
+                        crs_node_ref_visit_f *visit);
+
+
+/* Decodes leaf set entries from a message and adds them to the given leaf set.
+ * The leaf set itself will decide which ones to keep and which ones to throw
+ * away, given the entries that are already in the set. */
+int
+crs_leaf_set_decode(struct crs_message *msg, struct crs_leaf_set *dest,
+                    const char *field_name);
+
+void
+crs_leaf_set_encode(struct crs_message *msg, const struct crs_leaf_set *set);
+
 
 struct crs_leaf_set *
 crs_node_get_leaf_set(struct crs_node *node);
@@ -375,22 +523,66 @@ crs_node_get_next_hop(struct crs_node *node, crs_id key);
 typedef uint32_t  crs_application_id;
 
 typedef int
-(*crs_application_process_f)(void *user_data, struct crs_node *node,
-                             crs_id src, crs_id dest,
-                             const void *message, size_t message_length);
+crs_application_intercept_f(void *user_data, struct crs_node *node,
+                            struct crs_node_ref *next_hop,
+                            crs_id src, crs_id dest, struct crs_message *msg);
+
+typedef int
+crs_application_receive_f(void *user_data, struct crs_node *node,
+                          crs_id src, crs_id dest, struct crs_message *msg);
 
 
 struct crs_application *
-crs_application_new(crs_application_id id,
-                    void *user_data, cork_free_f free_user_data,
-                    crs_application_process_f process);
+crs_application_new(crs_application_id id, const char *name);
 
 void
 crs_application_free(struct crs_application *app);
 
+
+crs_application_id
+crs_application_get_id(const struct crs_application *app);
+
+const char *
+crs_application_get_name(const struct crs_application *app);
+
+struct crs_node *
+crs_application_get_node(const struct crs_application *app);
+
+void *
+crs_application_get_user_data(const struct crs_application *app);
+
+
+void
+crs_application_set_user_data(struct crs_application *app,
+                              void *user_data, cork_free_f free_user_data);
+
+void
+crs_application_set_receive(struct crs_application *app,
+                            crs_application_receive_f *receive);
+
+void
+crs_application_set_intercept(struct crs_application *app,
+                              crs_application_intercept_f *intercept);
+
+
+struct crs_message *
+crs_application_new_message(struct crs_application *app);
+
+void
+crs_application_free_message(struct crs_application *app,
+                             struct crs_message *msg);
+
+int
+crs_application_send_message(struct crs_application *app, crs_id dest,
+                             struct crs_message *msg);
+
+
 /* Takes control of app */
 int
 crs_node_add_application(struct crs_node *node, struct crs_application *app);
+
+struct crs_application *
+crs_node_get_application(struct crs_node *node, crs_application_id id);
 
 
 #endif  /* CROISSANT_H */

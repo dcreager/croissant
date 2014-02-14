@@ -1,0 +1,64 @@
+% crs_message_encode(3)
+
+# NAME
+
+crs_message_encode -- Creating new Pastry messages
+
+# SYNOPSIS
+
+| **#include &lt;croissant.h&gt;**
+|
+| void
+| **crs_message_encode_bytes**(struct crs_message \**msg*,
+|                          const void \**src*, size_t *size*);
+|
+| void
+| **crs_message_encode_buffer**(struct crs_message \**msg*,
+|                           const struct cork_buffer \**src*);
+|
+| void
+| **crs_message_encode_string**(struct crs_message \**msg*, const char \**str*);
+|
+| void
+| **crs_message_encode_uint8**(struct crs_message \**msg*, uint8_t *src*);
+|
+| void
+| **crs_message_encode_uint16**(struct crs_message \**msg*, uint16_t *src*);
+|
+| void
+| **crs_message_encode_uint32**(struct crs_message \**msg*, uint32_t *src*);
+|
+| void
+| **crs_message_encode_uint64**(struct crs_message \**msg*, uint64_t *src*);
+
+
+# DESCRIPTION
+
+When sending a message across the Pastry overlay network, you use the
+**crs_message_encode** family of functions to serialize the content of the
+message from your internal application data structures.  You can only use these
+functions with write-only messages.  You cannot use these functions with any
+read-only messages that you receive from the overlay network.
+
+**crs_message_encode_uint8**(), **crs_message_encode_uint16**(),
+**crs_message_encode_uint32**(), and **crs_message_encode_uint64**() serialize a
+single integer value into the message.  To make it easier to produce
+platform-independent message formats, we only provide serializers for the
+fixed-size integer types.  Similarly, we always write the integer in big-endian
+byte order, regardless of the endianness of the host machine.
+
+**crs_message_encode_bytes**() serializes a specific amount of binary content
+into the message.  You provide the length of the binary content, which is
+written as-is into the message.  This lets you use other serialization formats,
+if desired; you serialize into a temporary buffer and then use this function to
+append that content into the message.
+
+**crs_message_encode_buffer**(), and **crs_message_encode_string**() also
+serialize binary content into the message.  You should use these functions for
+variable-length data; they add a length prefix to the message before adding the
+binary content.  For **crs_message_encode_string**(), we use the **strlen**(3)
+to determine the length of the content.  For **crs_message_encode_buffer**(), we
+extract the binary content from a **cork_buffer**(3) (which keeps track of the
+length of its content).  In all cases, the length prefix will be a 32-bit
+integer.  This means that on all platforms (even 64-bit ones), these functions
+are limited to writing 2^32 bytes of data at a time.

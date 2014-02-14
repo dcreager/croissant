@@ -89,11 +89,35 @@ void
 \f[B]crs_id_print\f[](struct cork_buffer *\f[I]dest\f[], const crs_id
 \f[I]id\f[]);
 .PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_id_fprint\f[](FILE *\f[I]out\f[], const crs_id \f[I]id\f[]);
+.PP
 crs_id
 .PD 0
 .P
 .PD
 \f[B]crs_id_init\f[](const char *\f[I]str\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_id_decode\f[](struct crs_message *\f[I]msg\f[], crs_id
+*\f[I]dest\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ const char *field_name);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_id_encode\f[](struct crs_message *\f[I]msg\f[], crs_id
+\f[I]id\f[]);
 .SH DESCRIPTION
 .PP
 Croissant uses 128\-bit integers to identify entities on a Pastry
@@ -181,14 +205,16 @@ In both cases, the result is a \f[B]cork_u128\f[](3) 128\-bit integer.
 .PP
 The human\-readable rendering of a Pastry identifier is a 32\-digit
 hexadecimal string.
-\f[B]crs_id_to_raw_string\f[]() and \f[B]crs_id_print\f[]() produce the
-human\-readable representation of a \f[B]crs_id\f[].
+\f[B]crs_id_to_raw_string\f[](), \f[B]crs_id_print\f[](), and
+\f[B]crs_id_fprint\f[]() produce the human\-readable representation of a
+\f[B]crs_id\f[].
 \f[B]crs_id_to_raw_string\f[]() renders the string into a \f[C]char\f[]
 buffer that you've allocated yourself.
 You must ensure that this buffer holds at least
 \f[C]CRS_ID_STRING_LENGTH\f[] bytes.
 \f[B]crs_id_print\f[]() renders the string into a
 \f[B]cork_buffer\f[](3).
+\f[B]crs_id_fprint\f[]() renders the string in the given C stream.
 .PP
 \f[B]crs_id_init\f[]() parses the string representation of a Pastry
 identifier, and returns the result as a \f[B]crs_id\f[].
@@ -197,12 +223,20 @@ If the string that you pass in is invalid, we set a
 You must use \f[B]cork_error_occurred\f[](3) to check for this
 condition, since there isn't any special \f[B]crs_id\f[] value that we
 can return to signal an error.
-.SH RETURN VALUE
+.PP
+\f[B]crs_id_decode\f[]() and \f[B]crs_id_encode\f[]() let you include
+Pastry identifiers in any messages that you send across the overlay
+network.
+\f[B]crs_id_decode\f[]() reads a Pastry identifier from the message,
+raising a \f[B]CRS_PARSE_ERROR\f[](3) error if there isn't enough space
+to read a full identifier.
+\f[B]crs_id_encode\f[]() writes a Pastry identifier into a message.
+.SH RETURN VALUES
 .PP
 The result of \f[B]crs_id_init\f[]() is undefined if you pass in a
 string that doesn't contain the valid string representation of some
 Pastry identifier.
-In this case, we set a \f[B]CRS_PARSE_ERROR\f[] error condition.
+In this case, we set a \f[B]CRS_PARSE_ERROR\f[](3) error condition.
 You must use \f[B]cork_error_occurred\f[](3) to check for this
 condition, since there isn't any special \f[B]crs_id\f[] value that we
 can return to signal an error.

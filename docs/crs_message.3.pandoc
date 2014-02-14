@@ -1,0 +1,37 @@
+% crs_message(3)
+
+# NAME
+
+crs_message -- Pastry messages
+
+# SYNOPSIS
+
+| **#include &lt;croissant.h&gt;**
+|
+| **struct crs_message**;
+
+
+# DESCRIPTION
+
+Croissant applications use the **crs_message** type to hold the serialized
+messages that are sent across the Pastry overlay network.
+
+Each **crs_message** instance is either in *write-only* mode or *read-only*
+mode.  The normal workflow is that a sending node creates a **crs_message**
+instance and serializes the content of the message while it is in write-only
+mode.  The node then hands the **crs_message** instance to the overlay message,
+which takes care of delivering it to the destination node.  On the receiving
+side, the I/O layer constructs a read-only **crs_message** instance containing
+the message content that was received.  The message can then be decoded and
+processed by the receiving application.
+
+On the sending side, you use **crs_node_new_message**(3) to allocate a new
+write-only message, and the **crs_message_encode**(3) family of functions to
+fill in the message content.  You then use **crs_node_send_message**(3) to send
+the message to its destination.
+
+On the receiving side, we automatically construct the read-only **crs_message**
+instance in the internal I/O layer.  We will pass this message instance to your
+application's **crs_application_process_f**(3) callback function.  You can use
+the **crs_message_decode**(3) family of functions to parse out the contents of
+the message that you receive.

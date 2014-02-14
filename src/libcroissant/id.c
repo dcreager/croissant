@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2011-2013, RedJack, LLC.
+ * Copyright © 2011-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -82,4 +82,25 @@ crs_id_print(struct cork_buffer *dest, crs_id id)
     char  str[CRS_ID_STRING_LENGTH];
     cork_u128_to_padded_hex(str, id.u128);
     cork_buffer_append_string(dest, str);
+}
+
+void
+crs_id_fprint(FILE *out, crs_id id)
+{
+    char  str[CRS_ID_STRING_LENGTH];
+    cork_u128_to_padded_hex(str, id.u128);
+    fputs(str, out);
+}
+
+
+int
+crs_id_decode(struct crs_message *msg, crs_id *dest, const char *field_name)
+{
+    return crs_message_decode_bytes(msg, dest, sizeof(*dest), field_name);
+}
+
+void
+crs_id_encode(struct crs_message *msg, crs_id id)
+{
+    crs_message_encode_bytes(msg, &id, sizeof(id));
 }

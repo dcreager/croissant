@@ -1,0 +1,40 @@
+.TH "crs_message" "3" "2013-06-01" "Croissant" "Croissant\ documentation"
+.SH NAME
+.PP
+crs_message \[en] Pastry messages
+.SH SYNOPSIS
+.PP
+\f[B]#include <croissant.h>\f[]
+.PP
+\f[B]struct crs_message\f[];
+.SH DESCRIPTION
+.PP
+Croissant applications use the \f[B]crs_message\f[] type to hold the
+serialized messages that are sent across the Pastry overlay network.
+.PP
+Each \f[B]crs_message\f[] instance is either in \f[I]write\-only\f[]
+mode or \f[I]read\-only\f[] mode.
+The normal workflow is that a sending node creates a
+\f[B]crs_message\f[] instance and serializes the content of the message
+while it is in write\-only mode.
+The node then hands the \f[B]crs_message\f[] instance to the overlay
+message, which takes care of delivering it to the destination node.
+On the receiving side, the I/O layer constructs a read\-only
+\f[B]crs_message\f[] instance containing the message content that was
+received.
+The message can then be decoded and processed by the receiving
+application.
+.PP
+On the sending side, you use \f[B]crs_node_new_message\f[](3) to
+allocate a new write\-only message, and the
+\f[B]crs_message_encode\f[](3) family of functions to fill in the
+message content.
+You then use \f[B]crs_node_send_message\f[](3) to send the message to
+its destination.
+.PP
+On the receiving side, we automatically construct the read\-only
+\f[B]crs_message\f[] instance in the internal I/O layer.
+We will pass this message instance to your application's
+\f[B]crs_application_process_f\f[](3) callback function.
+You can use the \f[B]crs_message_decode\f[](3) family of functions to
+parse out the contents of the message that you receive.

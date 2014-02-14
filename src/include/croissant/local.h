@@ -1,6 +1,6 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2012-2013, RedJack, LLC.
+ * Copyright © 2012-2014, RedJack, LLC.
  * All rights reserved.
  *
  * Please see the LICENSE.txt file in this distribution for license
@@ -28,12 +28,19 @@ typedef unsigned int  crs_local_node_id;
 CORK_LOCAL struct crs_node_address *
 crs_local_node_address_new(crs_local_node_id id);
 
+CORK_LOCAL bool
+crs_local_node_address_equals(const struct crs_node_address *addr1,
+                              const struct crs_node_address *addr2);
+
+CORK_LOCAL cork_hash
+crs_local_node_address_hash(const struct crs_node_address *address);
+
 CORK_LOCAL struct crs_node_address *
-crs_local_node_address_decode(const void *message, size_t message_length);
+crs_local_node_address_decode(struct crs_message *msg);
 
 CORK_LOCAL void
-crs_local_node_address_encode(const struct crs_node_address *address,
-                              struct cork_buffer *dest);
+crs_local_node_address_encode(struct crs_message *msg,
+                              const struct crs_node_address *address);
 
 CORK_LOCAL void
 crs_local_node_print(struct cork_buffer *dest,
@@ -45,9 +52,11 @@ crs_local_node_print(struct cork_buffer *dest,
  */
 
 CORK_LOCAL struct crs_node_ref *
-crs_local_node_ref_new(struct crs_node *owner, crs_id node_id,
-                       const struct crs_node_address *address,
-                       struct crs_node *local_node);
+crs_local_node_ref_new_self(struct crs_node *self);
+
+CORK_LOCAL struct crs_node_ref *
+crs_local_node_ref_new(struct crs_node *owner,
+                       const struct crs_node_address *address);
 
 
 #endif  /* CROISSANT_LOCAL_H */

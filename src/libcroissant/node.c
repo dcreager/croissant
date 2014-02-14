@@ -17,8 +17,9 @@
 #include "croissant/application.h"
 #include "croissant/context.h"
 #include "croissant/local.h"
+#include "croissant/maintenance.h"
+#include "croissant/message.h"
 #include "croissant/node.h"
-#include "croissant/parse.h"
 #include "croissant/tests.h"
 
 #define CLOG_CHANNEL  "croissant:node"
@@ -34,7 +35,6 @@ crs_node_id_for_type(enum crs_node_type type)
     switch (type) {
         case CRS_NODE_TYPE_LOCAL:
             return CRS_NODE_TYPE_ID_LOCAL;
-
         default:
             cork_unreachable();
     }
@@ -46,7 +46,6 @@ crs_node_type_for_id(crs_node_type_id id)
     switch (id) {
         case CRS_NODE_TYPE_ID_LOCAL:
             return CRS_NODE_TYPE_LOCAL;
-
         default:
             cork_unreachable();
     }
@@ -65,7 +64,6 @@ crs_node_address_print(struct cork_buffer *dest,
         case CRS_NODE_TYPE_LOCAL:
             crs_local_node_print(dest, address);
             return;
-
         default:
             cork_unreachable();
     }
@@ -78,15 +76,13 @@ crs_node_address_free(const struct crs_node_address *address)
 }
 
 const struct crs_node_address *
-crs_node_address_decode(const void *message, size_t message_length)
+crs_node_address_decode(struct crs_message *msg, const char *field_name)
 {
     crs_node_type_id  type;
-    rpi_check(crs_ensure_size(message_length, sizeof(uint32_t), "node type"));
-    type = crs_decode_uint32(&message, &message_length);
+    rpi_check(crs_message_decode_uint32(msg, &type, field_name));
     switch (type) {
         case CRS_NODE_TYPE_ID_LOCAL:
-            return crs_local_node_address_decode(message, message_length);
-
+            return crs_local_node_address_decode(msg);
         default:
             crs_parse_error("Unknown node type 0x%08" PRIx32, type);
             return NULL;
@@ -94,18 +90,57 @@ crs_node_address_decode(const void *message, size_t message_length)
 }
 
 void
-crs_node_address_encode(const struct crs_node_address *address,
-                        struct cork_buffer *dest)
+crs_node_address_encode(struct crs_message *msg,
+                        const struct crs_node_address *address)
 {
-    crs_encode_uint32(dest, crs_node_id_for_type(address->type));
+    crs_message_encode_uint32(msg, crs_node_id_for_type(address->type));
     switch (address->type) {
         case CRS_NODE_TYPE_LOCAL:
-            crs_local_node_address_encode(address, dest);
+            crs_local_node_address_encode(msg, address);
             return;
-
         default:
             cork_unreachable();
     }
+}
+
+
+static bool
+crs_node_address_equals(void *user_data, const void *vaddr1, const void *vaddr2)
+{
+    const struct crs_node_address  *addr1 = vaddr1;
+    const struct crs_node_address  *addr2 = vaddr2;
+    if (addr1 == addr2) {
+        return true;
+    } else if (CORK_UNLIKELY(addr1->type != addr2->type)) {
+        return false;
+    }
+    switch (addr1->type) {
+        case CRS_NODE_TYPE_LOCAL:
+            return crs_local_node_address_equals(addr1, addr2);
+        default:
+            cork_unreachable();
+    }
+}
+
+static cork_hash
+crs_node_address_hash(void *user_data, const void *vaddress)
+{
+    const struct crs_node_address  *address = vaddress;
+    switch (address->type) {
+        case CRS_NODE_TYPE_LOCAL:
+            return crs_local_node_address_hash(address);
+        default:
+            cork_unreachable();
+    }
+}
+
+CORK_LOCAL struct cork_hash_table *
+crs_node_address_hash_table_new(size_t initial_size, unsigned int flags)
+{
+    struct cork_hash_table  *table = cork_hash_table_new(initial_size, flags);
+    cork_hash_table_set_equals(table, crs_node_address_equals);
+    cork_hash_table_set_hash(table, crs_node_address_hash);
+    return table;
 }
 
 
@@ -133,10 +168,15 @@ crs_node_new_with_id(struct crs_ctx *ctx, crs_id id,
     node->applications = cork_pointer_hash_table_new(0, 0);
     cork_hash_table_set_free_value
         (node->applications, (cork_free_f) crs_application_free);
-    node->ref = crs_local_node_ref_new(node, node->id, &node->address, node);
-    node->refs = NULL;
+    node->ref = crs_local_node_ref_new_self(node);
+    node->refs = crs_node_address_hash_table_new(0, 0);
+    cork_hash_table_set_free_value(node->refs, (cork_free_f) crs_node_ref_free);
+    cork_hash_table_put
+        (node->refs, &node->address, node->ref, NULL, NULL, NULL);
     node->routing_table = crs_routing_table_new(node);
     node->leaf_set = crs_leaf_set_new(node);
+    node->maint = crs_maintenance_new(node);
+    crs_maintenance_register(node->maint, node);
     return node;
 }
 
@@ -150,16 +190,10 @@ crs_node_new(struct crs_ctx *ctx, crs_id id,
 CORK_LOCAL void
 crs_node_free(struct crs_node *node)
 {
-    struct crs_node_ref  *curr;
-    struct crs_node_ref  *next;
     clog_debug("[%s] Free node", (char *) node->address_str.buf);
     crs_ctx_remove_node(node->ctx, node);
     cork_hash_table_free(node->applications);
-    crs_node_ref_free(node->ref);
-    for (curr = node->refs; curr != NULL; curr = next) {
-        next = curr->next;
-        crs_node_ref_free(curr);
-    }
+    cork_hash_table_free(node->refs);
     cork_buffer_done(&node->address_str);
     crs_routing_table_free(node->routing_table);
     crs_leaf_set_free(node->leaf_set);
@@ -209,28 +243,23 @@ crs_node_get_leaf_set(struct crs_node *node)
 }
 
 struct crs_node_ref *
-crs_node_new_ref(struct crs_node *owner, crs_id node_id,
+crs_node_new_ref(struct crs_node *owner,
                  const struct crs_node_address *address)
 {
-    struct crs_node_ref  *ref;
-
-    /* First see if node_id refers to the current node, or to a node that we've
-     * already created a reference to. */
-    if (crs_id_equals(node_id, owner->id)) {
-        return owner->ref;
+    bool  is_new;
+    struct cork_hash_table_entry  *entry;
+    /* If we already have a reference to a node with this address, just return
+     * it.  Otherwise, create a new reference. */
+    entry = cork_hash_table_get_or_create
+        (owner->refs, (void *) address, &is_new);
+    if (is_new) {
+        struct crs_node_ref  *ref = crs_node_ref_new(owner, address);
+        entry->key = &ref->address;
+        entry->value = ref;
+        return ref;
+    } else {
+        return entry->value;
     }
-
-    for (ref = owner->refs; ref != NULL; ref = ref->next) {
-        if (crs_id_equals(node_id, ref->id)) {
-            return ref;
-        }
-    }
-
-    /* Otherwise create a new node reference. */
-    ref = crs_node_ref_new(owner, node_id, address);
-    ref->next = owner->refs;
-    owner->refs = ref;
-    return ref;
 }
 
 
@@ -238,14 +267,12 @@ struct crs_node_ref *
 crs_node_get_next_hop(struct crs_node *node, crs_id key)
 {
     struct crs_node_ref  *ref;
-    char  key_str[CRS_ID_STRING_LENGTH];
 
     /* First try the node's leaf set */
     ref = crs_leaf_set_get_closest(node->leaf_set, key);
     if (ref != NULL) {
-        clog_debug("[%s] Next hop for %s is %s (leaf set)",
+        clog_debug("[%s] Next hop is %s (leaf set)",
                    (char *) node->address_str.buf,
-                   crs_id_to_raw_string(key_str, key),
                    (ref == CRS_NODE_REF_SELF)? "self":
                        crs_node_ref_get_id_str(ref));
         return ref;
@@ -254,9 +281,8 @@ crs_node_get_next_hop(struct crs_node *node, crs_id key)
     /* Then try the routing table */
     ref = crs_routing_table_get_closest(node->routing_table, key);
     if (ref != NULL) {
-        clog_debug("[%s] Next hop for %s is %s (routing table)",
+        clog_debug("[%s] Next hop is %s (routing table)",
                    (char *) node->address_str.buf,
-                   crs_id_to_raw_string(key_str, key),
                    crs_node_ref_get_id_str(ref));
         return ref;
     }
@@ -264,58 +290,82 @@ crs_node_get_next_hop(struct crs_node *node, crs_id key)
     /* Then look for a fallback */
     ref = crs_leaf_set_get_fallback(node->leaf_set, key);
     if (ref != NULL) {
-        clog_debug("[%s] Next hop for %s is %s (leaf set fallback)",
+        clog_debug("[%s] Next hop is %s (leaf set fallback)",
                    (char *) node->address_str.buf,
-                   crs_id_to_raw_string(key_str, key),
                    crs_node_ref_get_id_str(ref));
         return ref;
     }
 
     ref = crs_routing_table_get_fallback(node->routing_table, key);
     if (ref != NULL) {
-        clog_debug("[%s] Next hop for %s is %s (routing table fallback)",
+        clog_debug("[%s] Next hop is %s (routing table fallback)",
                    (char *) node->address_str.buf,
-                   crs_id_to_raw_string(key_str, key),
                    crs_node_ref_get_id_str(ref));
         return ref;
     }
 
     /* And if none of those worked, deliver to the local node */
-    clog_debug("[%s] Next hop for %s is self (last resort)",
-               (char *) node->address_str.buf,
-               crs_id_to_raw_string(key_str, key));
+    clog_debug("[%s] Next hop is self (last resort)",
+               (char *) node->address_str.buf);
     return CRS_NODE_REF_SELF;
+}
+
+struct crs_message *
+crs_node_new_message(struct crs_node *node)
+{
+    return crs_message_new();
+}
+
+void
+crs_node_free_message(struct crs_node *node, struct crs_message *msg)
+{
+    crs_message_free(msg);
 }
 
 int
 crs_node_route_message(struct crs_node *node, crs_id src, crs_id dest,
-                       const void *message, size_t message_length)
+                       struct crs_message *msg)
 {
     struct crs_node_ref  *next_hop;
-    rip_check(next_hop = crs_node_get_next_hop(node, dest));
+    crs_application_id  id;
+    struct crs_application  *app;
+
+    /* Determine the next hop for this message. */
+    ep_check(next_hop = crs_node_get_next_hop(node, dest));
+
+    /* Decode the beginning of the message to find out which application is
+     * belongs to. */
+    crs_message_start_reading(msg);
+    ei_check(crs_message_decode_uint32(msg, &id, "application ID"));
+    ep_check(app = crs_node_get_application(node, id));
+
+    /* Deliver the message to one of the application's callbacks, depending on
+     * whether this is the final destination. */
     if (next_hop == CRS_NODE_REF_SELF) {
-        char  dest_str[CRS_ID_STRING_LENGTH];
-        clog_debug("[%s] Delivering %s locally",
-                   (char *) node->address_str.buf,
-                   crs_id_to_raw_string(dest_str, dest));
-        return crs_node_process_message
-            (node, src, dest, message, message_length);
+        int  rc;
+        clog_debug("[%s] Deliver message to application \"%s\"",
+                   (char *) node->address_str.buf, app->name);
+        rc = crs_application_receive(app, node, src, dest, msg);
+        crs_message_free(msg);
+        return rc;
     } else {
-        char  dest_str[CRS_ID_STRING_LENGTH];
-        clog_debug("[%s] Sending %s to %s",
-                   (char *) node->address_str.buf,
-                   crs_id_to_raw_string(dest_str, dest),
-                   crs_node_ref_get_address_str(next_hop));
-        return crs_node_ref_send(next_hop, src, dest, message, message_length);
+        return crs_application_intercept(app, node, next_hop, src, dest, msg);
     }
+
+error:
+    crs_message_free(msg);
+    return -1;
 }
 
 int
 crs_node_send_message(struct crs_node *node, crs_id dest,
-                      const void *message, size_t message_length)
+                      struct crs_message *msg)
 {
-    return crs_node_route_message
-        (node, node->id, dest, message, message_length);
+    char  dest_str[CRS_ID_STRING_LENGTH];
+    clog_debug("[%s] Send message to %s",
+               (char *) node->address_str.buf,
+               crs_id_to_raw_string(dest_str, dest));
+    return crs_node_route_message(node, node->id, dest, msg);
 }
 
 
@@ -333,6 +383,7 @@ crs_node_add_application(struct crs_node *node, struct crs_application *app)
 
     if (is_new) {
         entry->value = app;
+        app->node = node;
         return 0;
     } else {
         cork_redefined("Already have an application for 0x%08" PRIx32, app->id);
@@ -341,7 +392,7 @@ crs_node_add_application(struct crs_node *node, struct crs_application *app)
     }
 }
 
-static struct crs_application *
+struct crs_application *
 crs_node_get_application(struct crs_node *node, crs_application_id id)
 {
     struct crs_application  *result =
@@ -350,20 +401,6 @@ crs_node_get_application(struct crs_node *node, crs_application_id id)
         cork_undefined("No application for 0x%08" PRIx32, id);
     }
     return result;
-}
-
-CORK_LOCAL int
-crs_node_process_message(struct crs_node *node, crs_id src, crs_id dest,
-                         const void *message, size_t message_length)
-{
-    crs_application_id  id;
-    struct crs_application  *app;
-    rii_check(crs_ensure_size
-              (message_length, sizeof(uint32_t), "application ID"));
-    id = crs_decode_uint32(&message, &message_length);
-    rip_check(app = crs_node_get_application(node, id));
-    return crs_application_process
-        (app, node, src, dest, message, message_length);
 }
 
 
@@ -382,13 +419,21 @@ crs_finalize_tests(void)
  * Joining and leaving networks
  */
 
-#if 0
 int
 crs_node_bootstrap(struct crs_node *node,
                    const struct crs_node_address *bootstrap_node)
 {
+    /* TODO: We'll also need to fire up any listening servers as this point.
+     * Right now we only support local nodes, so this isn't necessary. */
+    if (bootstrap_node == NULL) {
+        /* We don't know about any other nodes to start with. */
+        return 0;
+    } else {
+        return crs_maintenance_join(node->maint, bootstrap_node);
+    }
 }
 
+#if 0
 int
 crs_node_detach(struct crs_node *node)
 {

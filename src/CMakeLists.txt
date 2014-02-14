@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------
-# Copyright © 2011, RedJack, LLC.
+# Copyright © 2011-2014, RedJack, LLC.
 # All rights reserved.
 #
 # Please see the LICENSE.txt file in this distribution for license
@@ -18,9 +18,11 @@ set(LIBCROISSANT_SRC
     libcroissant/context.c
     libcroissant/id.c
     libcroissant/local.c
-    libcroissant/routing.c
+    libcroissant/maintenance.c
+    libcroissant/message.c
     libcroissant/node.c
     libcroissant/node-ref.c
+    libcroissant/routing.c
     libcroissant/tests.c
 )
 

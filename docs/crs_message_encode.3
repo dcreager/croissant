@@ -1,0 +1,104 @@
+.TH "crs_message_encode" "3" "2013-06-01" "Croissant" "Croissant\ documentation"
+.SH NAME
+.PP
+crs_message_encode \[en] Creating new Pastry messages
+.SH SYNOPSIS
+.PP
+\f[B]#include <croissant.h>\f[]
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_message_encode_bytes\f[](struct crs_message *\f[I]msg\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ const void
+*\f[I]src\f[], size_t \f[I]size\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_message_encode_buffer\f[](struct crs_message *\f[I]msg\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ const struct
+cork_buffer *\f[I]src\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_message_encode_string\f[](struct crs_message *\f[I]msg\f[],
+const char *\f[I]str\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_message_encode_uint8\f[](struct crs_message *\f[I]msg\f[],
+uint8_t \f[I]src\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_message_encode_uint16\f[](struct crs_message *\f[I]msg\f[],
+uint16_t \f[I]src\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_message_encode_uint32\f[](struct crs_message *\f[I]msg\f[],
+uint32_t \f[I]src\f[]);
+.PP
+void
+.PD 0
+.P
+.PD
+\f[B]crs_message_encode_uint64\f[](struct crs_message *\f[I]msg\f[],
+uint64_t \f[I]src\f[]);
+.SH DESCRIPTION
+.PP
+When sending a message across the Pastry overlay network, you use the
+\f[B]crs_message_encode\f[] family of functions to serialize the content
+of the message from your internal application data structures.
+You can only use these functions with write\-only messages.
+You cannot use these functions with any read\-only messages that you
+receive from the overlay network.
+.PP
+\f[B]crs_message_encode_uint8\f[](),
+\f[B]crs_message_encode_uint16\f[](),
+\f[B]crs_message_encode_uint32\f[](), and
+\f[B]crs_message_encode_uint64\f[]() serialize a single integer value
+into the message.
+To make it easier to produce platform\-independent message formats, we
+only provide serializers for the fixed\-size integer types.
+Similarly, we always write the integer in big\-endian byte order,
+regardless of the endianness of the host machine.
+.PP
+\f[B]crs_message_encode_bytes\f[]() serializes a specific amount of
+binary content into the message.
+You provide the length of the binary content, which is written as\-is
+into the message.
+This lets you use other serialization formats, if desired; you serialize
+into a temporary buffer and then use this function to append that
+content into the message.
+.PP
+\f[B]crs_message_encode_buffer\f[](), and
+\f[B]crs_message_encode_string\f[]() also serialize binary content into
+the message.
+You should use these functions for variable\-length data; they add a
+length prefix to the message before adding the binary content.
+For \f[B]crs_message_encode_string\f[](), we use the \f[B]strlen\f[](3)
+to determine the length of the content.
+For \f[B]crs_message_encode_buffer\f[](), we extract the binary content
+from a \f[B]cork_buffer\f[](3) (which keeps track of the length of its
+content).
+In all cases, the length prefix will be a 32\-bit integer.
+This means that on all platforms (even 64\-bit ones), these functions
+are limited to writing 2^32 bytes of data at a time.

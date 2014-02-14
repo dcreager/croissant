@@ -1,0 +1,159 @@
+.TH "crs_message_decode" "3" "2013-06-01" "Croissant" "Croissant\ documentation"
+.SH NAME
+.PP
+crs_message_decode \[en] Parsing Pastry messages
+.SH SYNOPSIS
+.PP
+\f[B]#include <croissant.h>\f[]
+.PP
+#define \f[B]CRS_PARSE_ERROR\f[]
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_message_decode_bytes\f[](struct crs_message *\f[I]msg\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ void *\f[I]dest\f[],
+size_t \f[I]size\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ const char
+*\f[I]field_name\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_message_decode_buffer\f[](struct crs_message *\f[I]msg\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ struct cork_buffer
+*\f[I]dest\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ const char
+*\f[I]field_name\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_message_decode_buffer_append\f[](struct crs_message
+*\f[I]msg\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ struct
+cork_buffer *\f[I]dest\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ const
+char *\f[I]field_name\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_message_decode_uint8\f[](struct crs_message *\f[I]msg\f[],
+uint8_t *\f[I]dest\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ const char
+*\f[I]field_name\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_message_decode_uint16\f[](struct crs_message *\f[I]msg\f[],
+uint16_t *\f[I]dest\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ const char
+*\f[I]field_name\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_message_decode_uint32\f[](struct crs_message *\f[I]msg\f[],
+uint32_t *\f[I]dest\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ const char
+*\f[I]field_name\f[]);
+.PP
+int
+.PD 0
+.P
+.PD
+\f[B]crs_message_decode_uint64\f[](struct crs_message *\f[I]msg\f[],
+uint64_t *\f[I]dest\f[],
+.PD 0
+.P
+.PD
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ const char
+*\f[I]field_name\f[]);
+.SH DESCRIPTION
+.PP
+When receiviing a message from the Pastry overlay network, you use the
+\f[B]crs_message_decode\f[] family of functions to parse the content of
+the message into your internal application data structures.
+You can only use these functions with read\-only messages.
+.PP
+Each read\-only message contains a \[lq]cursor\[rq] into the content of
+the message.
+(This is very much like the current position when reading from a file.)
+Each of the decoding functions described below read some data from the
+current cursor location, and advance the cursor past the data that was
+just read.
+In that way, you can call these functions one after the other to read
+each successive field from the message content.
+.PP
+In each case, we verify that there is enough data remaining in the
+message content for the kind of field being read.
+If not, then the function will set a \f[B]CRS_PARSE_ERROR\f[] error
+condition, and return \f[C]\-1\f[].
+We'll use the \f[I]field_name\f[] parameter to construct a descriptive
+error message; this should be the human\-readable name of the field that
+you're trying to read.
+.PP
+\f[B]crs_message_decode_uint8\f[](),
+\f[B]crs_message_decode_uint16\f[](),
+\f[B]crs_message_decode_uint32\f[](), and
+\f[B]crs_message_decode_uint64\f[]() parse a single integer value from
+the message.
+To make it easier to produce platform\-independent message formats, we
+only provide decoders for the fixed\-size integer types.
+Similarly, we always read the integer in big\-endian byte order,
+regardless of the endianness of the host machine.
+.PP
+\f[B]crs_message_decode_bytes\f[]() reads a specific amount of binary
+data from the message, copying that content into \f[I]dest\f[].
+You specify the size of this content; we read exactly that many bytes,
+and nothing else, from the message.
+.PP
+\f[B]crs_message_decode_buffer\f[]() and
+\f[B]crs_message_decode_buffer_append\f[]() read an variable amount of
+binary content from the message.
+We first read a 32\-bit length prefix, which specifies how much binary
+content follows.
+We then read that much binary content, placing the result into a
+\f[B]cork_buffer\f[](3).
+(This format matches what is produced by
+\f[B]crs_message_encode_buffer\f[](3) and
+\f[B]crs_message_encode_string\f[](3).)
+\f[B]crs_message_decode_buffer\f[]() clears \f[I]dest\f[] first, so that
+the buffer contains only the data read from the message.
+\f[B]crs_message_decode_buffer_append\f[]() appends the content to any
+data that's already in the buffer.

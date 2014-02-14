@@ -1,0 +1,63 @@
+% crs_application_send(3)
+
+# NAME
+
+crs_application_send -- Sending application messages
+
+# SYNOPSIS
+
+| **#include &lt;croissant.h&gt;**
+|
+| struct crs_message \*
+| **crs_application_new_message**(struct crs_application \**app*);
+|
+| void
+| **crs_application_free_message**(struct crs_application \**app*,
+|                              struct crs_message \**msg*);
+|
+| int
+| **crs_application_send_message**(struct crs_application \**app*,
+|                              crs_id *dest*, struct crs_message \**msg*);
+
+
+# DESCRIPTION
+
+Pastry applications can use these functions to send a message over the overlay
+network.
+
+**crs_application_new_message**() creates a new write-only **crs_message**(3)
+instance for the given application.  When sent, the message will be processed by
+the application on the receiving node with the same application ID.  We will
+automatically add the application ID to the message, so that the receiving node
+can delegate the message in this way.  You only need to add application-specific
+content to the message, using the **crs_message_encode**(3) family of functions.
+
+Once you have filled in the message content, **crs_application_send_message**()
+gives control of the message to the overlay network, which will send the message
+to the requested destination.  The overlay network's routing protocol will
+route the message so that the node whose Pastry identifier is closest to *dest*
+will receive it.  (Instances of your application on the nodes along the routing
+path from the local node to the destination node will also have a chance to
+inspect, and possibly modify, the message in transit.)
+
+Once you pass a **crs_message**(3) into **crs_application_send_message**(), you
+relinquish all control of the message.  You should not modify its contents or
+try to free it.
+
+If you have created and partially constructed a **crs_message**(3) instance, but
+then decide that you don't want to send it, you must use
+**crs_application_free_message**(3) to free the message instance.
+
+Note that the overlay network does not guarantee that two messages sent to the
+same *dest* identifier will be delivered to the same node.  If we detect that a
+node has failed (or equivalently, that we can't reach it), then any messages
+that would have previously been sent to it will be sent to some other node
+instead.  The only guarantee is that, given the current view of which nodes are
+still alive and reachable, the message will be delivered to the node with the
+closest identifier.  It is **your** responsibility to add the necessary
+redundancy to your application to allow it to survive the loss of a particular
+destination node.  In general, Pastry applications do this by sending replicas
+to other nodes with nearby Pastry identifiers (which you find by querying the
+node's leaf set).  Because the Pastry identifier of a node is assigned randomly,
+this ensures that the replicas will be distributed well across the underlying
+"real" network.
