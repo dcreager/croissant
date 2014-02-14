@@ -17,6 +17,7 @@
 #include "croissant/application.h"
 #include "croissant/context.h"
 #include "croissant/local.h"
+#include "croissant/maintenance.h"
 #include "croissant/message.h"
 #include "croissant/node.h"
 #include "croissant/tests.h"
@@ -174,6 +175,8 @@ crs_node_new_with_id(struct crs_ctx *ctx, crs_id id,
         (node->refs, &node->address, node->ref, NULL, NULL, NULL);
     node->routing_table = crs_routing_table_new(node);
     node->leaf_set = crs_leaf_set_new(node);
+    node->maint = crs_maintenance_new(node);
+    crs_maintenance_register(node->maint, node);
     return node;
 }
 
@@ -416,13 +419,21 @@ crs_finalize_tests(void)
  * Joining and leaving networks
  */
 
-#if 0
 int
 crs_node_bootstrap(struct crs_node *node,
                    const struct crs_node_address *bootstrap_node)
 {
+    /* TODO: We'll also need to fire up any listening servers as this point.
+     * Right now we only support local nodes, so this isn't necessary. */
+    if (bootstrap_node == NULL) {
+        /* We don't know about any other nodes to start with. */
+        return 0;
+    } else {
+        return crs_maintenance_join(node->maint, bootstrap_node);
+    }
 }
 
+#if 0
 int
 crs_node_detach(struct crs_node *node)
 {

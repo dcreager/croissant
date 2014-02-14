@@ -18,7 +18,7 @@ Some tests of manually updating the contents of a node's routing table.
   [local:2] New leaf set
   --- [0123456789abcdef0123456789abcdef]
   --- add routing table entry 00000000000000000000000000000000
-  [local:1] (rtable) [ 1/0] 00000000000000000000000000000000
+  [local:1] (rtable) [ 1/0] 00000000000000000000000000000000 (new entry)
   --- [0123456789abcdef0123456789abcdef]
   --- print routing table
   Routing table for 0123456789abcdef0123456789abcdef
@@ -51,10 +51,10 @@ Some tests of manually updating the contents of a node's routing table.
   [local:3] New leaf set
   --- [0123456789abcdef0123456789abcdef]
   --- add routing table entry 00000000000000000000000000000000
-  [local:1] (rtable) [ 1/0] 00000000000000000000000000000000
+  [local:1] (rtable) [ 1/0] 00000000000000000000000000000000 (new entry)
   --- [0123456789abcdef0123456789abcdef]
   --- add routing table entry 01000000000000000000000000000000
-  [local:1] (rtable) [ 2/0] 01000000000000000000000000000000
+  [local:1] (rtable) [ 2/0] 01000000000000000000000000000000 (new entry)
   --- [0123456789abcdef0123456789abcdef]
   --- print routing table
   Routing table for 0123456789abcdef0123456789abcdef
@@ -89,11 +89,10 @@ Some tests of manually updating the contents of a node's routing table.
   [local:3] New leaf set
   --- [0123456789abcdef0123456789abcdef]
   --- add routing table entry 00000000000000000000000000000000
-  [local:1] (rtable) [ 1/0] 00000000000000000000000000000000
+  [local:1] (rtable) [ 1/0] 00000000000000000000000000000000 (new entry)
   --- [0123456789abcdef0123456789abcdef]
   --- add routing table entry 00200000000000000000000000000000
-  [local:1] (rtable) [ 1/0] 00200000000000000000000000000000
-  [local:1] (rtable) [ 1/0] 00000000000000000000000000000000 is closer
+  [local:1] (rtable) [ 1/0] 00000000000000000000000000000000 (closer than 00200000000000000000000000000000)
   --- [0123456789abcdef0123456789abcdef]
   --- print routing table
   Routing table for 0123456789abcdef0123456789abcdef

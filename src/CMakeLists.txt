@@ -18,6 +18,7 @@ set(LIBCROISSANT_SRC
     libcroissant/context.c
     libcroissant/id.c
     libcroissant/local.c
+    libcroissant/maintenance.c
     libcroissant/message.c
     libcroissant/node.c
     libcroissant/node-ref.c

@@ -46,6 +46,7 @@ verify_routing_table(const struct crs_routing_table *table,
 static const char  *ID_SELF = "00000000000000000000000000000000";
 static const char  *ID_00   = "123456789abcdef123456789abcdef12";
 static const char  *ID_01   = "edcba987654321fedcba987654321fed";
+static const char  *ID_02   = "123ba987654321fedcba987654321fed";
 
 static crs_id
 create_test_id(const char *id_template, unsigned int common_prefix)
@@ -285,7 +286,7 @@ START_TEST(test_routing_table_conflict_01)
     node = crs_node_new(ctx, id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
     add_prefix_to_table_with_proximity(ctx, node, table, ID_00, 2, 0);
-    add_prefix_to_table_with_proximity(ctx, node, table, ID_00, 2, 1);
+    add_prefix_to_table_with_proximity(ctx, node, table, ID_02, 2, 1);
     /* The node with the smaller proximity metric should end up in the table */
     verify_routing_table(table,
         "[ 2/3] 003456789abcdef123456789abcdef12 local:2\n"
@@ -308,10 +309,10 @@ START_TEST(test_routing_table_conflict_02)
     node = crs_node_new(ctx, id, NULL);
     fail_if_error(table = crs_routing_table_new(node));
     add_prefix_to_table_with_proximity(ctx, node, table, ID_00, 2, 1);
-    add_prefix_to_table_with_proximity(ctx, node, table, ID_00, 2, 0);
+    add_prefix_to_table_with_proximity(ctx, node, table, ID_02, 2, 0);
     /* The node with the smaller proximity metric should end up in the table */
     verify_routing_table(table,
-        "[ 2/3] 003456789abcdef123456789abcdef12 local:3\n"
+        "[ 2/3] 003ba987654321fedcba987654321fed local:3\n"
     );
     crs_routing_table_free(table);
     crs_ctx_free(ctx);

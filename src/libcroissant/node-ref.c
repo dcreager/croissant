@@ -132,3 +132,22 @@ crs_node_ref_forward(struct crs_node_ref *next_hop, crs_id src, crs_id dest,
                (char *) next_hop->address_str.buf);
     return crs_node_ref_send(next_hop, src, dest, msg);
 }
+
+
+struct crs_node_ref *
+crs_node_ref_decode(struct crs_message *msg, struct crs_node *owner,
+                    const char *field_name)
+{
+    crs_id  id;
+    const struct crs_node_address  *address;
+    rpi_check(crs_id_decode(msg, &id, field_name));
+    rpp_check(address = crs_node_address_decode(msg, field_name));
+    return crs_node_new_ref(owner, address);
+}
+
+void
+crs_node_ref_encode(struct crs_message *msg, const struct crs_node_ref *ref)
+{
+    crs_id_encode(msg, ref->id);
+    crs_node_address_encode(msg, &ref->address);
+}

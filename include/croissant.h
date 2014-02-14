@@ -388,6 +388,18 @@ crs_node_ref_forward(struct crs_node_ref *next_hop, crs_id src, crs_id dest,
                      struct crs_message *msg);
 
 
+typedef int
+crs_node_ref_visit_f(void *user_data, struct crs_node_ref *ref);
+
+
+struct crs_node_ref *
+crs_node_ref_decode(struct crs_message *msg, struct crs_node *owner,
+                    const char *field_name);
+
+void
+crs_node_ref_encode(struct crs_message *msg, const struct crs_node_ref *ref);
+
+
 /*-----------------------------------------------------------------------
  * Routing state
  */
@@ -414,16 +426,16 @@ struct crs_node_ref *
 crs_routing_table_get(const struct crs_routing_table *table,
                       unsigned int row, unsigned int column);
 
-/* id must not be equal to the leaf set's node's ID. */
+/* id must not be equal to the routing table's node's ID. */
 struct crs_node_ref *
 crs_routing_table_get_closest(const struct crs_routing_table *table, crs_id id);
 
-/* id must not be equal to the leaf set's node's ID. */
+/* id must not be equal to the routing table's node's ID. */
 struct crs_node_ref *
 crs_routing_table_get_fallback(const struct crs_routing_table *table,
                                crs_id id);
 
-/* ref's ID must not be equal to the leaf set's node's ID. */
+/* ref's ID must not be equal to the routing table's node's ID. */
 void
 crs_routing_table_set(struct crs_routing_table *table,
                       struct crs_node_ref *ref);
@@ -435,6 +447,20 @@ crs_routing_table_clear(struct crs_routing_table *table,
 void
 crs_routing_table_print(struct cork_buffer *dest,
                         const struct crs_routing_table *table);
+
+
+/* Decodes routing table entries from a message and adds them to the given
+ * routing table.  The routing table itself will decide which ones to keep and
+ * which ones to throw away, given the entries that are already in the table. */
+int
+crs_routing_table_decode(struct crs_message *msg,
+                         struct crs_routing_table *dest,
+                         const char *field_name);
+
+void
+crs_routing_table_encode(struct crs_message *msg,
+                         const struct crs_routing_table *table,
+                         unsigned int row_count);
 
 
 /* This is l/2 from the Pastry papers — i.e., the size of one half of the leaf
@@ -463,6 +489,21 @@ crs_leaf_set_get_fallback(const struct crs_leaf_set *set, crs_id id);
 
 void
 crs_leaf_set_print(struct cork_buffer *dest, const struct crs_leaf_set *set);
+
+int
+crs_leaf_set_visit_each(const struct crs_leaf_set *set, void *user_data,
+                        crs_node_ref_visit_f *visit);
+
+
+/* Decodes leaf set entries from a message and adds them to the given leaf set.
+ * The leaf set itself will decide which ones to keep and which ones to throw
+ * away, given the entries that are already in the set. */
+int
+crs_leaf_set_decode(struct crs_message *msg, struct crs_leaf_set *dest,
+                    const char *field_name);
+
+void
+crs_leaf_set_encode(struct crs_message *msg, const struct crs_leaf_set *set);
 
 
 struct crs_leaf_set *

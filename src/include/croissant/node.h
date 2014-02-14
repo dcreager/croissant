@@ -68,6 +68,7 @@ struct crs_node {
     struct crs_node_address  address;
     struct crs_routing_table  *routing_table;
     struct crs_leaf_set  *leaf_set;
+    struct crs_maintenance  *maint;
     struct cork_hash_table  *applications;
     struct crs_node_ref  *ref;  /* A reference to the this node */
     struct cork_hash_table  *refs;

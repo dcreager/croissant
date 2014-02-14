@@ -13,6 +13,7 @@
 
 #include <clogger.h>
 #include <libcork/core.h>
+#include <libcork/helpers/errors.h>
 
 #include "croissant.h"
 #include "croissant/node.h"
@@ -132,22 +133,30 @@ crs_routing_table_set(struct crs_routing_table *table,
     assert(table->node == ref->owner);
     entry = crs_routing_table_get_entry_for_id(table, ref->id, &r, &c);
     if (entry != NULL) {
-        clog_debug("[%s] (rtable) [%2d/%hx] %s",
-                   crs_node_get_address_str(table->node),
-                   r, c, crs_node_ref_get_id_str(ref));
-        if (entry->ref != NULL) {
+        if (entry->ref == NULL) {
+            clog_debug("[%s] (rtable) [%2d/%hx] %s (new entry)",
+                       crs_node_get_address_str(table->node),
+                       r, c, crs_node_ref_get_id_str(ref));
+        } else {
             /* If there's already a node reference in this entry, then we should
              * keep the reference that's closer to the local process, according
              * to whichever proximity metric is being used. */
-            if (entry->ref->proximity <= ref->proximity) {
-                clog_debug("[%s] (rtable) [%2d/%x] %s is closer",
+            if (ref == entry->ref || crs_id_equals(ref->id, entry->ref->id)) {
+                clog_debug("[%s] (rtable) [%2d/%x] %s (duplicate)",
                            crs_node_get_address_str(table->node),
                            r, c, crs_node_ref_get_id_str(entry->ref));
                 return;
-            } else {
-                clog_debug("[%s] (rtable) [%2d/%x] %s replaced",
+            } else if (entry->ref->proximity <= ref->proximity) {
+                clog_debug("[%s] (rtable) [%2d/%x] %s (closer than %s)",
                            crs_node_get_address_str(table->node),
-                           r, c, crs_node_ref_get_id_str(entry->ref));
+                           r, c, crs_node_ref_get_id_str(entry->ref),
+                           crs_node_ref_get_id_str(ref));
+                return;
+            } else {
+                clog_debug("[%s] (rtable) [%2d/%x] %s (replaces %s)",
+                           crs_node_get_address_str(table->node),
+                           r, c, crs_node_ref_get_id_str(ref),
+                           crs_node_ref_get_id_str(entry->ref));
             }
         }
         entry->ref = ref;
@@ -180,6 +189,63 @@ crs_routing_table_print(struct cork_buffer *dest,
                     crs_node_ref_get_id_str(entry->ref),
                     crs_node_ref_get_address_str(entry->ref)
                 );
+            }
+        }
+    }
+}
+
+
+int
+crs_routing_table_decode(struct crs_message *msg,
+                         struct crs_routing_table *dest,
+                         const char *field_name)
+{
+    unsigned int  i;
+    uint16_t  count;
+
+    rii_check(crs_message_decode_uint16(msg, &count, field_name));
+    clog_debug("[%s] (rtable) Decode %" PRIu16
+               " routing table entries from message",
+               crs_node_get_address_str(dest->node), count);
+
+    for (i = 0; i < count; i++) {
+        struct crs_node_ref  *ref;
+        rip_check(ref = crs_node_ref_decode(msg, dest->node, field_name));
+        if (crs_id_equals(ref->id, dest->node->id)) {
+            clog_debug("[%s] (rtable) Ignore self",
+                       crs_node_get_address_str(dest->node));
+        } else {
+            crs_routing_table_set(dest, ref);
+        }
+    }
+
+    return 0;
+}
+
+void
+crs_routing_table_encode(struct crs_message *msg,
+                         const struct crs_routing_table *table,
+                         unsigned int row_count)
+{
+    const struct crs_routing_table_entry  *entry;
+    unsigned int  r;
+    unsigned int  c;
+    unsigned int  count = 0;
+
+    for (r = 0, entry = table->entries; r < row_count; r++) {
+        for (c = 0; c < CRS_ROUTING_TABLE_COLUMN_COUNT; c++, entry++) {
+            if (entry->ref != NULL) {
+                count++;
+            }
+        }
+    }
+
+    crs_message_encode_uint16(msg, count);
+
+    for (r = 0, entry = table->entries; r < row_count; r++) {
+        for (c = 0; c < CRS_ROUTING_TABLE_COLUMN_COUNT; c++, entry++) {
+            if (entry->ref != NULL) {
+                crs_node_ref_encode(msg, entry->ref);
             }
         }
     }
@@ -518,4 +584,86 @@ crs_leaf_set_print(struct cork_buffer *dest, const struct crs_leaf_set *set)
     cork_buffer_append(dest, "[max] ", 6);
     crs_id_print(dest, set->above_most);
     cork_buffer_append(dest, "\n", 1);
+}
+
+
+int
+crs_leaf_set_visit_each(const struct crs_leaf_set *set, void *user_data,
+                        crs_node_ref_visit_f *visit)
+{
+    unsigned int  i;
+    for (i = CRS_LEAF_SET_SIZE; i-- > 0; ) {
+        struct crs_node_ref  *ref = set->below[i].ref;
+        if (ref != NULL) {
+            rii_check(visit(user_data, ref));
+        }
+    }
+    for (i = 0; i < CRS_LEAF_SET_SIZE; i++) {
+        struct crs_node_ref  *ref = set->above[i].ref;
+        if (ref != NULL) {
+            rii_check(visit(user_data, ref));
+        }
+    }
+    return 0;
+}
+
+
+int
+crs_leaf_set_decode(struct crs_message *msg, struct crs_leaf_set *dest,
+                    const char *field_name)
+{
+    unsigned int  i;
+    uint8_t  count;
+
+    rii_check(crs_message_decode_uint8(msg, &count, field_name));
+    clog_debug("[%s] (leafset) Decode %" PRIu8 " leaf set entries from message",
+               crs_node_get_address_str(dest->node), count);
+
+    for (i = 0; i < count; i++) {
+        struct crs_node_ref  *ref;
+        rip_check(ref = crs_node_ref_decode(msg, dest->node, field_name));
+        if (crs_id_equals(ref->id, dest->node->id)) {
+            clog_debug("[%s] (leafset) Ignore self",
+                       crs_node_get_address_str(dest->node));
+        } else {
+            crs_leaf_set_add(dest, ref);
+        }
+    }
+
+    return 0;
+}
+
+void
+crs_leaf_set_encode(struct crs_message *msg, const struct crs_leaf_set *set)
+{
+    unsigned int  i;
+    unsigned int  count = 0;
+
+    for (i = CRS_LEAF_SET_SIZE; i-- > 0; ) {
+        struct crs_node_ref  *ref = set->below[i].ref;
+        if (ref != NULL) {
+            count++;
+        }
+    }
+    for (i = 0; i < CRS_LEAF_SET_SIZE; i++) {
+        struct crs_node_ref  *ref = set->above[i].ref;
+        if (ref != NULL) {
+            count++;
+        }
+    }
+
+    crs_message_encode_uint8(msg, count);
+
+    for (i = CRS_LEAF_SET_SIZE; i-- > 0; ) {
+        struct crs_node_ref  *ref = set->below[i].ref;
+        if (ref != NULL) {
+            crs_node_ref_encode(msg, ref);
+        }
+    }
+    for (i = 0; i < CRS_LEAF_SET_SIZE; i++) {
+        struct crs_node_ref  *ref = set->above[i].ref;
+        if (ref != NULL) {
+            crs_node_ref_encode(msg, ref);
+        }
+    }
 }

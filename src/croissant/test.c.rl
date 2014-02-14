@@ -102,6 +102,27 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
                 crs_routing_table_set(from_table, to_ref);
             };
 
+        create_empty_network =
+            "create" space+ "empty" space+ "network"
+            %{
+                fprintf(stderr, "--- [%s]\n--- create empty network\n",
+                        crs_node_get_id_str(node));
+                rii_check(crs_node_bootstrap(node, NULL));
+            };
+
+        join_network_via =
+            "join" space+ "network" space+ "via" space+ id1
+            %{
+                struct crs_node  *bootstrap_node;
+                const struct crs_node_address  *bootstrap_address;
+                fprintf(stderr, "--- [%s]\n--- join network via %s\n",
+                        crs_node_get_id_str(node),
+                        crs_id_to_raw_string(id1_str, id1));
+                rip_check(bootstrap_node = crs_ctx_require_node(ctx, id1));
+                bootstrap_address = crs_node_get_address(bootstrap_node);
+                rii_check(crs_node_bootstrap(node, bootstrap_address));
+            };
+
         print_leaf_set =
             "print" space+ "leaf" space+ "set"
             %{
@@ -164,6 +185,8 @@ crs_parse_command(struct crs_ctx *ctx, const char *command)
         node_command =
               add_leaf_set_entry
             | add_routing_table_entry
+            | create_empty_network
+            | join_network_via
             | print_leaf_set
             | print_next_hop
             | print_routing_table
