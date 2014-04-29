@@ -13,7 +13,6 @@
 
 #include "croissant.h"
 #include "croissant/context.h"
-#include "croissant/local.h"
 #include "croissant/node.h"
 
 
@@ -21,78 +20,102 @@
  * Contexts
  */
 
+struct crs_ctx {
+    struct cork_hash_table  *types_by_name;
+    struct cork_hash_table  *types_by_id;
+};
+
 struct crs_ctx *
 crs_ctx_new(void)
 {
     struct crs_ctx  *ctx = cork_new(struct crs_ctx);
-    ctx->nodes = NULL;
-    ctx->last_id = 0;
+    ctx->types_by_name = cork_string_hash_table_new(0, 0);
+    ctx->types_by_id = cork_pointer_hash_table_new(0, 0);
+    cork_hash_table_set_free_value
+        (ctx->types_by_id, (cork_free_f) crs_conn_type_free);
     return ctx;
 }
 
 void
 crs_ctx_free(struct crs_ctx *ctx)
 {
-    struct crs_node  *curr;
-    struct crs_node  *next;
-    for (curr = ctx->nodes; curr != NULL; curr = next) {
-        next = curr->next;
-        crs_node_free(curr);
-    }
+    cork_hash_table_free(ctx->types_by_name);
+    cork_hash_table_free(ctx->types_by_id);
     free(ctx);
 }
 
-CORK_LOCAL crs_local_node_id
-crs_ctx_next_node_id(struct crs_ctx *ctx)
+void
+crs_ctx_add_conn_type(struct crs_ctx *ctx, struct crs_conn_type *type)
 {
-    return ++ctx->last_id;
+    cork_hash_table_put
+        (ctx->types_by_name, (void *) type->name, type, NULL, NULL, NULL);
+    cork_hash_table_put_hash
+        (ctx->types_by_id, (cork_hash) type->id,
+         (void *) (uintptr_t) type->id, type, NULL, NULL, NULL);
 }
 
-CORK_LOCAL void
-crs_ctx_add_node(struct crs_ctx *ctx, struct crs_node *node)
+CORK_LOCAL struct crs_node_address *
+crs_ctx_decode_node_address(struct crs_message *msg, struct crs_ctx *ctx,
+                            const char *field_name)
 {
-    node->ctx = ctx;
-    node->next = ctx->nodes;
-    ctx->nodes = node;
-}
-
-CORK_LOCAL void
-crs_ctx_remove_node(struct crs_ctx *ctx, struct crs_node *node)
-{
-    struct crs_node  *prev = NULL;
-    struct crs_node  *curr = ctx->nodes;
-    for (curr = ctx->nodes; curr != NULL; curr = curr->next) {
-        if (curr == node) {
-            if (prev == NULL) {
-                ctx->nodes = curr->next;
-            } else {
-                prev->next = curr->next;
-            }
-            return;
+    crs_conn_type_id  id;
+    struct crs_conn_type  *type;
+    rii_check(crs_message_decode_uint32(msg, &id, "address type"));
+    type = cork_hash_table_get_hash
+        (ctx->types_by_id, (cork_hash) id, (void *) (uintptr_t) id);
+    if (CORK_UNLIKELY(type == NULL)) {
+        crs_parse_error("Unknown address type 0x%08" PRIx32, id);
+        return NULL;
+    } else {
+        int  rc;
+        struct crs_node_address  *address = crs_node_address_new(type);
+        rc = type->decode_address(address->user_data, msg, "address");
+        if (CORK_LIKELY(rc == 0)) {
+            return address;
+        } else {
+            crs_node_address_free(address);
+            return NULL;
         }
     }
 }
 
-CORK_LOCAL struct crs_node *
-crs_ctx_get_node(struct crs_ctx *ctx, crs_local_node_id id)
+CORK_LOCAL struct crs_node_address *
+crs_ctx_parse_node_address(struct crs_ctx *ctx, const char *str)
 {
-    struct crs_node  *curr;
-    for (curr = ctx->nodes; curr != NULL; curr = curr->next) {
-        if (curr->address.local_id == id) {
-            return curr;
-        }
-    }
-    return NULL;
-}
+    struct cork_buffer  buf = CORK_BUFFER_INIT();
+    char  *type_name;
+    char  *colon;
+    char  *address_detail;
+    struct crs_conn_type  *type;
 
-struct crs_node *
-crs_ctx_get_node_with_id(struct crs_ctx *ctx, crs_id id)
-{
-    struct crs_node  *curr;
-    for (curr = ctx->nodes; curr != NULL; curr = curr->next) {
-        if (crs_id_equals(id, curr->id)) {
-            return curr;
+    cork_buffer_set_string(&buf, str);
+    colon = strchr(buf.buf, ':');
+    if (CORK_UNLIKELY(colon == NULL)) {
+        cork_buffer_done(&buf);
+        crs_parse_error("Missing address type");
+        return NULL;
+    }
+
+    type_name = buf.buf;
+    *colon = '\0';
+    address_detail = colon + 1;
+
+    type = cork_hash_table_get(ctx->types_by_name, type_name);
+    if (CORK_UNLIKELY(type == NULL)) {
+        cork_buffer_done(&buf);
+        crs_parse_error("Unknown address type %s", type_name);
+        return NULL;
+    } else {
+        int  rc;
+        struct crs_node_address  *address = crs_node_address_new(type);
+        rc = type->parse_address(address->user_data, address_detail);
+        if (CORK_LIKELY(rc == 0)) {
+            cork_buffer_done(&buf);
+            return address;
+        } else {
+            cork_buffer_done(&buf);
+            crs_node_address_free(address);
+            return NULL;
         }
     }
-    return NULL;
 }

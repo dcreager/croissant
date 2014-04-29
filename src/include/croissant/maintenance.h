@@ -38,7 +38,7 @@ crs_maintenance_get(struct crs_node *node);
 
 CORK_LOCAL int
 crs_maintenance_join(struct crs_maintenance *maint,
-                     const struct crs_node_address *bootstrap_node);
+                     struct crs_node_ref *bootstrap_ref);
 
 CORK_LOCAL int
 crs_maintenance_find_joiner(struct crs_maintenance *maint,

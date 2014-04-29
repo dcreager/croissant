@@ -14,30 +14,19 @@
 #include <libcork/core.h>
 
 #include "croissant.h"
-#include "croissant/local.h"
+#include "croissant/node.h"
 
 
 /*-----------------------------------------------------------------------
  * Contexts
  */
 
-struct crs_ctx {
-    struct crs_node  *nodes;
-    struct crs_node_ref  *refs;
-    crs_local_node_id  last_id;
-};
+CORK_LOCAL struct crs_node_address *
+crs_ctx_decode_node_address(struct crs_message *msg, struct crs_ctx *ctx,
+                            const char *field_name);
 
-CORK_LOCAL crs_local_node_id
-crs_ctx_next_node_id(struct crs_ctx *ctx);
-
-CORK_LOCAL void
-crs_ctx_add_node(struct crs_ctx *ctx, struct crs_node *node);
-
-CORK_LOCAL void
-crs_ctx_remove_node(struct crs_ctx *ctx, struct crs_node *node);
-
-CORK_LOCAL struct crs_node *
-crs_ctx_get_node(struct crs_ctx *ctx, crs_local_node_id id);
+CORK_LOCAL struct crs_node_address *
+crs_ctx_parse_node_address(struct crs_ctx *ctx, const char *str);
 
 
 #endif  /* CROISSANT_CONTEXT_H */

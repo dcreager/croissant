@@ -25,49 +25,71 @@
  * Node references
  */
 
+static int
+crs_node_ref__default_send(void *ref, crs_id src, crs_id dest,
+                           struct crs_message *msg)
+{
+    return 0;
+}
+
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new_priv(struct crs_node *owner, crs_id node_id,
-                      const struct crs_node_address *address,
-                      crs_proximity proximity,
-                      struct crs_node *local_node,
-                      void *user_data, cork_free_f free_user_data,
-                      crs_node_ref_send_f *send)
+crs_node_ref_new(struct crs_node *owner, crs_id id,
+                 struct crs_node_address *address)
 {
     struct crs_node_ref  *ref = cork_new(struct crs_node_ref);
+    ref->bootstrapping = false;
     ref->owner = owner;
-    ref->id = node_id;
-    crs_id_to_raw_string(ref->id_str, node_id);
-    ref->address = *address;
+    ref->id = id;
+    crs_id_to_raw_string(ref->id_str, id);
+    ref->address = address;
     cork_buffer_init(&ref->address_str);
     crs_node_address_print(&ref->address_str, address);
-    ref->proximity = proximity;
-    ref->local_node = local_node;
-    ref->user_data = user_data;
-    ref->free_user_data = free_user_data;
-    ref->send = send;
+    ref->proximity = CRS_PROXIMITY_UNKNOWN;
+    ref->user_data = NULL;
+    ref->free_user_data = NULL;
+    ref->send = crs_node_ref__default_send;
     return ref;
 }
 
 CORK_LOCAL struct crs_node_ref *
-crs_node_ref_new(struct crs_node *owner,
-                 const struct crs_node_address *address)
+crs_node_ref_new_bootstrap(struct crs_node *owner,
+                           struct crs_node_address *address)
 {
-    switch (address->type) {
-        case CRS_NODE_TYPE_LOCAL:
-            /* We ignore the proximity value for local nodes; since they're
-             * local, we always use a proximity of 0. */
-            return crs_local_node_ref_new(owner, address);
-        default:
-            cork_unreachable();
-    }
+    struct crs_node_ref  *ref = cork_new(struct crs_node_ref);
+    ref->bootstrapping = true;
+    ref->owner = owner;
+    crs_id_to_raw_string(ref->id_str, id);
+    ref->address = address;
+    cork_buffer_init(&ref->address_str);
+    crs_node_address_print(&ref->address_str, address);
+    ref->proximity = CRS_PROXIMITY_UNKNOWN;
+    ref->user_data = NULL;
+    ref->free_user_data = NULL;
+    ref->send = crs_node_ref__default_send;
+    return ref;
 }
 
-void
+CORK_LOCAL void
 crs_node_ref_free(struct crs_node_ref *ref)
 {
     cork_free_user_data(ref);
     cork_buffer_done(&ref->address_str);
     free(ref);
+}
+
+void
+crs_node_ref_set_user_data(struct crs_node_ref *ref,
+                           void *user_data, cork_free_f free_user_data)
+{
+    cork_free_user_data(ref);
+    ref->user_data = user_data;
+    ref->free_user_data = free_user_data;
+}
+
+void
+crs_node_ref_set_send(struct crs_node_ref *ref, crs_node_ref_send_f *send)
+{
+    ref->send = send;
 }
 
 crs_id
@@ -76,13 +98,26 @@ crs_node_ref_get_id(const struct crs_node_ref *ref)
     return ref->id;
 }
 
+int
+crs_node_ref_set_id(struct crs_node_ref *ref, crs_id id)
+{
+    if (ref->bootstrapping) {
+        ref->id = id;
+        ref->bootstrapping = false;
+        return 0;
+    } else if (CORK_LIKELY(ref->id == id)) {
+        return 0;
+    } else {
+        crs_io_error
+}
+
 const char *
 crs_node_ref_get_id_str(const struct crs_node_ref *ref)
 {
     return ref->id_str;
 }
 
-const struct crs_node_address *
+struct crs_node_address *
 crs_node_ref_get_address(const struct crs_node_ref *ref)
 {
     return &ref->address;
@@ -110,17 +145,7 @@ int
 crs_node_ref_send(struct crs_node_ref *ref, crs_id src, crs_id dest,
                   struct crs_message *msg)
 {
-    /* If the node in question is in the current process, just sent the message
-     * directly. */
-    if (ref->local_node == NULL) {
-        return ref->send(ref, src, dest, msg);
-    } else {
-        clog_debug("[%s] {local} Send message to %s",
-                   crs_node_get_address_str(ref->owner),
-                   crs_node_ref_get_address_str(ref));
-        crs_message_reset_cursor(msg);
-        return crs_node_route_message(ref->local_node, src, dest, msg);
-    }
+    return ref->send(ref->user_data, src, dest, msg);
 }
 
 int
@@ -138,11 +163,12 @@ struct crs_node_ref *
 crs_node_ref_decode(struct crs_message *msg, struct crs_node *owner,
                     const char *field_name)
 {
+    struct crs_ctx  *ctx = owner->ctx;
     crs_id  id;
     const struct crs_node_address  *address;
     rpi_check(crs_id_decode(msg, &id, field_name));
-    rpp_check(address = crs_node_address_decode(msg, field_name));
-    return crs_node_new_ref(owner, address);
+    rpp_check(address = crs_ctx_decode_node_address(msg, ctx, field_name));
+    return crs_node_new_ref(owner, id, address);
 }
 
 void

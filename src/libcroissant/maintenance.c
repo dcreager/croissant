@@ -279,11 +279,9 @@ crs_maintenance_get(struct crs_node *node)
 
 CORK_LOCAL int
 crs_maintenance_join(struct crs_maintenance *maint,
-                     const struct crs_node_address *bootstrap_address)
+                     struct crs_node_ref *bootstrap_ref)
 {
     struct crs_message  *msg = crs_application_new_message(maint->app);
-    struct crs_node_ref  *bootstrap_ref;
-    bootstrap_ref = crs_node_new_ref(maint->node, bootstrap_address);
     clog_debug("[%s] Send join request to %s at %s",
                crs_node_get_address_str(maint->node),
                crs_node_ref_get_id_str(bootstrap_ref),

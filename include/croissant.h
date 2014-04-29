@@ -60,7 +60,8 @@ crs_message_decode_buffer(struct crs_message *msg, struct cork_buffer *dest,
 
 int
 crs_message_decode_buffer_append(struct crs_message *msg,
-                                 struct cork_buffer *dest, const char *field_name);
+                                 struct cork_buffer *dest,
+                                 const char *field_name);
 
 int
 crs_message_decode_uint8(struct crs_message *msg, uint8_t *dest,
@@ -164,6 +165,9 @@ crs_id_decode(struct crs_message *msg, crs_id *dest, const char *field_name);
 void
 crs_id_encode(struct crs_message *msg, crs_id id);
 
+struct cork_hash_table *
+crs_id_hash_table_new(size_t initial_size, unsigned int flags);
+
 
 /*-----------------------------------------------------------------------
  * Identifier arithmetic
@@ -244,10 +248,7 @@ crs_node_address_print(struct cork_buffer *dest,
                        const struct crs_node_address *address);
 
 void
-crs_node_address_free(const struct crs_node_address *address);
-
-const struct crs_node_address *
-crs_node_address_decode(struct crs_message *msg, const char *field_name);
+crs_node_address_free(struct crs_node_address *address);
 
 void
 crs_node_address_encode(struct crs_message *msg,
@@ -259,6 +260,7 @@ crs_node_address_encode(struct crs_message *msg,
  */
 
 struct crs_ctx;
+struct crs_node;
 
 struct crs_ctx *
 crs_ctx_new(void);
@@ -266,31 +268,29 @@ crs_ctx_new(void);
 void
 crs_ctx_free(struct crs_ctx *ctx);
 
-struct crs_node *
-crs_ctx_get_node_with_id(struct crs_ctx *ctx, crs_id id);
+typedef void
+crs_node_ready_f(void *user_data, struct crs_node *node);
+
+typedef void
+crs_error_f(void *user_data);
+
+/* Creates a new Pastry node with the given ID that will listen on the given
+ * address.  If bootstrap_address is NULL, creates a new Pastry overlay network
+ * with this node as the only member.  Otherwise, contacts an existing node at
+ * bootstrap_address and joins the same Pastry network that it belongs to.
+ *
+ * Calls the ready callback if we successfully create the node and join the
+ * network.  Calls the error callback if not. */
+void
+crs_ctx_join_network(struct crs_ctx *ctx, crs_id id, const char *address,
+                     const char *bootstrap_address,
+                     void *user_data, crs_node_ready_f *ready,
+                     crs_error_f *error);
 
 
 /*-----------------------------------------------------------------------
  * Nodes
  */
-
-struct crs_node;
-
-/* Creates a new Pastry node that will listen on the given address.  The node
- * does not belong to any Pastry network yet; you must call crs_node_bootstrap
- * to create a new network or add the node to an existing network.  If address
- * is NULL, this node will only be accessible within the current process.  (This
- * is mostly useful for test cases.) */
-struct crs_node *
-crs_node_new(struct crs_ctx *ctx, crs_id id,
-             const struct crs_node_address *address);
-
-/* If bootstrap_node is NULL, create a new Pastry network with this node as the
- * only member.  Otherwise, add the node to the Pastry network that
- * bootstrap_node belongs to. */
-int
-crs_node_bootstrap(struct crs_node *node,
-                   const struct crs_node_address *bootstrap_node);
 
 /* Detach node from the Pastry network that it belongs to. */
 int
@@ -302,11 +302,14 @@ crs_node_get_id(const struct crs_node *node);
 const char *
 crs_node_get_id_str(const struct crs_node *node);
 
-const struct crs_node_address *
+struct crs_node_address *
 crs_node_get_address(const struct crs_node *node);
 
 const char *
 crs_node_get_address_str(const struct crs_node *node);
+
+struct crs_node_ref *
+crs_node_get_self_ref(struct crs_node *node);
 
 
 /* Use the encoding functions to build up the content of the message.  You must
@@ -344,20 +347,22 @@ struct crs_node_ref;
 
 /* Each node maintains its own set of references to other nodes. */
 
+/* Takes control of address */
 struct crs_node_ref *
-crs_node_get_ref(struct crs_node *node);
-
-struct crs_node_ref *
-crs_node_new_ref(struct crs_node *owner,
-                 const struct crs_node_address *address);
+crs_node_get_ref(struct crs_node *owner, crs_id id,
+                 struct crs_node_address *address);
 
 crs_id
 crs_node_ref_get_id(const struct crs_node_ref *ref);
 
+/* Should only be called by a `connect` method. */
+int
+crs_node_ref_set_id(struct crs_node_ref *ref, crs_id id);
+
 const const char *
 crs_node_ref_get_id_str(const struct crs_node_ref *ref);
 
-const struct crs_node_address *
+struct crs_node_address *
 crs_node_ref_get_address(const struct crs_node_ref *ref);
 
 const const char *
@@ -393,7 +398,7 @@ crs_node_ref_visit_f(void *user_data, struct crs_node_ref *ref);
 
 
 struct crs_node_ref *
-crs_node_ref_decode(struct crs_message *msg, struct crs_node *owner,
+crs_node_ref_decode(struct crs_message *msg, struct crs_node *node,
                     const char *field_name);
 
 void
@@ -583,6 +588,118 @@ crs_node_add_application(struct crs_node *node, struct crs_application *app);
 
 struct crs_application *
 crs_node_get_application(struct crs_node *node, crs_application_id id);
+
+
+/*-----------------------------------------------------------------------
+ * Connection types
+ */
+
+typedef uint32_t  crs_conn_type_id;
+struct crs_conn_type;
+
+
+typedef void *
+crs_node_address_new_f(void *ct);
+
+typedef int
+crs_node_address_decode_f(void *addr, struct crs_message *msg,
+                          const char *field_name);
+
+typedef void
+crs_node_address_encode_f(void *addr, struct crs_message *msg);
+
+typedef int
+crs_node_address_parse_f(void *addr, char *str);
+
+typedef void
+crs_node_address_print_f(void *addr, struct cork_buffer *dest);
+
+
+typedef int
+crs_node_bind_f(void *ct, void *addr, struct crs_node *node);
+
+typedef int
+crs_node_detach_f(void *node);
+
+void
+crs_node_set_user_data(struct crs_node *node,
+                       void *user_data, cork_free_f free_user_data);
+
+void
+crs_node_set_detach(struct crs_node *node, crs_node_detach_f *detach);
+
+
+typedef int
+crs_node_ref_connect_f(void *ct, void *addr, struct crs_node *node,
+                       struct crs_node_ref *ref, bool bootstrap);
+
+/* Takes control of msg */
+typedef int
+crs_node_ref_send_f(void *ref, struct crs_node *node, crs_id src, crs_id dest,
+                    struct crs_message *msg);
+
+void
+crs_node_ref_set_user_data(struct crs_node_ref *ref,
+                           void *user_data, cork_free_f free_user_data);
+
+void
+crs_node_ref_set_send(struct crs_node_ref *ref, crs_node_ref_send_f *send);
+
+
+struct crs_conn_type *
+crs_conn_type_new(crs_conn_type_id id, const char *name);
+
+void
+crs_conn_type_set_user_data(struct crs_conn_type *type,
+                            void *user_data, cork_free_f free_user_data);
+
+void
+crs_conn_type_set_new_address(struct crs_conn_type *type,
+                              crs_node_address_new_f *new_address);
+
+void
+crs_conn_type_set_free_address(struct crs_conn_type *type,
+                               cork_free_f free_address);
+
+void
+crs_conn_type_set_decode_address(struct crs_conn_type *type,
+                                 crs_node_address_decode_f *decode_address);
+
+void
+crs_conn_type_set_encode_address(struct crs_conn_type *type,
+                                 crs_node_address_encode_f *encode_address);
+
+void
+crs_conn_type_set_parse_address(struct crs_conn_type *type,
+                                crs_node_address_parse_f *parse_address);
+
+void
+crs_conn_type_set_print_address(struct crs_conn_type *type,
+                                crs_node_address_print_f *print_address);
+
+void
+crs_conn_type_set_bind_node(struct crs_conn_type *type,
+                            crs_node_bind_f *bind);
+
+void
+crs_conn_type_set_connect_ref(struct crs_conn_type *type,
+                              crs_node_ref_connect_f *connect);
+
+void
+crs_conn_type_free(struct crs_conn_type *type);
+
+
+/* Takes control of type */
+void
+crs_ctx_add_conn_type(struct crs_ctx *ctx, struct crs_conn_type *type);
+
+
+/*-----------------------------------------------------------------------
+ * Local connections
+ */
+
+void
+crs_ctx_add_locals(struct crs_ctx *ctx);
 
 
 #endif  /* CROISSANT_H */

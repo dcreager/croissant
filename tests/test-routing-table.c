@@ -107,7 +107,6 @@ START_TEST(test_routing_table_01)
     verify_routing_table(table, "");
     crs_routing_table_free(table);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 
@@ -128,7 +127,6 @@ START_TEST(test_routing_table_02)
     );
     crs_routing_table_free(table);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 
@@ -183,7 +181,6 @@ START_TEST(test_routing_table_03)
     );
     crs_routing_table_free(table);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 
@@ -269,7 +266,6 @@ START_TEST(test_routing_table_04)
     );
     crs_routing_table_free(table);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 
@@ -293,7 +289,6 @@ START_TEST(test_routing_table_conflict_01)
     );
     crs_routing_table_free(table);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 
@@ -316,7 +311,6 @@ START_TEST(test_routing_table_conflict_02)
     );
     crs_routing_table_free(table);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 

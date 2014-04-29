@@ -81,7 +81,6 @@ START_TEST(test_leaf_set_01)
     );
     crs_leaf_set_free(set);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 
@@ -107,7 +106,6 @@ START_TEST(test_leaf_set_02)
     );
     crs_leaf_set_free(set);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 
@@ -157,7 +155,6 @@ START_TEST(test_leaf_set_03)
     );
     crs_leaf_set_free(set);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 
@@ -219,7 +216,6 @@ START_TEST(test_leaf_set_04)
     );
     crs_leaf_set_free(set);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 

@@ -62,7 +62,6 @@ START_TEST(test_local_nodes)
     cork_buffer_done(&actual);
     cork_buffer_done(&expected);
     crs_ctx_free(ctx);
-    fail_if_error(crs_finalize_tests());
 }
 END_TEST
 

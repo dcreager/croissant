@@ -18,16 +18,6 @@
 
 
 /*-----------------------------------------------------------------------
- * Test case helper functions
- */
-
-/* Ensures that all local nodes have been freed, and resets the local node ID
- * counter.  Useful in test cases to get reproducible output. */
-int
-crs_finalize_tests(void);
-
-
-/*-----------------------------------------------------------------------
  * Saving messages
  */
 
