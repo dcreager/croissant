@@ -3,8 +3,7 @@
  * Copyright © 2014, RedJack, LLC.
  * All rights reserved.
  *
- * Please see the LICENSE.txt file in this distribution for license
- * details.
+ * Please see the COPYING file in this distribution for license details.
  * ----------------------------------------------------------------------
  */
 
@@ -242,7 +241,7 @@ static void
 crs_maintenance__free(void *user_data)
 {
     struct crs_maintenance  *maint = user_data;
-    free(maint);
+    cork_delete(struct crs_maintenance, maint);
 }
 
 CORK_LOCAL struct crs_maintenance *

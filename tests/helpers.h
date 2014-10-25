@@ -1,10 +1,9 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2011-2012, RedJack, LLC.
+ * Copyright © 2011-2014, RedJack, LLC.
  * All rights reserved.
  *
- * Please see the LICENSE.txt file in this distribution for license
- * details.
+ * Please see the COPYING file in this distribution for license details.
  * ----------------------------------------------------------------------
  */
 
@@ -91,9 +90,20 @@ fail_unless_buf_equal(struct cork_buffer *actual, struct cork_buffer *expected,
     }
 }
 
+
+/* Use a custom allocator that debugs every allocation. */
+
+static void
+setup_allocator(void)
+{
+    struct cork_alloc  *debug = cork_debug_alloc_new(cork_allocator);
+    cork_set_allocator(debug);
+}
+
 static void
 initialize_tests(void)
 {
+    setup_allocator();
     if (clog_setup_logging() != 0) {
         fprintf(stderr, "Warning: %s\n", cork_error_message());
         cork_error_clear();

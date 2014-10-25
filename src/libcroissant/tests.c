@@ -3,8 +3,7 @@
  * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
- * Please see the LICENSE.txt file in this distribution for license
- * details.
+ * Please see the COPYING file in this distribution for license details.
  * ----------------------------------------------------------------------
  */
 
@@ -47,7 +46,7 @@ static void
 crs_save_message__free(void *user_data)
 {
     struct crs_save_message  *self = user_data;
-    free(self);
+    cork_delete(struct crs_save_message, self);
 }
 
 struct crs_save_message *
@@ -120,7 +119,7 @@ crs_print_message__free(void *user_data)
 {
     struct crs_print_message  *self = user_data;
     cork_buffer_done(&self->buf);
-    free(self);
+    cork_delete(struct crs_print_message, self);
 }
 
 struct crs_print_message *

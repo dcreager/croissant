@@ -1,10 +1,9 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2013, RedJack, LLC.
+ * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
- * Please see the LICENSE.txt file in this distribution for license
- * details.
+ * Please see the COPYING file in this distribution for license details.
  * ----------------------------------------------------------------------
  */
 
@@ -39,7 +38,7 @@ crs_ctx_free(struct crs_ctx *ctx)
         next = curr->next;
         crs_node_free(curr);
     }
-    free(ctx);
+    cork_delete(struct crs_ctx, ctx);
 }
 
 CORK_LOCAL crs_local_node_id

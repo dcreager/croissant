@@ -3,8 +3,7 @@
  * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
- * Please see the LICENSE.txt file in this distribution for license
- * details.
+ * Please see the COPYING file in this distribution for license details.
  * ----------------------------------------------------------------------
  */
 
@@ -72,7 +71,7 @@ crs_node_address_print(struct cork_buffer *dest,
 void
 crs_node_address_free(const struct crs_node_address *address)
 {
-    free((void *) address);
+    cork_delete(struct crs_node_address, (struct crs_node_address *) address);
 }
 
 const struct crs_node_address *
@@ -153,6 +152,7 @@ crs_node_new_with_id(struct crs_ctx *ctx, crs_id id,
                      const struct crs_node_address *address)
 {
     struct crs_node  *node = cork_new(struct crs_node);
+    printf("=== %p %p\n", node, &node->id);
     node->id = id;
     crs_id_to_raw_string(node->id_str, id);
     if (address == NULL) {
@@ -197,7 +197,7 @@ crs_node_free(struct crs_node *node)
     cork_buffer_done(&node->address_str);
     crs_routing_table_free(node->routing_table);
     crs_leaf_set_free(node->leaf_set);
-    free(node);
+    cork_delete(struct crs_node, node);
 }
 
 crs_id

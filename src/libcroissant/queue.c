@@ -1,10 +1,9 @@
 /* -*- coding: utf-8 -*-
  * ----------------------------------------------------------------------
- * Copyright © 2012-2013, RedJack, LLC.
+ * Copyright © 2012-2014, RedJack, LLC.
  * All rights reserved.
  *
- * Please see the LICENSE.txt file in this distribution for license
- * details.
+ * Please see the COPYING file in this distribution for license details.
  * ----------------------------------------------------------------------
  */
 
@@ -98,7 +97,7 @@ static void
 crs_local_message_free(struct crs_local_message *msg)
 {
     cork_buffer_done(&msg->content);
-    free(msg);
+    cork_delete(struct crs_local_message, msg);
 }
 
 

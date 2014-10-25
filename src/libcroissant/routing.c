@@ -3,8 +3,7 @@
  * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
- * Please see the LICENSE.txt file in this distribution for license
- * details.
+ * Please see the COPYING file in this distribution for license details.
  * ----------------------------------------------------------------------
  */
 
@@ -55,7 +54,7 @@ crs_routing_table_new(struct crs_node *node)
 void
 crs_routing_table_free(struct crs_routing_table *table)
 {
-    free(table);
+    cork_delete(struct crs_routing_table, table);
 }
 
 bool
@@ -277,9 +276,15 @@ struct crs_leaf_set *
 crs_leaf_set_new(struct crs_node *node)
 {
     struct crs_leaf_set  *set = cork_new(struct crs_leaf_set);
+    crs_id  f;
+    printf("--- %p %p\n", set, &set->below_least);
     memset(set, 0, sizeof(struct crs_leaf_set));
+    printf("--- %p %p\n", set, &set->below_least);
     set->node = node;
-    set->below_least = node->id;
+    printf("--- %p %p\n", set, &set->below_least);
+    f = node->id;
+    printf("--- %p %p\n", set, &set->below_least);
+    set->below_least = f;
     set->above_most = node->id;
     clog_debug("[%s] New leaf set", crs_node_get_address_str(node));
     return set;
@@ -288,7 +293,7 @@ crs_leaf_set_new(struct crs_node *node)
 void
 crs_leaf_set_free(struct crs_leaf_set *set)
 {
-    free(set);
+    cork_delete(struct crs_leaf_set, set);
 }
 
 

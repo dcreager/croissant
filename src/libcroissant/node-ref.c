@@ -3,8 +3,7 @@
  * Copyright © 2013-2014, RedJack, LLC.
  * All rights reserved.
  *
- * Please see the LICENSE.txt file in this distribution for license
- * details.
+ * Please see the COPYING file in this distribution for license details.
  * ----------------------------------------------------------------------
  */
 
@@ -67,7 +66,7 @@ crs_node_ref_free(struct crs_node_ref *ref)
 {
     cork_free_user_data(ref);
     cork_buffer_done(&ref->address_str);
-    free(ref);
+    cork_delete(struct crs_node_ref, ref);
 }
 
 crs_id
