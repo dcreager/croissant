@@ -8,6 +8,7 @@
  */
 
 #include <libcork/cli.h>
+#include <libcork/core.h>
 
 extern struct cork_command  croissant_test;
 

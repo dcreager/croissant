@@ -354,13 +354,13 @@ crs_node_new_ref(struct crs_node *owner,
 crs_id
 crs_node_ref_get_id(const struct crs_node_ref *ref);
 
-const const char *
+const char *
 crs_node_ref_get_id_str(const struct crs_node_ref *ref);
 
 const struct crs_node_address *
 crs_node_ref_get_address(const struct crs_node_ref *ref);
 
-const const char *
+const char *
 crs_node_ref_get_address_str(const struct crs_node_ref *ref);
 
 crs_proximity

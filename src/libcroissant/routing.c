@@ -134,7 +134,7 @@ crs_routing_table_set(struct crs_routing_table *table,
     entry = crs_routing_table_get_entry_for_id(table, ref->id, &r, &c);
     if (entry != NULL) {
         if (entry->ref == NULL) {
-            clog_debug("[%s] (rtable) [%2d/%hx] %s (new entry)",
+            clog_debug("[%s] (rtable) [%2d/%x] %s (new entry)",
                        crs_node_get_address_str(table->node),
                        r, c, crs_node_ref_get_id_str(ref));
         } else {
